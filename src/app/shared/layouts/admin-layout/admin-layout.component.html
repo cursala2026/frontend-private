@@ -1,0 +1,90 @@
+<div class="flex h-screen bg-gray-100">
+  <!-- Sidebar -->
+  <aside
+    [class]="isSidebarOpen() ? 'translate-x-0' : '-translate-x-full'"
+    class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0"
+  >
+    <!-- Logo -->
+    <div class="flex items-center justify-between h-16 px-6 bg-gray-900">
+      <h1 class="text-xl font-bold">Admin Panel</h1>
+      <button
+        (click)="toggleSidebar()"
+        class="lg:hidden text-gray-400 hover:text-white focus:outline-none"
+      >
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="mt-6 px-4">
+      @for (item of menuItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          [class.bg-gray-900]="isActiveRoute(item.route)"
+          class="flex items-center px-4 py-3 mb-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          <svg class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon" />
+          </svg>
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <!-- User Info -->
+    <div class="absolute bottom-0 w-full p-4 bg-gray-900">
+      @if (user(); as currentUser) {
+        <div class="flex items-center mb-3">
+          <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+            {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium">{{ currentUser.firstName }} {{ currentUser.lastName }}</p>
+            <p class="text-xs text-gray-400">{{ currentUser.email }}</p>
+          </div>
+        </div>
+      }
+      <button
+        (click)="logout()"
+        class="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+      >
+        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200">
+      <button
+        (click)="toggleSidebar()"
+        class="lg:hidden text-gray-600 hover:text-gray-900 focus:outline-none"
+      >
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <div class="flex items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Panel de Administración</h2>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Overlay para cerrar sidebar en móvil -->
+<div *ngIf="isSidebarOpen()"
+  (click)="toggleSidebar()"
+  class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
+></div>

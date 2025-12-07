@@ -1,0 +1,293 @@
+nohup: no se tendrá en cuenta la entrada
+
+> frontend-private@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names                            | Raw size
+main.js             | main                             | 52.18 kB | 
+styles.css          | styles                           | 27.74 kB | 
+chunk-KJBBOQY6.js   | -                                |  5.38 kB | 
+polyfills.js        | polyfills                        | 95 bytes | 
+
+                    | Initial total                    | 85.40 kB
+
+Lazy chunk files    | Names                            | Raw size
+chunk-SQWBSNTA.js   | student-teacher-layout-component | 21.30 kB | 
+chunk-7HD4HPTZ.js   | login-component                  | 17.32 kB | 
+chunk-Y24GMMXP.js   | admin-layout-component           | 15.39 kB | 
+chunk-CPRTVLBW.js   | alumno-dashboard-component       | 12.12 kB | 
+chunk-6RPXMYWY.js   | admin-dashboard-component        | 11.81 kB | 
+chunk-XU65ZVEW.js   | profesor-dashboard-component     | 11.78 kB | 
+chunk-MWX2KRU4.js   | unauthorized-component           |  7.07 kB | 
+
+Application bundle generation complete. [5.605 seconds] - 2025-12-07T01:52:20.812Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  6.69 kB | 
+
+Application bundle generation complete. [0.995 seconds] - 2025-12-07T01:54:45.380Z
+
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names                            | Raw size
+main.js             | main                             |  6.69 kB | 
+chunk-PIROAMVH.js   | -                                |  5.47 kB | 
+
+Lazy chunk files    | Names                            | Raw size
+chunk-ZUWYUPEC.js   | student-teacher-layout-component | 21.30 kB | 
+chunk-M4IC7767.js   | login-component                  | 17.32 kB | 
+chunk-6NIYLTGK.js   | admin-layout-component           | 15.39 kB | 
+chunk-E7CC5BIZ.js   | alumno-dashboard-component       | 12.12 kB | 
+chunk-CN5EYANP.js   | admin-dashboard-component        | 11.81 kB | 
+chunk-DZGXDEXE.js   | profesor-dashboard-component     | 11.78 kB | 
+chunk-V5P5H2KG.js   | unauthorized-component           |  7.07 kB | 
+
+Application bundle generation complete. [0.519 seconds] - 2025-12-07T02:14:19.255Z
+
+Page reload sent to client(s).
+11:14:21 [vite] (client) ✨ new dependencies optimized: rxjs/operators
+11:14:21 [vite] (client) ✨ optimized dependencies changed. reloading
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names                            | Raw size
+main.js             | main                             |  6.69 kB | 
+chunk-A3Q4CZJJ.js   | -                                |  5.92 kB | 
+
+Lazy chunk files    | Names                            | Raw size
+chunk-PIALCETO.js   | student-teacher-layout-component | 21.30 kB | 
+chunk-QKSBMXH6.js   | login-component                  | 17.32 kB | 
+chunk-TUYM26QF.js   | admin-layout-component           | 15.39 kB | 
+chunk-V5Z7XOWN.js   | alumno-dashboard-component       | 12.12 kB | 
+chunk-TJ6Q45OE.js   | admin-dashboard-component        | 11.81 kB | 
+chunk-447R5SAH.js   | profesor-dashboard-component     | 11.78 kB | 
+chunk-N2SICCA2.js   | unauthorized-component           |  7.07 kB | 
+
+Application bundle generation complete. [0.465 seconds] - 2025-12-07T02:35:10.027Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names                | Raw size
+main.js             | main                 |  6.82 kB | 
+
+Lazy chunk files    | Names                | Raw size
+chunk-KT7F7XXK.js   | dispatcher-component |  2.86 kB | 
+
+Application bundle generation complete. [0.521 seconds] - 2025-12-07T02:35:33.990Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names                            | Raw size
+chunk-UPIAY45Z.js   | -                                |  7.58 kB | 
+main.js             | main                             |  6.82 kB | 
+
+Lazy chunk files    | Names                            | Raw size
+chunk-U2IZIFGN.js   | student-teacher-layout-component | 21.30 kB | 
+chunk-3ZLK3SRC.js   | login-component                  | 17.32 kB | 
+chunk-FEQVFN4J.js   | admin-layout-component           | 15.39 kB | 
+chunk-2EI62TF5.js   | alumno-dashboard-component       | 12.12 kB | 
+chunk-JUELXSVK.js   | admin-dashboard-component        | 11.81 kB | 
+chunk-NZZR3XT3.js   | profesor-dashboard-component     | 11.78 kB | 
+chunk-6HAEUMGE.js   | unauthorized-component           |  7.07 kB | 
+chunk-5H2AFZ6P.js   | dispatcher-component             |  2.86 kB | 
+
+Application bundle generation complete. [0.507 seconds] - 2025-12-07T02:43:13.018Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.497 seconds] - 2025-12-07T02:43:49.869Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<void>' is not assignable to type 'Observable<LoginResponse>'.
+  Type 'void' is not assignable to type 'LoginResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:59:4:
+[37m      59 │     [32mreturn[37m this.http.post<any>(`${this.apiUrl}/login`, loginData)....
+         ╵     [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'as'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 1-2 arguments, but got 3.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown as LoginResponse[37m)
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2693: 'unknown' only refers to a type, but is being used as a value here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.598 seconds] - 2025-12-07T03:30:21.462Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<void>' is not assignable to type 'Observable<LoginResponse>'.
+  Type 'void' is not assignable to type 'LoginResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:59:4:
+[37m      59 │     [32mreturn[37m this.http.post<any>(`${this.apiUrl}/login`, loginData)....
+         ╵     [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'as'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 1-2 arguments, but got 3.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown as LoginResponse[37m)
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2693: 'unknown' only refers to a type, but is being used as a value here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.561 seconds] - 2025-12-07T04:03:49.886Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<void>' is not assignable to type 'Observable<LoginResponse>'.
+  Type 'void' is not assignable to type 'LoginResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:59:4:
+[37m      59 │     [32mreturn[37m this.http.post<any>(`${this.apiUrl}/login`, loginData)....
+         ╵     [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'as'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 1-2 arguments, but got 3.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown as LoginResponse[37m)
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2693: 'unknown' only refers to a type, but is being used as a value here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.561 seconds] - 2025-12-07T04:03:52.741Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<void>' is not assignable to type 'Observable<LoginResponse>'.
+  Type 'void' is not assignable to type 'LoginResponse'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:59:4:
+[37m      59 │     [32mreturn[37m this.http.post<any>(`${this.apiUrl}/login`, loginData)....
+         ╵     [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'as'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:19:
+[37m      66 │       map(() => {} [32mas[37m unknown as LoginResponse)
+         ╵                    [32m~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1005: ',' expected.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 1-2 arguments, but got 3.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown as LoginResponse[37m)
+         ╵                       [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2693: 'unknown' only refers to a type, but is being used as a value here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/services/auth.service.ts:66:22:
+[37m      66 │       map(() => {} as [32munknown[37m as LoginResponse)
+         ╵                       [32m~~~~~~~[0m
+
+

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /management/
+Disallow: /payment/
+
+Sitemap: https://cursala.com.ar/sitemap.xml

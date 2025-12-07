@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+	--color-brand-primary: #0081c2;
+	--color-brand-primary-dark: #00385b;
+	--color-brand-secondary: #fac40e;
+	--color-brand-secondary-text: #1c2434;
+	--color-brand-tertiary: #262626;
+	--color-brand-tertiary-light: #7e7d82;
+}
+
+@layer components {
+	/* Clases utilitarias que usan las utilidades generadas por @theme */
+	.text-brand-primary { @apply text-brand-primary; }
+
+	.btn-brand {
+		@apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 font-semibold;
+		@apply bg-brand-secondary text-brand-secondary-text;
+		@apply transition-transform duration-200 ease-in-out;
+		@apply hover:scale-105 hover:shadow-lg hover:bg-brand-secondary/90;
+	}
+
+	.btn-brand--white-text { @apply text-white; }
+
+	.logo { @apply text-brand-secondary-text; }
+}
