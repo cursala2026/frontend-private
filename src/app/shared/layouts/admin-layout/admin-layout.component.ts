@@ -8,14 +8,30 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './admin-layout.component.html',
-  
 })
 export class AdminLayoutComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
   isSidebarOpen = signal<boolean>(true);
+  isUserMenuOpen = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  // Getter para construir la URL completa de la imagen de perfil
+  get userProfileImageUrl(): string | null {
+    const currentUser = this.user();
+    if (!currentUser?.profilePhotoUrl) return null;
+    
+    const photoUrl = currentUser.profilePhotoUrl;
+    
+    // Si ya es una URL completa, devolverla tal cual
+    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
+      return photoUrl;
+    }
+    
+    // Si solo es el nombre del archivo, construir la URL de Bunny CDN
+    return `https://cursala.b-cdn.net/profile-images/${photoUrl}`;
+  }
 
   menuItems = [
     {
@@ -35,9 +51,17 @@ export class AdminLayoutComponent {
     },
   ];
 
-
   toggleSidebar(): void {
     this.isSidebarOpen.update(value => !value);
+  }
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen.update(value => !value);
+  }
+
+  navigateToProfile(): void {
+    this.router.navigate(['/admin/profile']);
+    this.isUserMenuOpen.set(false);
   }
 
   logout(): void {
@@ -46,5 +70,9 @@ export class AdminLayoutComponent {
 
   isActiveRoute(route: string): boolean {
     return this.router.url === route;
+  }
+
+  onImageError(event: any): void {
+    event.target.style.display = 'none';
   }
 }

@@ -4,6 +4,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../shared/components/modal-data-table/modal-data-table.component';
 import { TableColumn, TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { UsersService, UserListResponse } from '../../../core/services/users.service';
+import { InfoService } from '../../../core/services/info.service';
 
 @Component({
   selector: 'app-users',
@@ -25,6 +26,11 @@ export class UsersComponent implements OnInit {
   sortColumn = 'createdAt';
   sortDirection: 'ASC' | 'DESC' = 'DESC';
   searchTerm = '';
+
+  constructor(
+    private usersService: UsersService,
+    private infoService: InfoService
+  ) {}
 
   tableConfig: TableConfig = {
     columns: [
@@ -75,10 +81,10 @@ export class UsersComponent implements OnInit {
       {
         key: 'status',
         label: 'Estado',
-        type: 'badge',
-        formatter: (value: string) => value === 'ACTIVE' ? 'Activo' : 'Inactivo',
+        type: 'switch',
         align: 'center',
-        width: '10%'
+        width: '10%',
+        onChange: (row: any) => this.toggleUserStatus(row)
       }
     ],
     sortBy: this.sortColumn,
@@ -94,12 +100,6 @@ export class UsersComponent implements OnInit {
         class: 'btn-primary'
       },
       {
-        label: 'Cambiar Estado',
-        iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
-        handler: (row) => this.toggleUserStatus(row),
-        class: 'btn-secondary'
-      },
-      {
         label: 'Eliminar',
         iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
         handler: (row) => this.deleteUser(row),
@@ -108,8 +108,6 @@ export class UsersComponent implements OnInit {
       }
     ]
   };
-
-  constructor(private usersService: UsersService) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -182,16 +180,18 @@ export class UsersComponent implements OnInit {
       mode: isCreate ? 'create' : 'edit',
       size: 'xl',
       fields: [
-        {
+        // Solo mostrar uploader de foto en modo edición, no en creación
+        ...(!isCreate ? [{
           key: 'profilePhotoUrl',
-          label: 'URL Foto de Perfil',
-          type: 'text',
-          placeholder: 'https://ejemplo.com/foto.jpg'
-        },
+          label: 'Foto de Perfil',
+          type: 'image' as const,
+          imageShape: 'circle' as const,
+          aspectRatio: '1:1' as const
+        }] : []),
         {
           key: 'email',
           label: 'Email',
-          type: 'email',
+          type: 'email' as const,
           required: true,
           placeholder: 'correo@ejemplo.com',
           disabled: !isCreate
@@ -199,51 +199,51 @@ export class UsersComponent implements OnInit {
         {
           key: 'firstName',
           label: 'Nombre',
-          type: 'text',
+          type: 'text' as const,
           required: true,
           placeholder: 'Juan'
         },
         {
           key: 'lastName',
           label: 'Apellido',
-          type: 'text',
+          type: 'text' as const,
           required: true,
           placeholder: 'Pérez'
         },
         {
           key: 'dni',
           label: 'DNI',
-          type: 'text',
+          type: 'text' as const,
           placeholder: '12345678'
         },
         {
           key: 'phone',
           label: 'Teléfono',
-          type: 'text',
+          type: 'text' as const,
           placeholder: '+54 9 11 1234-5678'
         },
         {
           key: 'birthDate',
           label: 'Fecha de Nacimiento',
-          type: 'date'
+          type: 'date' as const
         },
         {
           key: 'professionalDescription',
           label: 'Descripción Profesional',
-          type: 'textarea',
+          type: 'textarea' as const,
           placeholder: 'Descripción de la experiencia profesional...'
         },
         {
           key: 'password',
           label: isCreate ? 'Contraseña' : 'Nueva Contraseña (dejar vacío para mantener)',
-          type: 'password',
+          type: 'password' as const,
           required: isCreate,
           placeholder: '••••••••'
         },
         {
           key: 'roles',
           label: 'Roles',
-          type: 'select',
+          type: 'select' as const,
           required: true,
           options: [
             { value: 'ALUMNO', label: 'Alumno' },
@@ -292,72 +292,147 @@ export class UsersComponent implements OnInit {
     const isCreate = !this.selectedUser._id;
     
     if (isCreate) {
-      // Convert single role to array
-      const userData = {
-        ...formData,
-        roles: Array.isArray(formData.roles) ? formData.roles : [formData.roles]
-      };
+      // Preparar datos de usuario filtrando valores vacíos e inválidos
+      const userData: any = {};
+      
+      Object.keys(formData).forEach(key => {
+        const value = formData[key];
+        // Excluir File objects, objetos vacíos, null, undefined, strings vacíos
+        if (value instanceof File || 
+            (typeof value === 'object' && value !== null && Object.keys(value).length === 0) ||
+            value === null || 
+            value === undefined || 
+            value === '') {
+          return;
+        }
+        userData[key] = value;
+      });
+      
+      // Convertir roles a array
+      if (userData.roles) {
+        userData.roles = Array.isArray(userData.roles) ? userData.roles : [userData.roles];
+      }
+      
+      // Generar username a partir del email si no existe
+      if (!userData.username && userData.email) {
+        userData.username = userData.email.split('@')[0];
+      }
       
       this.usersService.createUser(userData).subscribe({
         next: () => {
+          this.infoService.showSuccess('Usuario creado exitosamente');
           this.loadUsers();
           this.onModalClose();
         },
         error: (error) => {
           console.error('Error creating user:', error);
-          alert('Error al crear el usuario');
+          this.infoService.showError(error.error?.message || 'Error al crear el usuario');
           // El modal se encarga de resetear isSubmitting cuando se cierra
         }
       });
     } else {
       // Update user
-      const updateData = { ...formData };
-      if (!updateData.password) {
-        delete updateData.password;
-      }
-      if (formData.roles) {
-        // Si roles ya es un array, usarlo tal cual, si no, convertirlo a array
-        updateData.roles = Array.isArray(formData.roles) ? formData.roles : [formData.roles];
-      }
+      const hasProfilePhoto = formData.profilePhotoUrl instanceof File;
       
-      this.usersService.updateUser(this.selectedUser._id, updateData).subscribe({
-        next: () => {
-          this.loadUsers();
-          this.onModalClose();
-        },
-        error: (error) => {
-          console.error('Error updating user:', error);
-          alert('Error al actualizar el usuario');
-          // El modal se encarga de resetear isSubmitting cuando se cierra
+      if (hasProfilePhoto) {
+        // Si hay foto, usar FormData y endpoint updateUserData
+        const formDataToSend = new FormData();
+        
+        Object.keys(formData).forEach(key => {
+          const value = formData[key];
+          if (value !== null && value !== undefined && value !== '') {
+            if (key === 'profilePhotoUrl' && value instanceof File) {
+              formDataToSend.append('photo', value);
+            } else if (key === 'roles') {
+              // Convertir roles a array
+              const rolesArray = Array.isArray(value) ? value : [value];
+              formDataToSend.append('roles', JSON.stringify(rolesArray));
+            } else if (key !== 'password' || value) {
+              formDataToSend.append(key, value);
+            }
+          }
+        });
+        
+        this.usersService.updateUserData(this.selectedUser._id, formDataToSend).subscribe({
+          next: () => {
+            this.infoService.showSuccess('Usuario actualizado exitosamente');
+            this.loadUsers();
+            this.onModalClose();
+          },
+          error: (error) => {
+            console.error('Error updating user with photo:', error);
+            this.infoService.showError(error.error?.message || 'Error al actualizar el usuario');
+          }
+        });
+      } else {
+        // Sin foto, usar endpoint normal
+        const updateData: any = {};
+        
+        Object.keys(formData).forEach(key => {
+          const value = formData[key];
+          // Excluir archivos File
+          if (value instanceof File) {
+            return;
+          }
+          // Incluir el campo si tiene valor
+          if (value !== null && value !== undefined && value !== '') {
+            updateData[key] = value;
+          }
+        });
+        
+        // Eliminar password si está vacío
+        if (!updateData.password) {
+          delete updateData.password;
         }
-      });
+        
+        // Convertir roles a array si existe
+        if (updateData.roles) {
+          updateData.roles = Array.isArray(updateData.roles) ? updateData.roles : [updateData.roles];
+        }
+        
+        this.usersService.updateUser(this.selectedUser._id, updateData).subscribe({
+          next: () => {
+            this.infoService.showSuccess('Usuario actualizado exitosamente');
+            this.loadUsers();
+            this.onModalClose();
+          },
+          error: (error) => {
+            console.error('Error updating user:', error);
+            console.error('Update data sent:', updateData);
+            console.error('User ID:', this.selectedUser._id);
+            this.infoService.showError(error.error?.message || 'Error al actualizar el usuario');
+          }
+        });
+      }
     }
   }
 
   toggleUserStatus(user: any): void {
     const isActive = user.status === 'ACTIVE';
-    if (confirm(`¿Estás seguro de que quieres ${isActive ? 'desactivar' : 'activar'} a ${user.email}?`)) {
-      this.usersService.toggleUserStatus(user._id).subscribe({
-        next: () => {
-          this.loadUsers();
-        },
-        error: (error) => {
-          console.error('Error toggling user status:', error);
-          alert('Error al cambiar el estado del usuario');
-        }
-      });
-    }
+    const userName = `${user.firstName} ${user.lastName}`;
+    
+    this.usersService.toggleUserStatus(user._id).subscribe({
+      next: () => {
+        this.infoService.showSuccess(`${userName} ${isActive ? 'desactivado' : 'activado'} exitosamente`);
+        this.loadUsers();
+      },
+      error: (error) => {
+        console.error('Error toggling user status:', error);
+        this.infoService.showError(error.error?.message || 'Error al cambiar el estado del usuario');
+      }
+    });
   }
 
   deleteUser(user: any): void {
     if (confirm(`¿Estás seguro de que quieres eliminar a ${user.email}? Esta acción no se puede deshacer.`)) {
       this.usersService.deleteUser(user._id).subscribe({
         next: () => {
+          this.infoService.showSuccess('Usuario eliminado exitosamente');
           this.loadUsers();
         },
         error: (error) => {
           console.error('Error deleting user:', error);
-          alert('Error al eliminar el usuario');
+          this.infoService.showError(error.error?.message || 'Error al eliminar el usuario');
         }
       });
     }

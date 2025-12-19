@@ -1,9 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig } from '../../../shared/components/modal-data-table/modal-data-table.component';
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { InfoService } from '../../../core/services/info.service';
 
 @Component({
   selector: 'app-courses',
@@ -12,6 +13,8 @@ import { CoursesService, Course } from '../../../core/services/courses.service';
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
+  @ViewChild(ModalDataTableComponent) modalComponent!: ModalDataTableComponent;
+
   courses = signal<any[]>([]);
   loading = signal<boolean>(false);
   pagination = signal<PaginationData | undefined>(undefined);
@@ -35,7 +38,13 @@ export class CoursesComponent implements OnInit {
         width: '100px',
         align: 'center',
         imageShape: 'rectangle',
-        formatter: (value: string) => value ? `https://cursala.b-cdn.net/images/${value}` : 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff'
+        formatter: (value: string) => {
+          if (!value) return 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff';
+          // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
+          if (value.startsWith('http')) return value;
+          // Si es solo un filename (legacy), construir la URL completa
+          return `https://cursala.b-cdn.net/images/${value}`;
+        }
       },
       {
         key: 'name',
@@ -70,10 +79,10 @@ export class CoursesComponent implements OnInit {
       {
         key: 'isPublished',
         label: 'Publicado',
-        type: 'badge',
-        formatter: (value: boolean) => value ? 'Sí' : 'No',
+        type: 'switch',
         align: 'center',
-        width: '10%'
+        width: '10%',
+        onChange: (row: any, newValue: boolean) => this.handlePublishToggle(row, newValue)
       }
     ],
     sortBy: this.sortColumn,
@@ -92,24 +101,29 @@ export class CoursesComponent implements OnInit {
         label: 'Cambiar Estado',
         iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
         handler: (row) => this.toggleCourseStatus(row),
-        class: 'btn-secondary'
-      },
-      {
-        label: 'Publicar/Despublicar',
-        iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
-        handler: (row) => this.togglePublishedStatus(row),
-        class: 'btn-success'
+        class: 'btn-secondary',
+        requireConfirm: true,
+        confirmTitle: 'Cambiar Estado del Curso',
+        confirmMessage: (row: any) => `¿Estás seguro de que quieres ${row.status === 'ACTIVE' ? 'desactivar' : 'activar'} este curso?`,
+        confirmButtonText: 'Cambiar Estado'
       },
       {
         label: 'Eliminar',
         iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
         handler: (row) => this.deleteCourse(row),
-        class: 'btn-danger'
+        class: 'btn-danger',
+        requireConfirm: true,
+        confirmTitle: 'Eliminar Curso',
+        confirmMessage: '¿Estás seguro de que quieres eliminar este curso? Esta acción no se puede deshacer.',
+        confirmButtonText: 'Eliminar'
       }
     ]
   };
 
-  constructor(private coursesService: CoursesService) {}
+  constructor(
+    private coursesService: CoursesService,
+    private infoService: InfoService
+  ) {}
 
   ngOnInit(): void {
     this.loadCourses();
@@ -181,9 +195,20 @@ export class CoursesComponent implements OnInit {
 
   editCourse(course: any): void {
     // Preparar el curso con la URL completa de la imagen para el modal
+    let imageFileUrl = null;
+    if (course.imageUrl) {
+      // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
+      if (course.imageUrl.startsWith('http')) {
+        imageFileUrl = course.imageUrl;
+      } else {
+        // Si es solo un filename (legacy), construir la URL completa
+        imageFileUrl = `https://cursala.b-cdn.net/images/${course.imageUrl}`;
+      }
+    }
+
     this.selectedCourse = {
       ...course,
-      imageFile: course.imageUrl ? `https://cursala.b-cdn.net/images/${course.imageUrl}` : null,
+      imageFile: imageFileUrl,
       // Convertir days de array a string para el formulario
       days: course.days && Array.isArray(course.days) ? course.days.join(', ') : course.days
     };
@@ -324,6 +349,26 @@ export class CoursesComponent implements OnInit {
   onModalSave(formData: any): void {
     const isCreate = !this.selectedCourse._id;
 
+    // Validar que se haya incluido una imagen al crear
+    if (isCreate && !formData.imageFile) {
+      this.infoService.showError('Por favor, incluye una imagen para el curso');
+      this.modalComponent.isSubmitting.set(false);
+      return;
+    }
+
+    // Validar campos requeridos
+    if (!formData.name || !formData.name.trim()) {
+      this.infoService.showError('El nombre del curso es requerido');
+      this.modalComponent.isSubmitting.set(false);
+      return;
+    }
+
+    if (!formData.description || !formData.description.trim()) {
+      this.infoService.showError('La descripción del curso es requerida');
+      this.modalComponent.isSubmitting.set(false);
+      return;
+    }
+
     // Procesar los datos antes de enviar
     const processedData = {
       ...formData,
@@ -336,41 +381,46 @@ export class CoursesComponent implements OnInit {
     if (isCreate) {
       this.coursesService.createCourse(processedData).subscribe({
         next: () => {
+          this.infoService.showSuccess('Curso creado exitosamente');
           this.loadCourses();
           this.onModalClose();
         },
         error: (error) => {
           console.error('Error creating course:', error);
-          alert('Error al crear el curso. Por favor, verifica que hayas incluido una imagen.');
+          const errorMsg = error?.error?.message || 'Error al crear el curso';
+          this.infoService.showError(errorMsg);
+          this.modalComponent.isSubmitting.set(false);
         }
       });
     } else {
       this.coursesService.updateCourse(this.selectedCourse._id, processedData).subscribe({
         next: () => {
+          this.infoService.showSuccess('Curso actualizado exitosamente');
           this.loadCourses();
           this.onModalClose();
         },
         error: (error) => {
           console.error('Error updating course:', error);
-          alert('Error al actualizar el curso');
+          const errorMsg = error?.error?.message || 'Error al actualizar el curso';
+          this.infoService.showError(errorMsg);
+          this.modalComponent.isSubmitting.set(false);
         }
       });
     }
   }
 
   toggleCourseStatus(course: any): void {
-    const isActive = course.status === 'ACTIVE';
-    if (confirm(`¿Estás seguro de que quieres ${isActive ? 'desactivar' : 'activar'} el curso "${course.name}"?`)) {
-      this.coursesService.toggleCourseStatus(course._id).subscribe({
-        next: () => {
-          this.loadCourses();
-        },
-        error: (error) => {
-          console.error('Error toggling course status:', error);
-          alert('Error al cambiar el estado del curso');
-        }
-      });
-    }
+    this.coursesService.toggleCourseStatus(course._id).subscribe({
+      next: () => {
+        this.infoService.showSuccess('Estado del curso cambiado exitosamente');
+        this.loadCourses();
+      },
+      error: (error) => {
+        console.error('Error toggling course status:', error);
+        const errorMsg = error?.error?.message || 'Error al cambiar el estado del curso';
+        this.infoService.showError(errorMsg);
+      }
+    });
   }
 
   togglePublishedStatus(course: any): void {
@@ -378,27 +428,49 @@ export class CoursesComponent implements OnInit {
     if (confirm(`¿Estás seguro de que quieres ${isPublished ? 'despublicar' : 'publicar'} el curso "${course.name}"?`)) {
       this.coursesService.togglePublishedStatus(course._id, !isPublished).subscribe({
         next: () => {
+          this.infoService.showSuccess(`Curso ${!isPublished ? 'publicado' : 'despublicado'} exitosamente`);
           this.loadCourses();
         },
         error: (error) => {
           console.error('Error toggling published status:', error);
-          alert('Error al cambiar el estado de publicación del curso');
+          const errorMsg = error?.error?.message || 'Error al cambiar el estado de publicación del curso';
+          this.infoService.showError(errorMsg);
         }
       });
     }
   }
 
+  handlePublishToggle(course: any, newValue: boolean): void {
+    // Actualizar directamente el estado sin confirmación (visual feedback inmediato)
+    course.isPublished = newValue;
+
+    this.coursesService.togglePublishedStatus(course._id, newValue).subscribe({
+      next: () => {
+        // Éxito - el cambio ya está reflejado visualmente
+        this.infoService.showSuccess(`Curso ${newValue ? 'publicado' : 'despublicado'} exitosamente`);
+      },
+      error: (error) => {
+        // Revertir el cambio en caso de error
+        course.isPublished = !newValue;
+        console.error('Error toggling published status:', error);
+        const errorMsg = error?.error?.message || 'Error al cambiar el estado de publicación del curso';
+        this.infoService.showError(errorMsg);
+        this.loadCourses(); // Recargar para asegurar consistencia
+      }
+    });
+  }
+
   deleteCourse(course: any): void {
-    if (confirm(`¿Estás seguro de que quieres eliminar el curso "${course.name}"? Esta acción no se puede deshacer.`)) {
-      this.coursesService.deleteCourse(course._id).subscribe({
-        next: () => {
-          this.loadCourses();
-        },
-        error: (error) => {
-          console.error('Error deleting course:', error);
-          alert('Error al eliminar el curso');
-        }
-      });
-    }
+    this.coursesService.deleteCourse(course._id).subscribe({
+      next: () => {
+        this.infoService.showSuccess('Curso eliminado exitosamente');
+        this.loadCourses();
+      },
+      error: (error) => {
+        console.error('Error deleting course:', error);
+        const errorMsg = error?.error?.message || 'Error al eliminar el curso';
+        this.infoService.showError(errorMsg);
+      }
+    });
   }
 }

@@ -20,10 +20,13 @@ export class DataTableComponent {
   @Output() searchChange = new EventEmitter<string>();
   @Output() actionClick = new EventEmitter<{ action: string; row: any }>();
   @Output() selectionChange = new EventEmitter<any[]>();
+  @Output() switchToggle = new EventEmitter<{ row: any; column: TableColumn; newValue: boolean }>();
 
   searchTerm = signal<string>('');
   selectedRows = signal<Set<any>>(new Set());
   currentSort = signal<{ column: string; direction: 'ASC' | 'DESC' } | null>(null);
+  showConfirmModal = signal<boolean>(false);
+  pendingAction = signal<{ action: TableAction; row: any } | null>(null);
 
   // Expose Math for template
   Math = Math;
@@ -117,8 +120,31 @@ export class DataTableComponent {
 
   handleAction(action: TableAction, row: any): void {
     if (action.condition && !action.condition(row)) return;
+
+    // Si la acción requiere confirmación, mostrar modal
+    if (action.requireConfirm) {
+      this.pendingAction.set({ action, row });
+      this.showConfirmModal.set(true);
+      return;
+    }
+
+    // Si no requiere confirmación, ejecutar directamente
     this.actionClick.emit({ action: action.label, row });
     action.handler(row);
+  }
+
+  confirmAction(): void {
+    const pending = this.pendingAction();
+    if (pending) {
+      this.actionClick.emit({ action: pending.action.label, row: pending.row });
+      pending.action.handler(pending.row);
+    }
+    this.cancelAction();
+  }
+
+  cancelAction(): void {
+    this.showConfirmModal.set(false);
+    this.pendingAction.set(null);
   }
 
   getCellValue(row: any, column: TableColumn): any {
@@ -146,7 +172,9 @@ export class DataTableComponent {
       'Activo': 'bg-green-100 text-green-800',
       'Inactivo': 'bg-red-100 text-red-800',
       'ACTIVE': 'bg-green-100 text-green-800',
-      'INACTIVE': 'bg-red-100 text-red-800'
+      'INACTIVE': 'bg-red-100 text-red-800',
+      'Sí': 'bg-green-100 text-green-800',
+      'No': 'bg-red-100 text-red-800'
     };
     return badgeClasses[value] || 'bg-gray-100 text-gray-800';
   }
@@ -159,5 +187,64 @@ export class DataTableComponent {
       'btn-success': 'text-green-600 hover:bg-green-50 border border-green-200'
     };
     return classes[actionClass || ''] || 'text-gray-600 hover:bg-gray-50 border border-gray-200';
+  }
+
+  handleSwitchToggle(row: any, column: TableColumn, event: Event): void {
+    event.stopPropagation();
+    const currentValue = row[column.key];
+    
+    // Determinar el valor booleano basado en el tipo de dato
+    let boolValue: boolean;
+    if (typeof currentValue === 'string') {
+      // Para estados como 'ACTIVE', 'INACTIVE', 'active', 'inactive'
+      boolValue = currentValue.toUpperCase() === 'ACTIVE';
+    } else {
+      boolValue = !!currentValue;
+    }
+    
+    const newValue = !boolValue;
+
+    // Emitir evento para que el componente padre maneje el cambio
+    this.switchToggle.emit({ row, column, newValue });
+
+    // Si la columna tiene un onChange handler, ejecutarlo
+    if (column.onChange) {
+      column.onChange(row, newValue);
+    }
+  }
+
+  isSwitchActive(row: any, column: TableColumn): boolean {
+    const value = row[column.key];
+    if (typeof value === 'string') {
+      return value.toUpperCase() === 'ACTIVE';
+    }
+    return !!value;
+  }
+
+  getConfirmTitle(): string {
+    const pending = this.pendingAction();
+    if (!pending) return 'Confirmar acción';
+
+    const title = pending.action.confirmTitle;
+    if (typeof title === 'function') {
+      return title(pending.row);
+    }
+    return title || 'Confirmar acción';
+  }
+
+  getConfirmMessage(): string {
+    const pending = this.pendingAction();
+    if (!pending) return '¿Estás seguro de que quieres realizar esta acción?';
+
+    const message = pending.action.confirmMessage;
+    if (typeof message === 'function') {
+      return message(pending.row);
+    }
+    return message || '¿Estás seguro de que quieres realizar esta acción?';
+  }
+
+  getConfirmButtonText(): string {
+    const pending = this.pendingAction();
+    return pending?.action?.confirmButtonText || 'Eliminar';
   }
 }
