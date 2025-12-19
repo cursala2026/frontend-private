@@ -1,0 +1,228 @@
+<div class="py-6">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            {{ isEditMode ? 'Editar Clase' : 'Crear Nueva Clase' }}
+          </h1>
+          <p class="mt-2 text-sm text-gray-600">
+            {{ isEditMode ? 'Modifica los datos de la clase' : 'Completa el formulario para crear una nueva clase' }}
+          </p>
+        </div>
+        <button
+          (click)="onCancel()"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    }
+
+    <!-- Form -->
+    @if (!loading()) {
+      <form [formGroup]="classForm" (ngSubmit)="onSubmit()" class="bg-white shadow rounded-lg p-6 space-y-6">
+        <!-- Course Selection -->
+        <div>
+          <label for="courseId" class="block text-sm font-medium text-gray-700 mb-2">
+            Curso
+            @if (!isEditMode) {
+              <span class="text-red-500">*</span>
+            }
+          </label>
+          @if (courses().length === 0) {
+            <div class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              Cargando cursos...
+            </div>
+          } @else {
+            @if (isEditMode) {
+              <!-- En modo edición, mostrar el curso como texto de solo lectura -->
+              <div class="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                {{ course()?.name || 'Cargando...' }}
+              </div>
+              <input type="hidden" formControlName="courseId" />
+            } @else {
+              <!-- En modo creación, mostrar el selector -->
+              <select
+                id="courseId"
+                formControlName="courseId"
+                class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                [class.border-red-300]="classForm.get('courseId')?.invalid && classForm.get('courseId')?.touched"
+              >
+                <option value="">Selecciona un curso</option>
+                @for (course of courses(); track course._id) {
+                  <option [value]="course._id">{{ course.name }}</option>
+                }
+              </select>
+            }
+          }
+          @if (!isEditMode && classForm.get('courseId')?.invalid && classForm.get('courseId')?.touched) {
+            <p class="mt-1 text-sm text-red-600">El curso es requerido</p>
+          }
+          @if (courses().length === 0 && !loading()) {
+            <p class="mt-1 text-sm text-yellow-600">No hay cursos disponibles. Crea un curso primero.</p>
+          }
+        </div>
+
+        <!-- Name -->
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            Nombre de la Clase <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="name"
+            formControlName="name"
+            class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            [class.border-red-300]="classForm.get('name')?.invalid && classForm.get('name')?.touched"
+            placeholder="Ej: Introducción a React"
+          />
+          @if (classForm.get('name')?.invalid && classForm.get('name')?.touched) {
+            <p class="mt-1 text-sm text-red-600">El nombre es requerido</p>
+          }
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="4"
+            class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Descripción de la clase..."
+          ></textarea>
+        </div>
+
+        <!-- Image -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Imagen de la Clase
+            @if (!isEditMode) {
+              <span class="text-red-500">*</span>
+            }
+          </label>
+          <div class="space-y-4">
+            @if (imagePreview) {
+              <div class="relative inline-block">
+                <img
+                  [src]="imagePreview"
+                  alt="Preview"
+                  class="h-48 w-full object-cover rounded-lg border border-gray-300"
+                />
+                <button
+                  type="button"
+                  (click)="selectedImageFile = null; imagePreview = null; classForm.patchValue({ imageFile: null })"
+                  class="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+            <input
+              type="file"
+              id="imageFile"
+              accept="image/*"
+              (change)="onImageSelected($event)"
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            />
+            @if (!isEditMode && !selectedImageFile) {
+              <p class="text-sm text-red-600">La imagen es requerida para crear una nueva clase</p>
+            }
+          </div>
+        </div>
+
+        <!-- Video -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Video de la Clase (opcional)
+          </label>
+          <div class="space-y-4">
+            @if (videoPreview) {
+              <div class="relative">
+                <video
+                  [src]="videoPreview"
+                  controls
+                  class="w-full h-64 rounded-lg border border-gray-300 bg-black"
+                ></video>
+                <button
+                  type="button"
+                  (click)="selectedVideoFile = null; videoPreview = null"
+                  class="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            }
+            <input
+              type="file"
+              id="videoFile"
+              accept="video/*"
+              (change)="onVideoSelected($event)"
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            />
+            <p class="text-xs text-gray-500">Tamaño máximo: 2GB. Formatos soportados: MP4, WebM, MOV. Videos mayores a 100MB usan streaming optimizado.</p>
+          </div>
+        </div>
+
+        <!-- Link Live -->
+        <div>
+          <label for="linkLive" class="block text-sm font-medium text-gray-700 mb-2">
+            Enlace de Clase en Vivo (opcional)
+          </label>
+          <input
+            type="url"
+            id="linkLive"
+            formControlName="linkLive"
+            class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="https://meet.google.com/..."
+          />
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            (click)="onCancel()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            [disabled]="saving()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="saving() || classForm.invalid"
+          >
+            @if (saving()) {
+              <span class="flex items-center">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Guardando...
+              </span>
+            } @else {
+              {{ isEditMode ? 'Guardar Cambios' : 'Crear Clase' }}
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>
+

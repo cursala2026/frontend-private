@@ -3,6 +3,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../config/environment';
 
+export interface TeacherInfo {
+  teacherId: string;
+  teacherName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  professionalDescription?: string;
+  profilePhotoUrl?: string;
+}
+
 export interface Course {
   _id: string;
   name: string;
@@ -27,6 +37,8 @@ export interface Course {
   interestFree: boolean;
   showOnHome?: boolean;
   mainTeacher?: string;
+  mainTeacherInfo?: TeacherInfo;
+  teacherInfo?: TeacherInfo[];
   numberOfClasses?: number;
   duration?: number;
   isPublished?: boolean;
@@ -114,6 +126,10 @@ export class CoursesService {
 
   getCourseById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  getPublishedCourses(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/published`);
   }
 
   private toISOString(date: Date | string | undefined): string | undefined {

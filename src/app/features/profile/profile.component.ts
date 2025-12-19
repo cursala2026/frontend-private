@@ -58,7 +58,9 @@ export class ProfileComponent {
     if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
       return photoUrl;
     }
-    return `https://cursala.b-cdn.net/profile-images/${photoUrl}`;
+    // Codificar el nombre del archivo para manejar caracteres especiales
+    const encodedFileName = encodeURIComponent(photoUrl);
+    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
   }
 
   onImageSelected(event: Event): void {

@@ -55,6 +55,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
       },
       {
+        path: 'classes',
+        loadComponent: () => import('./features/admin/classes/classes.component').then(m => m.ClassesComponent)
+      },
+      {
+        path: 'classes/:id/edit',
+        loadComponent: () => import('./features/admin/classes/class-edit/class-edit.component').then(m => m.ClassEditComponent)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
@@ -69,7 +77,7 @@ export const routes: Routes = [
   {
     path: 'profesor',
     canActivate: [authGuard, profesorGuard],
-    loadComponent: () => import('./shared/layouts/student-teacher-layout/student-teacher-layout.component').then(m => m.StudentTeacherLayoutComponent),
+    loadComponent: () => import('./shared/layouts/teacher-layout/teacher-layout.component').then(m => m.TeacherLayoutComponent),
     children: [
       {
         path: '',
@@ -94,7 +102,7 @@ export const routes: Routes = [
   {
     path: 'alumno',
     canActivate: [authGuard, alumnoGuard],
-    loadComponent: () => import('./shared/layouts/student-teacher-layout/student-teacher-layout.component').then(m => m.StudentTeacherLayoutComponent),
+    loadComponent: () => import('./shared/layouts/student-layout/student-layout.component').then(m => m.StudentLayoutComponent),
     children: [
       {
         path: '',
@@ -111,6 +119,10 @@ export const routes: Routes = [
       {
         path: 'grades',
         loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
+      },
+      {
+        path: 'courses/:courseId',
+        loadComponent: () => import('./features/alumno/course-detail/course-detail.component').then(m => m.CourseDetailComponent)
       }
     ]
   },

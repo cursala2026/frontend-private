@@ -1,0 +1,192 @@
+<div class="min-h-screen bg-gray-100">
+  <!-- Navbar -->
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <!-- Logo y navegación principal -->
+        <div class="flex">
+          <!-- Logo -->
+          <div class="shrink-0 flex items-center">
+            <img src="logo/cursala.svg" alt="Cursala" class="h-8 w-auto">
+          </div>
+
+          <!-- Desktop Navigation -->
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            @for (item of menuItems; track item.route) {
+              <a
+                [routerLink]="item.route"
+                [class.border-indigo-500]="isActiveRoute(item.route)"
+                [class.text-gray-900]="isActiveRoute(item.route)"
+                [class.border-transparent]="!isActiveRoute(item.route)"
+                [class.text-gray-500]="!isActiveRoute(item.route)"
+                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium hover:border-gray-300 hover:text-gray-700"
+              >
+                {{ item.label }}
+              </a>
+            }
+          </div>
+        </div>
+
+        <!-- Usuario y acciones -->
+        <div class="hidden sm:ml-6 sm:flex sm:items-center">
+          <!-- User Menu Dropdown -->
+          @if (user(); as currentUser) {
+            <div class="relative user-menu-container">
+              <!-- User Info Button -->
+              <button
+                (click)="toggleUserMenu()"
+                class="flex items-center space-x-2 px-2 py-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                @if (userProfileImageUrl) {
+                  <img 
+                    [src]="userProfileImageUrl" 
+                    alt="Foto de perfil"
+                    class="h-10 w-10 rounded-full object-cover border-2 border-gray-200 cursor-pointer"
+                    (error)="onImageError($event)"
+                  />
+                } @else {
+                  <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold cursor-pointer">
+                    {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+                  </div>
+                }
+                <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              @if (isUserMenuOpen()) {
+                <div class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                  <!-- User Info Section -->
+                  <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <div class="flex items-center space-x-3">
+                      @if (userProfileImageUrl) {
+                        <img 
+                          [src]="userProfileImageUrl" 
+                          alt="Foto de perfil"
+                          class="h-12 w-12 rounded-full object-cover border-2 border-gray-300"
+                          (error)="onImageError($event)"
+                        />
+                      } @else {
+                        <div class="h-12 w-12 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold border-2 border-gray-300">
+                          {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">
+                          {{ currentUser.username || currentUser.firstName + ' ' + currentUser.lastName }}
+                        </p>
+                        <p class="text-xs text-gray-500 truncate">
+                          {{ currentUser.email }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Menu Options -->
+                  <div class="py-1" role="menu">
+                    <button
+                      (click)="goToProfile()"
+                      class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                      role="menuitem"
+                    >
+                      <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Perfil
+                    </button>
+                    <button
+                      (click)="logout()"
+                      class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                      role="menuitem"
+                    >
+                      <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Mobile menu button -->
+        <div class="flex items-center sm:hidden">
+          <button
+            (click)="toggleMobileMenu()"
+            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+          >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              @if (!isMobileMenuOpen()) {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              } @else {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              }
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    @if (isMobileMenuOpen()) {
+      <div class="sm:hidden">
+        <div class="pt-2 pb-3 space-y-1">
+          @for (item of menuItems; track item.route) {
+            <a
+              [routerLink]="item.route"
+              (click)="toggleMobileMenu()"
+              [class.bg-indigo-50]="isActiveRoute(item.route)"
+              [class.border-indigo-500]="isActiveRoute(item.route)"
+              [class.text-indigo-700]="isActiveRoute(item.route)"
+              [class.border-transparent]="!isActiveRoute(item.route)"
+              [class.text-gray-600]="!isActiveRoute(item.route)"
+              class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+            >
+              {{ item.label }}
+            </a>
+          }
+        </div>
+
+        <!-- Mobile User Info -->
+        @if (user(); as currentUser) {
+          <div class="pt-4 pb-3 border-t border-gray-200">
+            <div class="flex items-center px-4">
+              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+              </div>
+              <div class="ml-3">
+                <p class="text-base font-medium text-gray-800">
+                  {{ currentUser.firstName }} {{ currentUser.lastName }}
+                </p>
+                <p class="text-sm font-medium text-gray-500">
+                  {{ currentUser.email }}
+                </p>
+              </div>
+            </div>
+            <div class="mt-3 px-2">
+              <button
+                (click)="logout()"
+                class="w-full flex items-center px-4 py-2 text-base font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+
