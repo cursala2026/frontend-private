@@ -48,11 +48,11 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+        loadComponent: () => import('./features/admin/users/users.component').then(m => m.UsersComponent)
       },
       {
         path: 'courses',
-        loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+        loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
       },
       {
         path: 'roles',

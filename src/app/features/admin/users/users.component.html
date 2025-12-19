@@ -1,0 +1,42 @@
+<div class="h-full flex flex-col">
+  <div class="flex-1 flex flex-col max-w-full">
+    <!-- Header -->
+    <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 bg-white">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
+        <p class="mt-1 text-sm text-gray-500">Administra los usuarios del sistema</p>
+      </div>
+      <button 
+        (click)="editUser({})"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+      >
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        Nuevo Usuario
+      </button>
+    </div>
+
+    <!-- Data Table -->
+    <div class="flex-1 min-h-0 bg-gray-50">
+      <app-data-table
+        [data]="users()"
+        [config]="tableConfig"
+        [loading]="loading()"
+        [pagination]="pagination()"
+        (sortChange)="onSortChange($event)"
+        (pageChange)="onPageChange($event)"
+        (searchChange)="onSearchChange($event)"
+      />
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<app-modal-data-table
+  [isOpen]="isModalOpen"
+  [config]="modalConfig"
+  [data]="selectedUser"
+  (close)="onModalClose()"
+  (save)="onModalSave($event)"
+/>

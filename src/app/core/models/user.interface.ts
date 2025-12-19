@@ -1,10 +1,3 @@
-export interface IRole {
-  _id: string;
-  name: string;
-  description: string;
-  code: string;
-}
-
 export interface IFeature {
   name: string;
 }
@@ -19,9 +12,9 @@ export interface IUser {
   birthDate?: Date;
   dni?: string;
   status: string;
-  // Puede ser un array de objetos IRole (antes) o un array de códigos de role (string) que ahora devuelve el backend
-  roles: Array<IRole | string>;
-  features: IFeature[];
+  // Roles ahora son strings directamente (e.g., 'ADMIN', 'PROFESOR', 'ALUMNO')
+  roles: string[];
+  features?: IFeature[];
   lastConnection?: Date;
   professionalDescription?: string;
   profilePhotoUrl?: string;

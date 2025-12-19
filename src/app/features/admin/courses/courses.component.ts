@@ -1,0 +1,404 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { ModalDataTableComponent, ModalConfig } from '../../../shared/components/modal-data-table/modal-data-table.component';
+import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
+import { CoursesService, Course } from '../../../core/services/courses.service';
+
+@Component({
+  selector: 'app-courses',
+  standalone: true,
+  imports: [CommonModule, DataTableComponent, ModalDataTableComponent],
+  templateUrl: './courses.component.html'
+})
+export class CoursesComponent implements OnInit {
+  courses = signal<any[]>([]);
+  loading = signal<boolean>(false);
+  pagination = signal<PaginationData | undefined>(undefined);
+
+  isModalOpen = signal<boolean>(false);
+  modalConfig!: ModalConfig;
+  selectedCourse: any = null;
+
+  currentPage = 1;
+  pageSize = 10;
+  sortColumn = 'createdAt';
+  sortDirection: 'ASC' | 'DESC' = 'DESC';
+  searchTerm = '';
+
+  tableConfig: TableConfig = {
+    columns: [
+      {
+        key: 'imageUrl',
+        label: 'Imagen',
+        type: 'image',
+        width: '100px',
+        align: 'center',
+        imageShape: 'rectangle',
+        formatter: (value: string) => value ? `https://cursala.b-cdn.net/images/${value}` : 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff'
+      },
+      {
+        key: 'name',
+        label: 'Nombre',
+        sortable: true,
+        type: 'text',
+        width: '30%'
+      },
+      {
+        key: 'modality',
+        label: 'Modalidad',
+        type: 'text',
+        formatter: (value: string) => value || '-',
+        width: '15%'
+      },
+      {
+        key: 'price',
+        label: 'Precio',
+        type: 'text',
+        formatter: (value: number) => value ? `$${value}` : '-',
+        width: '10%',
+        align: 'right'
+      },
+      {
+        key: 'status',
+        label: 'Estado',
+        type: 'badge',
+        formatter: (value: string) => value === 'ACTIVE' ? 'Activo' : 'Inactivo',
+        align: 'center',
+        width: '10%'
+      },
+      {
+        key: 'isPublished',
+        label: 'Publicado',
+        type: 'badge',
+        formatter: (value: boolean) => value ? 'Sí' : 'No',
+        align: 'center',
+        width: '10%'
+      }
+    ],
+    sortBy: this.sortColumn,
+    sortDirection: this.sortDirection,
+    pageSize: this.pageSize,
+    searchable: true,
+    selectable: false,
+    actions: [
+      {
+        label: 'Editar',
+        iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
+        handler: (row) => this.editCourse(row),
+        class: 'btn-primary'
+      },
+      {
+        label: 'Cambiar Estado',
+        iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+        handler: (row) => this.toggleCourseStatus(row),
+        class: 'btn-secondary'
+      },
+      {
+        label: 'Publicar/Despublicar',
+        iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+        handler: (row) => this.togglePublishedStatus(row),
+        class: 'btn-success'
+      },
+      {
+        label: 'Eliminar',
+        iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+        handler: (row) => this.deleteCourse(row),
+        class: 'btn-danger'
+      }
+    ]
+  };
+
+  constructor(private coursesService: CoursesService) {}
+
+  ngOnInit(): void {
+    this.loadCourses();
+  }
+
+  loadCourses(): void {
+    this.loading.set(true);
+
+    const params = {
+      page: this.currentPage,
+      page_size: this.pageSize,
+      sort: this.sortColumn,
+      sort_dir: this.sortDirection,
+      search: this.searchTerm || undefined
+    };
+
+    this.coursesService.getCourses(params).subscribe({
+      next: (response: any) => {
+        // Handle backend response format
+        const data = response?.data || [];
+
+        // Since backend returns all courses, we need to implement client-side pagination
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const endIndex = startIndex + this.pageSize;
+        const paginatedData = Array.isArray(data) ? data.slice(startIndex, endIndex) : [];
+
+        const pagination = {
+          page: this.currentPage,
+          page_size: this.pageSize,
+          total: Array.isArray(data) ? data.length : 0,
+          totalPages: Math.ceil((Array.isArray(data) ? data.length : 0) / this.pageSize)
+        };
+
+        this.courses.set(paginatedData);
+        this.pagination.set(pagination);
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading courses:', error);
+        this.courses.set([]);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  onSortChange(event: { column: string; direction: 'ASC' | 'DESC' }): void {
+    this.sortColumn = event.column;
+    this.sortDirection = event.direction;
+    this.currentPage = 1;
+    this.loadCourses();
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadCourses();
+  }
+
+  onSearchChange(searchTerm: string): void {
+    this.searchTerm = searchTerm;
+    this.currentPage = 1;
+
+    // Debounce search
+    setTimeout(() => {
+      if (this.searchTerm === searchTerm) {
+        this.loadCourses();
+      }
+    }, 500);
+  }
+
+  editCourse(course: any): void {
+    // Preparar el curso con la URL completa de la imagen para el modal
+    this.selectedCourse = {
+      ...course,
+      imageFile: course.imageUrl ? `https://cursala.b-cdn.net/images/${course.imageUrl}` : null,
+      // Convertir days de array a string para el formulario
+      days: course.days && Array.isArray(course.days) ? course.days.join(', ') : course.days
+    };
+    const isCreate = !course._id;
+
+    this.modalConfig = {
+      title: isCreate ? 'Crear Nuevo Curso' : 'Editar Curso',
+      mode: isCreate ? 'create' : 'edit',
+      size: 'xl',
+      fields: [
+        {
+          key: 'imageFile',
+          label: 'Imagen del Curso',
+          type: 'image',
+          required: isCreate,
+          placeholder: 'Seleccionar imagen',
+          imageShape: 'rectangle',
+          aspectRatio: '3:2 (rectangular)'
+        },
+        {
+          key: 'name',
+          label: 'Nombre del Curso',
+          type: 'text',
+          required: true,
+          placeholder: 'Nombre del curso'
+        },
+        {
+          key: 'description',
+          label: 'Descripción Corta',
+          type: 'textarea',
+          placeholder: 'Descripción breve del curso'
+        },
+        {
+          key: 'longDescription',
+          label: 'Descripción Larga',
+          type: 'textarea',
+          placeholder: 'Descripción detallada del curso'
+        },
+        {
+          key: 'modality',
+          label: 'Modalidad',
+          type: 'select',
+          options: [
+            { value: 'Presencial', label: 'Presencial' },
+            { value: 'Online', label: 'Online' },
+            { value: 'Híbrido', label: 'Híbrido' }
+          ]
+        },
+        {
+          key: 'price',
+          label: 'Precio',
+          type: 'number',
+          placeholder: '0'
+        },
+        {
+          key: 'maxInstallments',
+          label: 'Máximo de Cuotas',
+          type: 'number',
+          placeholder: '1'
+        },
+        {
+          key: 'interestFree',
+          label: 'Sin Interés',
+          type: 'checkbox'
+        },
+        {
+          key: 'days',
+          label: 'Días de la Semana',
+          type: 'text',
+          placeholder: 'Lunes, Miércoles, Viernes'
+        },
+        {
+          key: 'time',
+          label: 'Horario (HH:mm)',
+          type: 'text',
+          placeholder: '18:00'
+        },
+        {
+          key: 'startDate',
+          label: 'Fecha de Inicio',
+          type: 'date'
+        },
+        {
+          key: 'registrationOpenDate',
+          label: 'Fecha de Apertura de Inscripciones',
+          type: 'date'
+        },
+        {
+          key: 'numberOfClasses',
+          label: 'Número de Clases',
+          type: 'number',
+          placeholder: '0'
+        },
+        {
+          key: 'duration',
+          label: 'Duración (horas)',
+          type: 'number',
+          placeholder: '0'
+        },
+        {
+          key: 'isPublished',
+          label: 'Publicado',
+          type: 'checkbox'
+        }
+      ]
+    };
+
+    this.isModalOpen.set(true);
+  }
+
+  viewCourse(course: any): void {
+    this.selectedCourse = course;
+
+    this.modalConfig = {
+      title: 'Detalles del Curso',
+      mode: 'view',
+      size: 'xl',
+      fields: [
+        { key: 'name', label: 'Nombre', type: 'text' },
+        { key: 'description', label: 'Descripción', type: 'textarea' },
+        { key: 'longDescription', label: 'Descripción Larga', type: 'textarea' },
+        { key: 'modality', label: 'Modalidad', type: 'text' },
+        { key: 'price', label: 'Precio', type: 'number' },
+        { key: 'status', label: 'Estado', type: 'text' },
+        { key: 'isPublished', label: 'Publicado', type: 'checkbox' },
+        { key: 'createdAt', label: 'Fecha de Creación', type: 'date' }
+      ]
+    };
+
+    this.isModalOpen.set(true);
+  }
+
+  onModalClose(): void {
+    this.isModalOpen.set(false);
+    this.selectedCourse = null;
+  }
+
+  onModalSave(formData: any): void {
+    const isCreate = !this.selectedCourse._id;
+
+    // Procesar los datos antes de enviar
+    const processedData = {
+      ...formData,
+      // Convertir days de string a array si es necesario
+      days: formData.days && typeof formData.days === 'string'
+        ? formData.days.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0)
+        : formData.days
+    };
+
+    if (isCreate) {
+      this.coursesService.createCourse(processedData).subscribe({
+        next: () => {
+          this.loadCourses();
+          this.onModalClose();
+        },
+        error: (error) => {
+          console.error('Error creating course:', error);
+          alert('Error al crear el curso. Por favor, verifica que hayas incluido una imagen.');
+        }
+      });
+    } else {
+      this.coursesService.updateCourse(this.selectedCourse._id, processedData).subscribe({
+        next: () => {
+          this.loadCourses();
+          this.onModalClose();
+        },
+        error: (error) => {
+          console.error('Error updating course:', error);
+          alert('Error al actualizar el curso');
+        }
+      });
+    }
+  }
+
+  toggleCourseStatus(course: any): void {
+    const isActive = course.status === 'ACTIVE';
+    if (confirm(`¿Estás seguro de que quieres ${isActive ? 'desactivar' : 'activar'} el curso "${course.name}"?`)) {
+      this.coursesService.toggleCourseStatus(course._id).subscribe({
+        next: () => {
+          this.loadCourses();
+        },
+        error: (error) => {
+          console.error('Error toggling course status:', error);
+          alert('Error al cambiar el estado del curso');
+        }
+      });
+    }
+  }
+
+  togglePublishedStatus(course: any): void {
+    const isPublished = course.isPublished;
+    if (confirm(`¿Estás seguro de que quieres ${isPublished ? 'despublicar' : 'publicar'} el curso "${course.name}"?`)) {
+      this.coursesService.togglePublishedStatus(course._id, !isPublished).subscribe({
+        next: () => {
+          this.loadCourses();
+        },
+        error: (error) => {
+          console.error('Error toggling published status:', error);
+          alert('Error al cambiar el estado de publicación del curso');
+        }
+      });
+    }
+  }
+
+  deleteCourse(course: any): void {
+    if (confirm(`¿Estás seguro de que quieres eliminar el curso "${course.name}"? Esta acción no se puede deshacer.`)) {
+      this.coursesService.deleteCourse(course._id).subscribe({
+        next: () => {
+          this.loadCourses();
+        },
+        error: (error) => {
+          console.error('Error deleting course:', error);
+          alert('Error al eliminar el curso');
+        }
+      });
+    }
+  }
+}

@@ -70,28 +70,10 @@ export class AuthService {
   }
 
   /**
-   * Si el userInfo.roles son IDs, llama al backend para obtener los códigos y actualiza el user en storage.
-   * Devuelve un observable que completa cuando la normalización termina (o inmediatamente si no es necesaria).
+   * Los roles ahora son strings directamente, no necesitan normalización
    */
   private normalizeRolesIfNeeded(authResult: LoginResponse): Observable<void> {
-    const roles = authResult.userInfo?.roles;
-    if (!Array.isArray(roles) || roles.length === 0) return of(void 0);
-    if (typeof roles[0] === 'string' && /^[0-9a-fA-F]{24}$/.test(roles[0])) {
-      const payload = { roleIds: roles };
-      return this.http.post<any>(`${this.apiUrl}/getrolesbyids`, payload, {
-        headers: { Authorization: `Bearer ${authResult.token}` }
-      }).pipe(
-        map((resp: any) => resp.data || []),
-        map((fetchedRoles: any[]) => {
-          const roleCodes = fetchedRoles.map(r => (r.code ? r.code : r));
-          const updatedUser = { ...authResult.userInfo, roles: roleCodes } as IUser;
-          localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
-          this.userSignal.set(updatedUser);
-          return void 0;
-        })
-      );
-    }
-
+    // Roles ya vienen como strings del backend (e.g., ['ADMIN', 'PROFESOR'])
     return of(void 0);
   }
 
@@ -104,32 +86,6 @@ export class AuthService {
 
     this.tokenSignal.set(authResult.token);
     this.userSignal.set(authResult.userInfo);
-    
-    // Si el backend devolvió role IDs (array de strings 24 hex), traducirlos a objetos { code }
-    try {
-      const roles = authResult.userInfo?.roles;
-      if (Array.isArray(roles) && roles.length > 0 && typeof roles[0] === 'string' && /^[0-9a-fA-F]{24}$/.test(roles[0])) {
-        // Llamar al endpoint que devuelve roles por id
-        const payload = { roleIds: roles };
-        // No bloquear el flujo: hacemos la petición y actualizamos el usuario en background
-        this.http.post<any>(`${this.apiUrl}/getrolesbyids`, payload, {
-          headers: { Authorization: `Bearer ${authResult.token}` }
-        }).pipe(map((resp: any) => resp.data)).subscribe({
-          next: (fetchedRoles: any[]) => {
-            // Convertir a array de códigos o objetos { code }
-            const roleCodes = fetchedRoles.map(r => (r.code ? r.code : r));
-            const updatedUser = { ...this.userSignal(), roles: roleCodes } as IUser;
-            localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
-            this.userSignal.set(updatedUser);
-          },
-          error: () => {
-            // Si falla, dejamos los role ids tal cual (no crítico)
-          }
-        });
-      }
-    } catch (e) {
-      // ignore
-    }
   }
 
   /**
@@ -218,20 +174,10 @@ export class AuthService {
     const user = this.currentUser();
     if (!user || !user.roles) return false;
 
-    // Support roles as objects ({ code: 'ADMIN' }) or strings (either role code 'ADMIN' or role id)
-    const DEFAULT_ADMIN_ROLE_ID = '768b59e49b3298289bdbd0fd';
-
+    // Roles ahora son strings directamente (e.g., 'ADMIN', 'PROFESOR', 'ALUMNO')
     return user.roles.some((role: any) => {
-      if (!role) return false;
       if (typeof role === 'string') {
-        // If backend sent role code as string
-        if (role.toUpperCase() === roleCode) return true;
-        // If backend sent role id, consider default admin id mapping for ADMIN
-        if (role === DEFAULT_ADMIN_ROLE_ID && roleCode === UserRole.ADMIN) return true;
-        return false;
-      }
-      if (typeof role === 'object') {
-        return role.code === roleCode || role === roleCode;
+        return role.toUpperCase() === roleCode;
       }
       return false;
     });
@@ -251,13 +197,9 @@ export class AuthService {
     const user = this.currentUser();
     if (!user || !user.roles) return [];
 
+    // Roles ahora son strings directamente
     return user.roles
-      .map((role: any) => {
-        if (!role) return '';
-        if (typeof role === 'string') return role;
-        if (typeof role === 'object' && 'code' in role && role.code) return role.code as string;
-        return '';
-      })
+      .map((role: any) => (typeof role === 'string' ? role : ''))
       .filter(Boolean);
   }
 

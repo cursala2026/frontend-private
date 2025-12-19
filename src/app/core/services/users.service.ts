@@ -1,0 +1,78 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../config/environment';
+
+export interface UserListResponse {
+  data: any[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateUserDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  phone?: string;
+}
+
+export interface UpdateUserDto {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  roles?: string[];
+  phone?: string;
+  isActive?: boolean;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UsersService {
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/user`;
+
+  getUsers(params: {
+    page?: number;
+    page_size?: number;
+    sort?: string;
+    sort_dir?: 'ASC' | 'DESC';
+    search?: string;
+  }): Observable<UserListResponse> {
+    let httpParams = new HttpParams();
+    
+    if (params.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
+    if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    if (params.sort_dir) httpParams = httpParams.set('sort_dir', params.sort_dir);
+    if (params.search) httpParams = httpParams.set('search', params.search);
+
+    return this.http.get<UserListResponse>(this.apiUrl, { params: httpParams });
+  }
+
+  getUserById(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  createUser(user: CreateUserDto): Observable<any> {
+    return this.http.post(`${this.apiUrl}/create`, user);
+  }
+
+  updateUser(id: string, user: UpdateUserDto): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/updateUser/${id}`, user);
+  }
+
+  toggleUserStatus(id: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/toggle-status`, {});
+  }
+
+  deleteUser(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/deleteUser/${id}`);
+  }
+}
