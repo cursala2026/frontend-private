@@ -6,11 +6,13 @@ import { ModalDataTableComponent, ModalConfig } from '../../../shared/components
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
+import { TeacherAssignmentService } from '../../../core/services/teacher-assignment.service';
+import { TeacherAssignmentModalComponent } from './teacher-assignment-modal/teacher-assignment-modal.component';
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent],
+  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
@@ -23,8 +25,10 @@ export class CoursesComponent implements OnInit {
   pagination = signal<PaginationData | undefined>(undefined);
 
   isModalOpen = signal<boolean>(false);
+  isTeacherAssignmentModalOpen = signal<boolean>(false);
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
+  selectedCourseForAssignment: any = null;
 
   currentPage = 1;
   pageSize = 10;
@@ -86,6 +90,22 @@ export class CoursesComponent implements OnInit {
         align: 'center',
         width: '10%',
         onChange: (row: any, newValue: boolean) => this.handlePublishToggle(row, newValue)
+      },
+      {
+        key: 'assignedTeachers',
+        label: 'Profesor Principal',
+        type: 'text',
+        formatter: (value: any, row: any) => {
+          // Mostrar el profesor principal del curso
+          if (row.mainTeacherInfo) {
+            return row.mainTeacherInfo.firstName 
+              ? `${row.mainTeacherInfo.firstName} ${row.mainTeacherInfo.lastName || ''}`
+              : row.mainTeacherInfo.teacherName || row.mainTeacherInfo.email || 'Sin asignar';
+          }
+          return 'Sin asignar';
+        },
+        onClick: (row: any) => this.openTeacherAssignmentModal(row),
+        width: '20%'
       }
     ],
     sortBy: this.sortColumn,
@@ -131,7 +151,8 @@ export class CoursesComponent implements OnInit {
 
   constructor(
     private coursesService: CoursesService,
-    private infoService: InfoService
+    private infoService: InfoService,
+    private teacherAssignmentService: TeacherAssignmentService
   ) {}
 
   ngOnInit(): void {
@@ -485,5 +506,19 @@ export class CoursesComponent implements OnInit {
 
   viewClasses(course: any): void {
     this.router.navigate(['/admin/classes'], { queryParams: { courseId: course._id } });
+  }
+
+  openTeacherAssignmentModal(course: any): void {
+    this.selectedCourseForAssignment = course;
+    this.isTeacherAssignmentModalOpen.set(true);
+  }
+
+  onTeacherAssignmentModalClose(): void {
+    this.isTeacherAssignmentModalOpen.set(false);
+    this.selectedCourseForAssignment = null;
+  }
+
+  onTeacherAssignmentRefresh(): void {
+    this.loadCourses();
   }
 }

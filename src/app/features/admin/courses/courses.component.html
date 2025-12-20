@@ -32,7 +32,7 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal para editar/crear cursos -->
 <app-modal-data-table
   [isOpen]="isModalOpen"
   [config]="modalConfig"
@@ -40,3 +40,14 @@
   (close)="onModalClose()"
   (save)="onModalSave($event)"
 />
+
+<!-- Modal para asignar profesores -->
+<app-teacher-assignment-modal
+  [isOpen]="isTeacherAssignmentModalOpen()"
+  [courseId]="selectedCourseForAssignment?._id || ''"
+  [courseName]="selectedCourseForAssignment?.name || ''"
+  [currentMainTeacher]="selectedCourseForAssignment?.mainTeacherInfo || selectedCourseForAssignment?.mainTeacher"
+  (close)="onTeacherAssignmentModalClose()"
+  (refreshCourses)="onTeacherAssignmentRefresh()"
+/>
+

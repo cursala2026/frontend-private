@@ -44,14 +44,16 @@ export class UsersService {
     sort?: string;
     sort_dir?: 'ASC' | 'DESC';
     search?: string;
+    _t?: string;
   }): Observable<UserListResponse> {
     let httpParams = new HttpParams();
-    
+
     if (params.page) httpParams = httpParams.set('page', params.page.toString());
     if (params.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
     if (params.sort_dir) httpParams = httpParams.set('sort_dir', params.sort_dir);
     if (params.search) httpParams = httpParams.set('search', params.search);
+    if (params._t) httpParams = httpParams.set('_t', params._t);
 
     return this.http.get<UserListResponse>(this.apiUrl, { params: httpParams });
   }

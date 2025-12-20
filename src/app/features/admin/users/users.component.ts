@@ -5,6 +5,7 @@ import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../share
 import { TableColumn, TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { UsersService, UserListResponse } from '../../../core/services/users.service';
 import { InfoService } from '../../../core/services/info.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 
 @Component({
   selector: 'app-users',
@@ -73,10 +74,19 @@ export class UsersComponent implements OnInit {
       {
         key: 'roles',
         label: 'Roles',
-        type: 'badge',
-        formatter: (value: string[]) => value?.join(', ') || 'Sin roles',
+        type: 'select',
+        formatter: (value: string[]) => {
+          // Obtener el primer rol del array (ya que ahora usamos un solo rol por usuario)
+          return Array.isArray(value) && value.length > 0 ? value[0] : 'ALUMNO';
+        },
+        selectOptions: [
+          { value: UserRole.ALUMNO, label: 'Alumno' },
+          { value: UserRole.PROFESOR, label: 'Profesor' },
+          { value: UserRole.ADMIN, label: 'Administrador' }
+        ],
+        onChange: (row: any, newValue: string) => this.handleRoleChange(row, newValue),
         align: 'center',
-        width: '10%'
+        width: '12%'
       },
       {
         key: 'status',
@@ -436,5 +446,53 @@ export class UsersComponent implements OnInit {
         }
       });
     }
+  }
+
+  handleRoleChange(user: any, newRole: string): void {
+    const oldRole = user.roles && user.roles.length > 0 ? user.roles[0] : null;
+
+    // Actualizar visualmente de inmediato con una nueva referencia del array
+    const currentUsers = this.users();
+    const userIndex = currentUsers.findIndex(u => u._id === user._id);
+
+    if (userIndex !== -1) {
+      currentUsers[userIndex] = {
+        ...currentUsers[userIndex],
+        roles: [newRole]
+      };
+      // Crear nuevo array para forzar detección de cambios
+      this.users.set([...currentUsers]);
+    }
+
+    // Enviar actualización al backend
+    this.usersService.updateUser(user._id, { roles: [newRole] }).subscribe({
+      next: () => {
+        this.infoService.showSuccess(`Rol actualizado a ${this.getRoleLabel(newRole)} exitosamente`);
+      },
+      error: (error) => {
+        console.error('Error updating user role:', error);
+        this.infoService.showError(error.error?.message || 'Error al actualizar el rol del usuario');
+
+        // Revertir el cambio visual en caso de error
+        if (oldRole && userIndex !== -1) {
+          currentUsers[userIndex] = {
+            ...currentUsers[userIndex],
+            roles: [oldRole]
+          };
+          this.users.set([...currentUsers]);
+        } else {
+          this.loadUsers();
+        }
+      }
+    });
+  }
+
+  getRoleLabel(role: string): string {
+    const roleLabels: Record<string, string> = {
+      [UserRole.ADMIN]: 'Administrador',
+      [UserRole.PROFESOR]: 'Profesor',
+      [UserRole.ALUMNO]: 'Alumno'
+    };
+    return roleLabels[role] || role;
   }
 }

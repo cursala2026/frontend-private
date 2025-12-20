@@ -221,6 +221,47 @@ export class DataTableComponent {
     return !!value;
   }
 
+  getSelectValue(row: any, column: TableColumn): string {
+    const value = row[column.key];
+
+    // Si es un array, tomar el primer elemento
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value[0] : '';
+    }
+
+    // Si es un string, retornarlo directamente
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    // Si tiene formatter, usarlo
+    if (column.formatter) {
+      return column.formatter(value, row);
+    }
+
+    return value || '';
+  }
+
+  handleSelectChange(row: any, column: TableColumn, event: Event): void {
+    event.stopPropagation();
+    const selectElement = event.target as HTMLSelectElement;
+    const newValue = selectElement.value;
+
+    // Si la columna tiene un onChange handler, ejecutarlo
+    if (column.onChange) {
+      column.onChange(row, newValue);
+    }
+  }
+
+  getSelectClass(value: string): string {
+    const selectClasses: Record<string, string> = {
+      'ADMIN': 'bg-blue-100 text-blue-800 ring-1 ring-blue-600/20 focus:ring-blue-500',
+      'PROFESOR': 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20 focus:ring-yellow-500',
+      'ALUMNO': 'bg-green-100 text-green-800 ring-1 ring-green-600/20 focus:ring-green-500'
+    };
+    return selectClasses[value] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 focus:ring-gray-500';
+  }
+
   getConfirmTitle(): string {
     const pending = this.pendingAction();
     if (!pending) return 'Confirmar acción';

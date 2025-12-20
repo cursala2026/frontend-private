@@ -212,4 +212,9 @@ export class CoursesService {
   deleteCourse(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}/delete`);
   }
+
+  assignMainTeacher(courseId: string, teacherId: string): Observable<any> {
+    // Backend accepts PATCH /courses/:id with JSON body. We send only mainTeacher.
+    return this.http.patch(`${this.apiUrl}/${courseId}`, { mainTeacher: teacherId });
+  }
 }

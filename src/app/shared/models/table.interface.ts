@@ -1,14 +1,21 @@
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export interface TableColumn {
   key: string;
   label: string;
   sortable?: boolean;
   filterable?: boolean;
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'badge' | 'image' | 'actions' | 'switch';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'badge' | 'image' | 'actions' | 'switch' | 'select';
   formatter?: (value: any, row: any) => string;
   width?: string;
   align?: 'left' | 'center' | 'right';
   imageShape?: 'circle' | 'rectangle'; // Forma de la imagen: círculo o rectángulo
-  onChange?: (row: any, newValue: any) => void; // Callback para cambios en switch
+  selectOptions?: SelectOption[]; // Opciones para select
+  onChange?: (row: any, newValue: any) => void; // Callback para cambios en switch o select
+  onClick?: (row: any) => void; // Acción al hacer click en la celda
 }
 
 export interface TableConfig {
