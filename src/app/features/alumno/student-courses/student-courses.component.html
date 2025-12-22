@@ -1,0 +1,147 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow-lg rounded-lg">
+    <div class="px-4 py-8 sm:p-8">
+      <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">
+        Mis Cursos
+      </h1>
+      <p class="text-indigo-100 text-lg">
+        Aquí puedes ver todos los cursos a los que estás inscrito
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (i of [1, 2, 3, 4, 5, 6]; track $index) {
+        <div class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+          <div class="h-48 bg-gray-200"></div>
+          <div class="p-6">
+            <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+      <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 4v2M7.08 6.47a9 9 0 1114.84 0M9 12h6m-3 3h.01" />
+      </svg>
+      <p class="text-red-700 font-medium">{{ error() }}</p>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && !error() && courses().length === 0) {
+    <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-12 text-center">
+      <svg class="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
+      </svg>
+      <h3 class="text-xl font-semibold text-blue-900 mb-2">Aún no tienes cursos</h3>
+      <p class="text-blue-700 mb-6">
+        Explora nuestros cursos disponibles y comienza tu aprendizaje hoy
+      </p>
+      <a 
+        href="/alumno"
+        class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+        Explorar Cursos
+      </a>
+    </div>
+  }
+
+  <!-- Courses Grid -->
+  @if (!loading() && !error() && courses().length > 0) {
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (course of courses(); track course._id) {
+        <div 
+          (click)="viewCourse(course)"
+          class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
+        >
+          <!-- Course Image -->
+          <div class="relative h-48 bg-gradient-to-br from-indigo-400 to-purple-500 overflow-hidden">
+            @if (getCourseImageUrl(course.imageUrl)) {
+              <img 
+                [src]="getCourseImageUrl(course.imageUrl)" 
+                [alt]="course.name"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                (error)="$event.target.style.display='none'"
+              />
+            }
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+            <!-- Badge -->
+            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+              <span class="text-indigo-600 font-semibold text-sm">
+                @if (course.price && course.price > 0) {
+                  {{ formatPrice(course.price) }}
+                } @else {
+                  <span class="text-green-600">Gratis</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          <!-- Course Info -->
+          <div class="p-6">
+            @if (course.description) {
+              <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ course.description }}</p>
+            }
+            
+            <div class="flex flex-wrap gap-2 mb-4">
+              @if (course.modality) {
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  {{ course.modality }}
+                </span>
+              }
+              @if (course.numberOfClasses) {
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  {{ course.numberOfClasses }} clases
+                </span>
+              }
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+              {{ course.name }}
+            </h3>
+
+            <!-- Footer Info -->
+            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+              @if (course.mainTeacherInfo) {
+                <div class="flex items-center space-x-2">
+                  <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                    {{ course.mainTeacherInfo.firstName.charAt(0) }}{{ course.mainTeacherInfo.lastName.charAt(0) }}
+                  </div>
+                  <span class="text-xs text-gray-600">{{ course.mainTeacherInfo.teacherName }}</span>
+                </div>
+              }
+              <button
+                class="text-indigo-600 hover:text-indigo-700 font-semibold text-sm flex items-center transition-colors"
+              >
+                Ver <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

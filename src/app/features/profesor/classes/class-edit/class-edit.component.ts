@@ -36,6 +36,10 @@ export class TeacherClassEditComponent implements OnInit {
   selectedVideoFile: File | null = null;
   videoPreview: string | null = null;
 
+  selectedSupportFiles: File[] = [];
+  existingSupportMaterials: string[] = [];
+  supportMaterialsToDelete: string[] = [];
+
   classId: string | null = null;
   courseId: string | null = null;
   isEditMode = false;
@@ -127,9 +131,15 @@ export class TeacherClassEditComponent implements OnInit {
           this.videoPreview = this.getClassVideoUrl(classData.videoUrl);
         }
 
+        // Cargar materiales de apoyo existentes
+        if (classData.supportMaterials && classData.supportMaterials.length > 0) {
+          this.existingSupportMaterials = [...classData.supportMaterials];
+        }
+
         this.classForm.patchValue({
           name: classData.name || '',
           description: classData.description || '',
+          courseId: this.courseId || '',
           linkLive: classData.linkLive || ''
         });
 
@@ -162,6 +172,8 @@ export class TeacherClassEditComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedImageFile = input.files[0];
+      this.classForm.patchValue({ imageFile: this.selectedImageFile });
+      this.classForm.markAsDirty(); // Marcar formulario como modificado
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.imagePreview = e.target.result;
@@ -174,6 +186,8 @@ export class TeacherClassEditComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedVideoFile = input.files[0];
+      this.classForm.patchValue({ videoFile: this.selectedVideoFile });
+      this.classForm.markAsDirty(); // Marcar formulario como modificado
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.videoPreview = e.target.result;
@@ -201,6 +215,75 @@ export class TeacherClassEditComponent implements OnInit {
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  onSupportFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      // Agregar los archivos seleccionados al array
+      const newFiles = Array.from(input.files);
+      this.selectedSupportFiles = [...this.selectedSupportFiles, ...newFiles];
+      this.classForm.markAsDirty();
+      // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
+      input.value = '';
+    }
+  }
+
+  removeSupportFile(index: number): void {
+    this.selectedSupportFiles.splice(index, 1);
+    this.classForm.markAsDirty();
+  }
+
+  removeExistingSupportMaterial(material: string): void {
+    this.supportMaterialsToDelete.push(material);
+    this.existingSupportMaterials = this.existingSupportMaterials.filter(m => m !== material);
+    this.classForm.markAsDirty();
+  }
+
+  getSupportMaterialUrl(fileName: string): string {
+    if (fileName.startsWith('http://') || fileName.startsWith('https://')) {
+      return fileName;
+    }
+    return `https://cursala.b-cdn.net/support-materials/${encodeURIComponent(fileName)}`;
+  }
+
+  getSupportMaterialName(fileName: string): string {
+    // Extraer solo el nombre del archivo sin la ruta
+    return fileName.split('/').pop() || fileName;
+  }
+
+  downloadSupportMaterial(fileName: string): void {
+    const url = this.getSupportMaterialUrl(fileName);
+    window.open(url, '_blank');
+  }
+
+  hasChanges(): boolean {
+    // En modo edición, verificar si hay cambios en el formulario o archivos seleccionados
+    if (this.isEditMode) {
+      return this.classForm.dirty ||
+             this.selectedImageFile !== null ||
+             this.selectedVideoFile !== null ||
+             this.selectedSupportFiles.length > 0 ||
+             this.supportMaterialsToDelete.length > 0;
+    }
+    // En modo creación, siempre hay cambios si el formulario es válido
+    return true;
+  }
+
+  canSubmit(): boolean {
+    // Verificar que el formulario sea válido
+    if (this.classForm.invalid) {
+      return false;
+    }
+    // En modo creación, verificar que haya imagen
+    if (!this.isEditMode && !this.selectedImageFile) {
+      return false;
+    }
+    // En modo edición, verificar que haya cambios
+    if (this.isEditMode && !this.hasChanges()) {
+      return false;
+    }
+    return true;
   }
 
   onSubmit(): void {
@@ -235,12 +318,31 @@ export class TeacherClassEditComponent implements OnInit {
       classData.videoFile = this.selectedVideoFile;
     }
 
+    // Agregar archivos de apoyo
+    if (this.selectedSupportFiles.length > 0) {
+      classData.supportMaterials = this.selectedSupportFiles;
+    }
+
+    // En modo edición, mantener los materiales existentes que no se eliminaron
+    if (this.isEditMode && this.supportMaterialsToDelete.length > 0) {
+      // Filtrar los materiales eliminados
+      const remainingMaterials = this.existingSupportMaterials.filter(
+        m => !this.supportMaterialsToDelete.includes(m)
+      );
+      classData.supportMaterialIds = remainingMaterials;
+    } else if (this.isEditMode && this.existingSupportMaterials.length > 0) {
+      classData.supportMaterialIds = this.existingSupportMaterials;
+    }
+
     if (this.isEditMode && this.classId) {
       // Actualizar clase existente
       this.classesService.updateClass(this.classId, classData).subscribe({
         next: () => {
           this.info.showSuccess('Clase actualizada exitosamente');
-          this.router.navigate(['/profesor/classes']);
+          // Navegar de vuelta con el curso seleccionado
+          this.router.navigate(['/profesor/classes'], {
+            queryParams: { courseId: this.courseId }
+          });
         },
         error: (error) => {
           console.error('Error updating class:', error);
@@ -253,7 +355,10 @@ export class TeacherClassEditComponent implements OnInit {
       this.classesService.createClass(classData).subscribe({
         next: () => {
           this.info.showSuccess('Clase creada exitosamente');
-          this.router.navigate(['/profesor/classes']);
+          // Navegar de vuelta con el curso seleccionado
+          this.router.navigate(['/profesor/classes'], {
+            queryParams: { courseId: classData.courseId }
+          });
         },
         error: (error) => {
           console.error('Error creating class:', error);
@@ -266,7 +371,14 @@ export class TeacherClassEditComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/profesor/classes']);
+    // Navegar de vuelta con el curso seleccionado si existe
+    if (this.courseId) {
+      this.router.navigate(['/profesor/classes'], {
+        queryParams: { courseId: this.courseId }
+      });
+    } else {
+      this.router.navigate(['/profesor/classes']);
+    }
   }
 }
 

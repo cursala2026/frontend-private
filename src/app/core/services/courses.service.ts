@@ -22,6 +22,7 @@ export interface Course {
   order: number;
   imageUrl?: string;
   classes: Class[];
+  students?: any[]; // Array de estudiantes (puede ser ObjectId o objeto completo)
   meta?: {
     totalClasses: number;
     popularity: number;
@@ -48,9 +49,13 @@ export interface Course {
 }
 
 export interface Class {
-  title: string;
+  _id?: string;
+  name: string;
   status: string;
   imageUrl?: string;
+  videoUrl?: string;
+  description?: string;
+  order?: number;
 }
 
 export interface CourseListResponse {
@@ -221,5 +226,17 @@ export class CoursesService {
   assignMainTeacher(courseId: string, teacherId: string): Observable<any> {
     // Backend expects PATCH /courses/:courseId/main-teacher with mainTeacherId in body
     return this.http.patch(`${this.apiUrl}/${courseId}/main-teacher`, { mainTeacherId: teacherId });
+  }
+
+  enrollInCourse(courseId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${courseId}/enroll`, {});
+  }
+
+  unenrollFromCourse(courseId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${courseId}/unenroll`, {});
+  }
+
+  getStudentCourses(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/me/courses`);
   }
 }

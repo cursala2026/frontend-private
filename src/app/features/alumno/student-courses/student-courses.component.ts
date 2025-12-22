@@ -1,47 +1,45 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { RouterModule, Router } from '@angular/router';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 
 @Component({
-  selector: 'app-alumno-dashboard',
+  selector: 'app-student-courses',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './alumno-dashboard.component.html',
-  
+  imports: [CommonModule, RouterModule],
+  templateUrl: './student-courses.component.html'
 })
-export class AlumnoDashboardComponent implements OnInit {
-  private authService = inject(AuthService);
+export class StudentCoursesComponent implements OnInit {
   private coursesService = inject(CoursesService);
   private router = inject(Router);
-  
-  user = this.authService.currentUser;
+
   courses = signal<Course[]>([]);
   loading = signal<boolean>(true);
+  error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.loadCourses();
+    this.loadStudentCourses();
   }
 
-  loadCourses(): void {
+  loadStudentCourses(): void {
     this.loading.set(true);
-    this.coursesService.getPublishedCourses().subscribe({
+    this.error.set(null);
+
+    this.coursesService.getStudentCourses().subscribe({
       next: (response: any) => {
-        const data = response?.data || [];
-        this.courses.set(Array.isArray(data) ? data : []);
+        const coursesData = response?.data || response || [];
+        this.courses.set(Array.isArray(coursesData) ? coursesData : []);
         this.loading.set(false);
       },
       error: (error) => {
-        console.error('Error loading courses:', error);
-        this.courses.set([]);
+        console.error('Error loading student courses:', error);
+        this.error.set('No se pudieron cargar tus cursos. Por favor, intenta nuevamente.');
         this.loading.set(false);
       }
     });
   }
 
-  openCourseDetails(course: Course): void {
-    // Navegar a la página de detalles del curso
+  viewCourse(course: Course): void {
     this.router.navigate(['/alumno/course-detail', course._id]);
   }
 
@@ -59,5 +57,15 @@ export class AlumnoDashboardComponent implements OnInit {
       style: 'currency',
       currency: 'ARS'
     }).format(price);
+  }
+
+  formatDate(date?: Date | string): string {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return new Intl.DateTimeFormat('es-AR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(dateObj);
   }
 }

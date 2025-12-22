@@ -1,13 +1,11 @@
-<div class="space-y-6">
+<div class="space-y-4">
   <!-- Header Section -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow-lg rounded-lg">
-    <div class="px-4 py-8 sm:p-8">
-      <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">
-        Mis Clases
-      </h1>
-      <p class="text-indigo-100 text-lg">
-        Gestiona y edita las clases de tus cursos
-      </p>
+  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow rounded-lg">
+    <div class="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-white">Mis Clases</h1>
+        <p class="text-indigo-100 text-sm">Gestiona las clases de tus cursos</p>
+      </div>
     </div>
   </div>
 
@@ -101,8 +99,8 @@
             <!-- Class Image -->
             <div class="relative h-48 bg-gradient-to-br from-indigo-400 to-purple-500 overflow-hidden">
               @if (getClassImageUrl(classItem.imageUrl)) {
-                <img 
-                  [src]="getClassImageUrl(classItem.imageUrl)" 
+                <img
+                  [src]="getClassImageUrl(classItem.imageUrl)"
                   [alt]="classItem.name"
                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   (error)="handleImageError($event)"
@@ -112,6 +110,18 @@
               <div class="absolute bottom-4 left-4 right-4">
                 <h3 class="text-white font-bold text-lg line-clamp-2">{{ classItem.name }}</h3>
               </div>
+
+              <!-- Delete Button -->
+              <button
+                (click)="deleteClass($event, classItem)"
+                class="absolute top-4 left-4 bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors duration-200 z-10"
+                title="Eliminar clase"
+              >
+                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+
               @if (classItem.status === 'ACTIVE') {
                 <div class="absolute top-4 right-4 bg-green-500 px-3 py-1 rounded-full">
                   <span class="text-white font-semibold text-xs">Activa</span>
@@ -144,3 +154,11 @@
     }
   </div>
 </div>
+
+<!-- Modal de confirmación de eliminación -->
+<app-confirm-modal
+  [isOpen]="showDeleteModal"
+  [config]="deleteModalConfig"
+  (confirm)="confirmDelete()"
+  (cancel)="cancelDelete()"
+></app-confirm-modal>

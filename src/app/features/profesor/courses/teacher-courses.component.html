@@ -1,23 +1,17 @@
-<div class="space-y-6">
+<div class="space-y-4">
   <!-- Header Section -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow-lg rounded-lg">
-    <div class="px-4 py-8 sm:p-8">
-      <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">
-        Mis Cursos
-      </h1>
-      <p class="text-indigo-100 text-lg">
-        Gestiona y edita los cursos que tienes asignados
-      </p>
+  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow rounded-lg">
+    <div class="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-white">Mis Cursos</h1>
+        <p class="text-indigo-100 text-sm">Gestiona los cursos que tienes asignados</p>
+      </div>
+      <span class="text-white/80 text-sm">{{ courses().length }} cursos</span>
     </div>
   </div>
 
   <!-- Courses Section -->
   <div>
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Cursos Asignados</h2>
-      <span class="text-sm text-gray-500">{{ courses().length }} cursos</span>
-    </div>
-
     @if (loading()) {
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         @for (item of [1,2,3,4,5,6]; track item) {

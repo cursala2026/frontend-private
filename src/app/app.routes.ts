@@ -126,7 +126,15 @@ export const routes: Routes = [
       },
       {
         path: 'courses',
-        loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
+        loadComponent: () => import('./features/alumno/student-courses/student-courses.component').then(m => m.StudentCoursesComponent)
+      },
+      {
+        path: 'course-detail/:courseId',
+        loadComponent: () => import('./features/alumno/course-detail/course-detail.component').then(m => m.CourseDetailComponent)
+      },
+      {
+        path: 'course-detail/:courseId/class/:classId',
+        loadComponent: () => import('./features/alumno/class-detail/class-detail.component').then(m => m.ClassDetailComponent)
       },
       {
         path: 'profile',
@@ -135,10 +143,6 @@ export const routes: Routes = [
       {
         path: 'grades',
         loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
-      },
-      {
-        path: 'courses/:courseId',
-        loadComponent: () => import('./features/alumno/course-detail/course-detail.component').then(m => m.CourseDetailComponent)
       }
     ]
   },

@@ -1,0 +1,39 @@
+@if (isOpen()) {
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+      <h2 class="text-xl font-bold text-gray-900 mb-4">
+        Confirmar desinscrición
+      </h2>
+      
+      <p class="text-gray-600 mb-6">
+        ¿Estás seguro de que deseas desinscribirse del curso <strong>{{ courseName() }}</strong>?
+      </p>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Esta acción no se puede deshacer. Perderás acceso a todas las clases y materiales del curso.
+      </p>
+
+      <div class="flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="onClose()"
+          [disabled]="isLoading()"
+          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="onConfirm()"
+          [disabled]="isLoading()"
+          class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+        >
+          @if (isLoading()) {
+            <span class="inline-block animate-spin">⌛</span>
+          }
+          {{ isLoading() ? 'Desinscriendo...' : 'Confirmar desinscrición' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,10 +1,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClassesService, ClassData } from '../../../core/services/classes.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 
 interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
   courseName?: string;
@@ -14,13 +15,14 @@ interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
 @Component({
   selector: 'app-teacher-classes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './teacher-classes.component.html',
 })
 export class TeacherClassesComponent implements OnInit {
   private authService = inject(AuthService);
   private classesService = inject(ClassesService);
   private coursesService = inject(CoursesService);
+  private route = inject(ActivatedRoute);
   router = inject(Router);
   
   user = this.authService.currentUser;
@@ -30,8 +32,29 @@ export class TeacherClassesComponent implements OnInit {
   loading = signal<boolean>(true);
   loadingClasses = signal<boolean>(false);
 
+  // Modal de confirmación
+  showDeleteModal = signal<boolean>(false);
+  classToDelete: ClassData | null = null;
+  deleteModalConfig: ConfirmModalConfig = {
+    title: 'Eliminar Clase',
+    message: '',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    icon: 'danger'
+  };
+
   ngOnInit(): void {
     this.loadCourses();
+
+    // Verificar si hay un courseId en los query params
+    this.route.queryParamMap.subscribe(params => {
+      const courseIdFromQuery = params.get('courseId');
+      if (courseIdFromQuery) {
+        this.selectedCourseId = courseIdFromQuery;
+        this.loadClassesByCourse(courseIdFromQuery);
+      }
+    });
   }
 
   loadCourses(): void {
@@ -90,6 +113,38 @@ export class TeacherClassesComponent implements OnInit {
       // Navegar a la página de creación de clase con el courseId como query param
       this.router.navigate(['/profesor/classes/new'], { queryParams: { courseId: this.selectedCourseId } });
     }
+  }
+
+  deleteClass(event: Event, classItem: ClassData): void {
+    event.stopPropagation(); // Evitar que se dispare el click de la tarjeta
+
+    // Configurar el modal con la información de la clase
+    this.classToDelete = classItem;
+    this.deleteModalConfig.message = `¿Estás seguro de que deseas eliminar la clase "${classItem.name}"?\n\nEsta acción no se puede deshacer.`;
+    this.showDeleteModal.set(true);
+  }
+
+  confirmDelete(): void {
+    if (this.classToDelete?._id) {
+      this.classesService.deleteClass(this.classToDelete._id).subscribe({
+        next: () => {
+          // Recargar las clases del curso actual
+          if (this.selectedCourseId) {
+            this.loadClassesByCourse(this.selectedCourseId);
+          }
+          this.classToDelete = null;
+        },
+        error: (error) => {
+          console.error('Error deleting class:', error);
+          alert('Error al eliminar la clase. Por favor, inténtalo de nuevo.');
+          this.classToDelete = null;
+        }
+      });
+    }
+  }
+
+  cancelDelete(): void {
+    this.classToDelete = null;
   }
 
   getClassImageUrl(imageUrl?: string): string {

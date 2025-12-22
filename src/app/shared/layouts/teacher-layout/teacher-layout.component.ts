@@ -25,10 +25,6 @@ export class TeacherLayoutComponent {
 
   menuItems: MenuItem[] = [
     {
-      label: 'Dashboard',
-      route: '/profesor'
-    },
-    {
       label: 'Mis Cursos',
       route: '/profesor/courses'
     },

@@ -15,6 +15,9 @@ interface Student {
   courseName: string;
   startDate: Date;
   endDate: Date;
+  progress: number;
+  completedClasses: number;
+  totalClasses: number;
 }
 
 @Component({

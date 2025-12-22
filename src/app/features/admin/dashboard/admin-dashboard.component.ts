@@ -16,6 +16,8 @@ interface RecentUser {
 
 interface SystemStats {
   totalUsers: number;
+  totalStudents: number;
+  totalTeachers: number;
   totalCourses: number;
   totalCategories: number;
   totalPromotionalCodes: number;

@@ -34,6 +34,10 @@ export class ClassEditComponent implements OnInit {
   selectedVideoFile: File | null = null;
   videoPreview: string | null = null;
 
+  selectedSupportFiles: File[] = [];
+  existingSupportMaterials: string[] = [];
+  supportMaterialsToDelete: string[] = [];
+
   classId: string | null = null;
   courseId: string | null = null;
   isEditMode = false;
@@ -150,6 +154,11 @@ export class ClassEditComponent implements OnInit {
           this.videoPreview = this.getClassVideoUrl(classData.videoUrl);
         }
 
+        // Cargar materiales de apoyo existentes
+        if (classData.supportMaterials && classData.supportMaterials.length > 0) {
+          this.existingSupportMaterials = [...classData.supportMaterials];
+        }
+
         this.loading.set(false);
       },
       error: (error) => {
@@ -194,6 +203,43 @@ export class ClassEditComponent implements OnInit {
       const videoUrl = URL.createObjectURL(file);
       this.videoPreview = videoUrl;
     }
+  }
+
+  onSupportFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const newFiles = Array.from(input.files);
+      this.selectedSupportFiles = [...this.selectedSupportFiles, ...newFiles];
+      this.classForm.markAsDirty();
+      input.value = '';
+    }
+  }
+
+  removeSupportFile(index: number): void {
+    this.selectedSupportFiles.splice(index, 1);
+    this.classForm.markAsDirty();
+  }
+
+  removeExistingSupportMaterial(material: string): void {
+    this.supportMaterialsToDelete.push(material);
+    this.existingSupportMaterials = this.existingSupportMaterials.filter(m => m !== material);
+    this.classForm.markAsDirty();
+  }
+
+  getSupportMaterialUrl(fileName: string): string {
+    if (fileName.startsWith('http://') || fileName.startsWith('https://')) {
+      return fileName;
+    }
+    return `https://cursala.b-cdn.net/support-materials/${encodeURIComponent(fileName)}`;
+  }
+
+  getSupportMaterialName(fileName: string): string {
+    return fileName.split('/').pop() || fileName;
+  }
+
+  downloadSupportMaterial(fileName: string): void {
+    const url = this.getSupportMaterialUrl(fileName);
+    window.open(url, '_blank');
   }
 
   getClassImageUrl(imageUrl?: string): string {
@@ -246,6 +292,21 @@ export class ClassEditComponent implements OnInit {
 
     if (this.selectedVideoFile) {
       classData.videoFile = this.selectedVideoFile;
+    }
+
+    // Agregar archivos de apoyo
+    if (this.selectedSupportFiles.length > 0) {
+      classData.supportMaterials = this.selectedSupportFiles;
+    }
+
+    // En modo edición, mantener los materiales existentes que no se eliminaron
+    if (this.isEditMode && this.supportMaterialsToDelete.length > 0) {
+      const remainingMaterials = this.existingSupportMaterials.filter(
+        m => !this.supportMaterialsToDelete.includes(m)
+      );
+      classData.supportMaterialIds = remainingMaterials;
+    } else if (this.isEditMode && this.existingSupportMaterials.length > 0) {
+      classData.supportMaterialIds = this.existingSupportMaterials;
     }
 
     if (this.isEditMode && this.classId) {
