@@ -78,10 +78,11 @@ export class CoursesComponent implements OnInit {
       {
         key: 'status',
         label: 'Estado',
-        type: 'badge',
-        formatter: (value: string) => value === 'ACTIVE' ? 'Activo' : 'Inactivo',
+        type: 'switch',
         align: 'center',
-        width: '10%'
+        width: '10%',
+        switchColor: 'blue',
+        onChange: (row: any, newValue: boolean) => this.handleStatusToggle(row, newValue)
       },
       {
         key: 'isPublished',
@@ -125,16 +126,6 @@ export class CoursesComponent implements OnInit {
         iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
         handler: (row) => this.editCourse(row),
         class: 'btn-primary'
-      },
-      {
-        label: 'Cambiar Estado',
-        iconSvg: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
-        handler: (row) => this.toggleCourseStatus(row),
-        class: 'btn-secondary',
-        requireConfirm: true,
-        confirmTitle: 'Cambiar Estado del Curso',
-        confirmMessage: (row: any) => `¿Estás seguro de que quieres ${row.status === 'ACTIVE' ? 'desactivar' : 'activar'} este curso?`,
-        confirmButtonText: 'Cambiar Estado'
       },
       {
         label: 'Eliminar',
@@ -439,16 +430,24 @@ export class CoursesComponent implements OnInit {
     }
   }
 
-  toggleCourseStatus(course: any): void {
-    this.coursesService.toggleCourseStatus(course._id).subscribe({
+  handleStatusToggle(course: any, newValue: boolean): void {
+    // Actualizar directamente el estado sin confirmación (visual feedback inmediato)
+    const newStatus = newValue ? 'ACTIVE' : 'INACTIVE';
+    const oldStatus = course.status;
+    course.status = newStatus;
+
+    this.coursesService.toggleCourseStatus(course._id, newStatus).subscribe({
       next: () => {
-        this.infoService.showSuccess('Estado del curso cambiado exitosamente');
-        this.loadCourses();
+        // Éxito - el cambio ya está reflejado visualmente
+        this.infoService.showSuccess(`Curso ${newValue ? 'activado' : 'desactivado'} exitosamente`);
       },
       error: (error) => {
+        // Revertir el cambio en caso de error
+        course.status = oldStatus;
         console.error('Error toggling course status:', error);
         const errorMsg = error?.error?.message || 'Error al cambiar el estado del curso';
         this.infoService.showError(errorMsg);
+        this.loadCourses(); // Recargar para asegurar consistencia
       }
     });
   }

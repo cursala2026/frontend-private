@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableColumn, TableConfig, TableAction, PaginationData } from '../../models/table.interface';
@@ -30,6 +30,8 @@ export class DataTableComponent {
 
   // Expose Math for template
   Math = Math;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   allSelected = computed(() => {
     if (this.data.length === 0) return false;
@@ -221,31 +223,70 @@ export class DataTableComponent {
     return !!value;
   }
 
+  getSwitchClasses(row: any, column: TableColumn): string {
+    const isActive = this.isSwitchActive(row, column);
+    const color = column.switchColor || 'green';
+    
+    const colorClasses: Record<string, { active: string; focus: string }> = {
+      green: { active: 'bg-green-600', focus: 'focus:ring-green-500' },
+      blue: { active: 'bg-blue-600', focus: 'focus:ring-blue-500' },
+      purple: { active: 'bg-purple-600', focus: 'focus:ring-purple-500' },
+      indigo: { active: 'bg-indigo-600', focus: 'focus:ring-indigo-500' },
+      yellow: { active: 'bg-yellow-600', focus: 'focus:ring-yellow-500' },
+      red: { active: 'bg-red-600', focus: 'focus:ring-red-500' }
+    };
+
+    const colors = colorClasses[color] || colorClasses['green'];
+    return isActive ? colors.active + ' ' + colors.focus : 'bg-gray-200' + ' ' + colors.focus;
+  }
+
   getSelectValue(row: any, column: TableColumn): string {
     const value = row[column.key];
+    let result = '';
 
+    // Para selects, siempre usar el valor real, NO el formatter
+    // El formatter es solo para mostrar texto, no para el binding del select
+    
     // Si es un array, tomar el primer elemento
     if (Array.isArray(value)) {
-      return value.length > 0 ? value[0] : '';
+      result = value.length > 0 ? String(value[0]) : '';
+    } else if (typeof value === 'string') {
+      result = value;
+    } else if (value == null) {
+      result = '';
+    } else {
+      result = String(value);
     }
 
-    // Si es un string, retornarlo directamente
-    if (typeof value === 'string') {
-      return value;
+    // Normalizar a mayúsculas para roles y asegurar que coincida con las opciones
+    if (column.key === 'roles') {
+      result = result.toUpperCase().trim();
+      // Asegurar que sea uno de los valores válidos
+      if (!result || (result !== 'ADMIN' && result !== 'PROFESOR' && result !== 'ALUMNO')) {
+        result = 'ALUMNO'; // Valor por defecto
+      }
     }
 
-    // Si tiene formatter, usarlo
-    if (column.formatter) {
-      return column.formatter(value, row);
-    }
-
-    return value || '';
+    return result;
   }
 
   handleSelectChange(row: any, column: TableColumn, event: Event): void {
     event.stopPropagation();
     const selectElement = event.target as HTMLSelectElement;
     const newValue = selectElement.value;
+
+    // Actualizar el valor en el objeto row inmediatamente para reflejar el cambio visual
+    // Siempre usar array para roles para mantener consistencia
+    if (column.key === 'roles') {
+      row[column.key] = [newValue];
+    } else if (Array.isArray(row[column.key])) {
+      row[column.key] = [newValue];
+    } else {
+      row[column.key] = newValue;
+    }
+
+    // Forzar detección de cambios para actualizar el select visualmente
+    this.cdr.detectChanges();
 
     // Si la columna tiene un onChange handler, ejecutarlo
     if (column.onChange) {
@@ -254,12 +295,15 @@ export class DataTableComponent {
   }
 
   getSelectClass(value: string): string {
+    // Normalizar el valor a mayúsculas para comparar
+    const normalizedValue = value ? String(value).toUpperCase() : '';
+    
     const selectClasses: Record<string, string> = {
       'ADMIN': 'bg-blue-100 text-blue-800 ring-1 ring-blue-600/20 focus:ring-blue-500',
       'PROFESOR': 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20 focus:ring-yellow-500',
       'ALUMNO': 'bg-green-100 text-green-800 ring-1 ring-green-600/20 focus:ring-green-500'
     };
-    return selectClasses[value] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 focus:ring-gray-500';
+    return selectClasses[normalizedValue] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 focus:ring-gray-500';
   }
 
   getConfirmTitle(): string {

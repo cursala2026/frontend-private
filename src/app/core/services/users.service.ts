@@ -49,13 +49,25 @@ export class UsersService {
     let httpParams = new HttpParams();
 
     if (params.page) httpParams = httpParams.set('page', params.page.toString());
-    if (params.page_size) httpParams = httpParams.set('page_size', params.page_size.toString());
+    if (params.page_size) {
+      httpParams = httpParams.set('page_size', params.page_size.toString());
+      // También enviar limit por si el backend lo usa
+      httpParams = httpParams.set('limit', params.page_size.toString());
+    }
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
     if (params.sort_dir) httpParams = httpParams.set('sort_dir', params.sort_dir);
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params._t) httpParams = httpParams.set('_t', params._t);
 
     return this.http.get<UserListResponse>(this.apiUrl, { params: httpParams });
+  }
+
+  getAllUsers(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/getAllUsers`);
+  }
+
+  getTeachers(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/getTeachers`);
   }
 
   getUserById(id: string): Observable<any> {

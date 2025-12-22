@@ -72,6 +72,10 @@ export class ClassesService {
     return this.http.get(`${this.apiUrl}/course/${courseId}/classes`);
   }
 
+  getClassesByTeacherCourses(teacherId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/teacher/${teacherId}/classes`);
+  }
+
   createClass(classData: CreateClassDto): Observable<any> {
     const formData = new FormData();
     

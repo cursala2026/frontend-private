@@ -171,8 +171,8 @@
                     <div class="flex items-center justify-center">
                       <button
                         type="button"
-                        [class]="'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ' +
-                          (isSwitchActive(row, column) ? 'bg-green-600' : 'bg-gray-200')"
+                        [class]="'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ' +
+                          getSwitchClasses(row, column)"
                         (click)="handleSwitchToggle(row, column, $event)"
                       >
                         <span
@@ -184,14 +184,15 @@
                   }
                   @case ('select') {
                     <div class="flex items-center justify-center">
+                      @let selectValue = getSelectValue(row, column);
                       <select
-                        [value]="getSelectValue(row, column)"
+                        [value]="selectValue"
                         (change)="handleSelectChange(row, column, $event)"
-                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm ' + getSelectClass(getSelectValue(row, column))"
+                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm ' + getSelectClass(selectValue)"
                         (click)="$event.stopPropagation()"
                       >
                         @for (option of column.selectOptions; track option.value) {
-                          <option [value]="option.value">{{ option.label }}</option>
+                          <option [value]="option.value" [selected]="selectValue === option.value">{{ option.label }}</option>
                         }
                       </select>
                     </div>

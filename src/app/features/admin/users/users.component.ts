@@ -145,7 +145,23 @@ export class UsersComponent implements OnInit {
           totalPages: 0
         };
         
-        this.users.set(Array.isArray(data) ? data : []);
+        // Normalizar los roles para asegurar que siempre sean arrays y en mayúsculas
+        const normalizedData = Array.isArray(data) ? data.map((user: any) => {
+          let roles = [];
+          if (Array.isArray(user.roles)) {
+            roles = user.roles.map((r: any) => String(r).toUpperCase());
+          } else if (user.roles) {
+            roles = [String(user.roles).toUpperCase()];
+          } else {
+            roles = ['ALUMNO'];
+          }
+          return {
+            ...user,
+            roles: roles
+          };
+        }) : [];
+        
+        this.users.set(normalizedData);
         this.pagination.set(pagination);
         this.loading.set(false);
       },
@@ -451,23 +467,45 @@ export class UsersComponent implements OnInit {
   handleRoleChange(user: any, newRole: string): void {
     const oldRole = user.roles && user.roles.length > 0 ? user.roles[0] : null;
 
-    // Actualizar visualmente de inmediato con una nueva referencia del array
+    // Obtener el array actual de usuarios
     const currentUsers = this.users();
     const userIndex = currentUsers.findIndex(u => u._id === user._id);
 
+    // Actualizar visualmente de inmediato - crear nuevo objeto para forzar detección de cambios
     if (userIndex !== -1) {
-      currentUsers[userIndex] = {
+      // Crear una copia profunda del usuario con el nuevo rol
+      const updatedUser = {
         ...currentUsers[userIndex],
         roles: [newRole]
       };
-      // Crear nuevo array para forzar detección de cambios
-      this.users.set([...currentUsers]);
+      
+      // Actualizar también el objeto original que se pasa como parámetro
+      user.roles = [newRole];
+      
+      // Crear nuevo array con el usuario actualizado
+      const newUsers = [...currentUsers];
+      newUsers[userIndex] = updatedUser;
+      this.users.set(newUsers);
     }
 
     // Enviar actualización al backend
     this.usersService.updateUser(user._id, { roles: [newRole] }).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.infoService.showSuccess(`Rol actualizado a ${this.getRoleLabel(newRole)} exitosamente`);
+        
+        // Actualizar el usuario con la respuesta del backend si está disponible
+        if (response?.data && userIndex !== -1) {
+          const updatedUsers = [...this.users()];
+          updatedUsers[userIndex] = {
+            ...updatedUsers[userIndex],
+            ...response.data,
+            roles: Array.isArray(response.data.roles) ? response.data.roles : [response.data.roles || newRole]
+          };
+          this.users.set(updatedUsers);
+        } else {
+          // Recargar la lista de usuarios para asegurar que los datos estén sincronizados
+          this.loadUsers();
+        }
       },
       error: (error) => {
         console.error('Error updating user role:', error);
@@ -475,11 +513,13 @@ export class UsersComponent implements OnInit {
 
         // Revertir el cambio visual en caso de error
         if (oldRole && userIndex !== -1) {
-          currentUsers[userIndex] = {
-            ...currentUsers[userIndex],
+          const revertedUsers = [...this.users()];
+          revertedUsers[userIndex] = {
+            ...revertedUsers[userIndex],
             roles: [oldRole]
           };
-          this.users.set([...currentUsers]);
+          user.roles = [oldRole];
+          this.users.set(revertedUsers);
         } else {
           this.loadUsers();
         }

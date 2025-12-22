@@ -36,8 +36,11 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnChanges(): void {
-    if (this.isOpen && this.courseId) {
+  ngOnChanges(changes: any): void {
+    // Solo inicializar si el modal se abre o cambia el courseId
+    if (changes.isOpen && changes.isOpen.currentValue && this.courseId) {
+      this.initializeModal();
+    } else if (changes.courseId && changes.courseId.currentValue) {
       this.initializeModal();
     }
   }
@@ -62,41 +65,14 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   loadTeachers(): void {
     this.loadingTeachers.set(true);
 
-    // Agregar timestamp para evitar caché HTTP 304
-    const params = {
-      page_size: 100,
-      _t: Date.now().toString()
-    };
-
-    this.usersService.getUsers(params as any).subscribe({
+    // Usar el endpoint específico para obtener solo profesores
+    this.usersService.getTeachers().subscribe({
       next: (response: any) => {
-        // El backend puede devolver response.data como objeto con diferentes estructuras
-        let allUsers: any[] = [];
-
-        if (Array.isArray(response?.data)) {
-          // Si data es directamente un array
-          allUsers = response.data;
-        } else if (response?.data?.data && Array.isArray(response.data.data)) {
-          // Si data contiene otro objeto data con el array
-          allUsers = response.data.data;
-        } else if (response?.data?.users && Array.isArray(response.data.users)) {
-          // Si data contiene un objeto users con el array
-          allUsers = response.data.users;
-        }
-
-        const teachers = allUsers.filter((user: any) => {
-          const role = user.role;
-          const roles = Array.isArray(user.roles) ? user.roles : [];
-          return role === UserRole.PROFESOR || role === 'PROFESOR' ||
-                 roles.includes(UserRole.PROFESOR) || roles.includes('PROFESOR');
-        });
-
+        // El backend devuelve response.data con el array de profesores
+        const teachers = Array.isArray(response?.data) ? response.data : [];
+        
         this.teachers.set(teachers);
         this.loadingTeachers.set(false);
-
-        if (teachers.length === 0) {
-          this.infoService.showError('No se encontraron profesores en el sistema');
-        }
       },
       error: (error: any) => {
         console.error('Error loading teachers:', error);
@@ -107,15 +83,14 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   }
 
   assignTeacher(): void {
-    if (!this.selectedTeacherId) {
-      this.infoService.showError('Por favor selecciona un profesor');
-      return;
-    }
-
+    // Permitir asignar o remover profesor (selectedTeacherId puede estar vacío)
     this.isSubmitting.set(true);
-    this.coursesService.assignMainTeacher(this.courseId, this.selectedTeacherId).subscribe({
+    this.coursesService.assignMainTeacher(this.courseId, this.selectedTeacherId || '').subscribe({
       next: () => {
-        this.infoService.showSuccess('Profesor principal asignado exitosamente');
+        const message = this.selectedTeacherId 
+          ? 'Profesor principal asignado exitosamente'
+          : 'Profesor principal removido exitosamente';
+        this.infoService.showSuccess(message);
         this.isSubmitting.set(false);
         this.refreshCourses.emit();
         this.onClose();
@@ -156,6 +131,8 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
     this.selectedTeacherId = '';
     this.initialTeacherId = '';
     this.isSubmitting.set(false);
+    // Limpiar la lista de profesores al cerrar para forzar recarga la próxima vez
+    this.teachers.set([]);
     this.close.emit();
   }
 }

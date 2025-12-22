@@ -16,6 +16,7 @@ export interface TableColumn {
   selectOptions?: SelectOption[]; // Opciones para select
   onChange?: (row: any, newValue: any) => void; // Callback para cambios en switch o select
   onClick?: (row: any) => void; // Acción al hacer click en la celda
+  switchColor?: 'green' | 'blue' | 'purple' | 'indigo' | 'yellow' | 'red'; // Color del switch cuando está activo
 }
 
 export interface TableConfig {

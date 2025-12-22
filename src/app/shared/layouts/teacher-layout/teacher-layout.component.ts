@@ -33,8 +33,12 @@ export class TeacherLayoutComponent {
       route: '/profesor/courses'
     },
     {
-      label: 'Calificaciones',
-      route: '/profesor/grades'
+      label: 'Mis Clases',
+      route: '/profesor/classes'
+    },
+    {
+      label: 'Mis Alumnos',
+      route: '/profesor/students'
     }
   ];
 

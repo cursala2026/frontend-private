@@ -42,6 +42,7 @@ export interface Course {
   numberOfClasses?: number;
   duration?: number;
   isPublished?: boolean;
+  isMainTeacher?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -132,6 +133,10 @@ export class CoursesService {
     return this.http.get(`${this.apiUrl}/published`);
   }
 
+  getTeacherCourses(teacherId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/teacher/${teacherId}`);
+  }
+
   private toISOString(date: Date | string | undefined): string | undefined {
     if (!date) return undefined;
     if (typeof date === 'string') {
@@ -201,8 +206,8 @@ export class CoursesService {
     return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }
 
-  toggleCourseStatus(id: string): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}/status`, {});
+  toggleCourseStatus(id: string, status: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/status`, { status });
   }
 
   togglePublishedStatus(id: string, isPublished: boolean): Observable<any> {
@@ -214,7 +219,7 @@ export class CoursesService {
   }
 
   assignMainTeacher(courseId: string, teacherId: string): Observable<any> {
-    // Backend accepts PATCH /courses/:id with JSON body. We send only mainTeacher.
-    return this.http.patch(`${this.apiUrl}/${courseId}`, { mainTeacher: teacherId });
+    // Backend expects PATCH /courses/:courseId/main-teacher with mainTeacherId in body
+    return this.http.patch(`${this.apiUrl}/${courseId}/main-teacher`, { mainTeacherId: teacherId });
   }
 }

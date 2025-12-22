@@ -85,15 +85,31 @@ export const routes: Routes = [
       },
       {
         path: 'courses',
-        loadComponent: () => import('./features/profesor/dashboard/profesor-dashboard.component').then(m => m.ProfesorDashboardComponent)
+        loadComponent: () => import('./features/profesor/courses/teacher-courses.component').then(m => m.TeacherCoursesComponent)
+      },
+      {
+        path: 'courses/:courseId/edit',
+        loadComponent: () => import('./features/profesor/courses/course-edit/course-edit.component').then(m => m.CourseEditComponent)
+      },
+      {
+        path: 'classes',
+        loadComponent: () => import('./features/profesor/classes/teacher-classes.component').then(m => m.TeacherClassesComponent)
+      },
+      {
+        path: 'classes/new',
+        loadComponent: () => import('./features/profesor/classes/class-edit/class-edit.component').then(m => m.TeacherClassEditComponent)
+      },
+      {
+        path: 'classes/:id/edit',
+        loadComponent: () => import('./features/profesor/classes/class-edit/class-edit.component').then(m => m.TeacherClassEditComponent)
       },
       {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
       {
-        path: 'grades',
-        loadComponent: () => import('./features/profesor/dashboard/profesor-dashboard.component').then(m => m.ProfesorDashboardComponent)
+        path: 'students',
+        loadComponent: () => import('./features/profesor/students/teacher-students.component').then(m => m.TeacherStudentsComponent)
       }
     ]
   },
