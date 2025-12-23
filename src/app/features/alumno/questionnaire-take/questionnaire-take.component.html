@@ -1,0 +1,328 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-6">
+      <button
+        (click)="goBack()"
+        class="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors mb-4"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver al curso
+      </button>
+
+      @if (loading()) {
+        <div class="h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+        <div class="h-6 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+      } @else {
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ questionnaire()?.title }}</h1>
+        @if (questionnaire()?.description) {
+          <p class="text-gray-600">{{ questionnaire()?.description }}</p>
+        }
+      }
+    </div>
+
+    @if (loading()) {
+      <!-- Loading State -->
+      <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="animate-pulse space-y-6">
+          @for (item of [1, 2, 3]; track item) {
+            <div class="space-y-3">
+              <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-20 bg-gray-200 rounded"></div>
+            </div>
+          }
+        </div>
+      </div>
+    } @else if (showResults()) {
+      <!-- Results View -->
+      <div class="space-y-6">
+        <!-- Score Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="text-center">
+            <h2 class="text-2xl font-bold mb-4">Resultado del Cuestionario</h2>
+
+            <!-- Pending Grading Message -->
+            @if (currentSubmission()?.status === 'SUBMITTED') {
+              <div class="mb-6">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-4">
+                  <svg class="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold text-yellow-700 mb-2">Esperando Calificación</h3>
+                <p class="text-gray-700 mb-4">
+                  Tu examen ha sido enviado y está pendiente de calificación manual por el profesor.
+                </p>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p class="text-sm text-yellow-800 font-medium">
+                    ⚠️ Debes esperar a que el profesor califique el examen antes de poder continuar con el curso.
+                  </p>
+                </div>
+                @if (currentSubmission()?.autoGradedScore !== undefined) {
+                  <div class="text-sm text-gray-600 mt-4">
+                    <p>Puntuación automática (preguntas de opción múltiple): {{ currentSubmission()?.autoGradedScore?.toFixed(1) }}%</p>
+                    <p class="text-xs text-gray-500 mt-1">La calificación final se calculará cuando el profesor califique las preguntas de texto.</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="mb-6">
+                <div [class]="getScoreColor() + ' text-6xl font-bold mb-2'">
+                  {{ getScore().toFixed(1) }}%
+                </div>
+                <div class="text-lg">
+                  @if (isPassed()) {
+                    <span class="text-green-600 font-semibold">¡Aprobado!</span>
+                  } @else {
+                    <span class="text-red-600 font-semibold">No Aprobado</span>
+                    @if (canRetry()) {
+                      <p class="text-sm text-gray-600 mt-2">
+                        Puedes intentar nuevamente para mejorar tu calificación.
+                      </p>
+                      <p class="text-sm text-yellow-700 font-medium mt-2 bg-yellow-50 border border-yellow-200 rounded p-2">
+                        ⚠️ Las respuestas no se mostrarán hasta que hayas agotado todos tus intentos.
+                      </p>
+                    } @else {
+                      <p class="text-sm text-gray-600 mt-2">
+                        Ya no tienes más intentos disponibles. Esta es tu calificación final.
+                      </p>
+                    }
+                  }
+                </div>
+                @if (questionnaire()?.passingScore) {
+                  <p class="text-gray-600 mt-2">
+                    Nota mínima requerida: {{ questionnaire()?.passingScore }}%
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Feedback -->
+            @if (currentSubmission()?.feedback) {
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p class="text-sm font-semibold text-blue-900 mb-2">Comentarios del profesor:</p>
+                <p class="text-blue-800">{{ currentSubmission()?.feedback }}</p>
+              </div>
+            }
+
+            <!-- Attempt Info -->
+            <div class="text-sm text-gray-600 mb-6">
+              <p>Intento #{{ currentSubmission()?.attemptNumber }}</p>
+              @if (previousSubmissions().length > 0) {
+                <p>Total de intentos: {{ previousSubmissions().length }}</p>
+              }
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-center gap-4 flex-wrap">
+              <button
+                (click)="goBack()"
+                class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Volver al Curso
+              </button>
+
+              @if (canRetry() && (currentSubmission()?.status === 'SUBMITTED' || (currentSubmission()?.status === 'GRADED' && !isPassed()))) {
+                <button
+                  (click)="retry()"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Intentar Nuevamente
+                </button>
+              }
+
+              @if (isPassed() && getNextClassId()) {
+                <button
+                  (click)="goToNextClass()"
+                  class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Continuar a la Siguiente Clase
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Answers Review (if showCorrectAnswers is true AND no retries available) -->
+        <!-- Don't show answers if student can retry to avoid giving them exam information -->
+        @if (questionnaire()?.showCorrectAnswers && !canRetry()) {
+          <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold mb-4">Revisión de Respuestas</h3>
+
+            <div class="space-y-6">
+              @for (question of questionnaire()?.questions; track question._id; let i = $index) {
+                @let answer = getAnswerForQuestion(question._id!);
+                <div class="border-b border-gray-200 pb-6 last:border-b-0">
+                  <!-- Question Header -->
+                  <div class="flex items-start justify-between mb-3">
+                    <h4 class="text-lg font-medium text-gray-900">
+                      {{ i + 1 }}. {{ question.questionText }}
+                    </h4>
+                    <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
+                      {{ question.points }} pts
+                    </span>
+                  </div>
+
+                  <!-- Multiple Choice Answer -->
+                  @if (question.type === 'MULTIPLE_CHOICE' && answer) {
+                    <div class="space-y-2">
+                      @for (option of question.options; track option._id) {
+                        <div
+                          class="flex items-center gap-2 px-3 py-2 rounded"
+                          [class.bg-green-100]="isCorrectOption(question._id!, option._id!.toString())"
+                          [class.bg-red-100]="!isCorrectOption(question._id!, option._id!.toString()) && answer.selectedOptionId === option._id?.toString()"
+                          [class.bg-gray-50]="answer.selectedOptionId !== option._id?.toString() && !isCorrectOption(question._id!, option._id!.toString())"
+                        >
+                          <span class="flex-1">{{ option.text }}</span>
+                          @if (answer.selectedOptionId === option._id?.toString()) {
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                          }
+                          @if (isCorrectOption(question._id!, option._id!.toString())) {
+                            <span class="text-xs font-medium text-green-700">Correcta</span>
+                          }
+                        </div>
+                      }
+                      <div class="mt-2 text-sm">
+                        @if (answer.isCorrect) {
+                          <span class="text-green-600 font-medium">✓ Respuesta correcta (+{{ question.points }} pts)</span>
+                        } @else {
+                          <span class="text-red-600 font-medium">✗ Respuesta incorrecta (0 pts)</span>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Text Answer -->
+                  @if (question.type === 'TEXT' && answer) {
+                    <div class="space-y-3">
+                      <div class="bg-gray-50 rounded p-3">
+                        <p class="text-sm text-gray-600 mb-1">Tu respuesta:</p>
+                        <p class="text-gray-900">{{ answer.textAnswer || '(Sin respuesta)' }}</p>
+                      </div>
+
+                      @if (answer.pointsAwarded !== undefined) {
+                        <div class="text-sm font-medium">
+                          Puntos: {{ answer.pointsAwarded }} / {{ question.points }}
+                        </div>
+                      }
+
+                      @if (answer.feedback) {
+                        <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                          <p class="text-sm font-semibold text-blue-900 mb-1">Retroalimentación:</p>
+                          <p class="text-blue-800 text-sm">{{ answer.feedback }}</p>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Questionnaire Form -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <!-- Instructions -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 class="font-semibold text-blue-900 mb-2">Instrucciones:</h3>
+          <ul class="text-sm text-blue-800 space-y-1">
+            <li>• Responde todas las preguntas obligatorias</li>
+            @if (questionnaire()?.passingScore) {
+              <li>• Nota mínima para aprobar: {{ questionnaire()?.passingScore }}%</li>
+            }
+            @if (questionnaire()?.allowRetries) {
+              @if (questionnaire()?.maxRetries) {
+                <li>• Puedes realizar hasta {{ questionnaire()?.maxRetries }} intentos</li>
+              } @else {
+                <li>• Puedes realizar intentos ilimitados</li>
+              }
+            } @else {
+              <li>• Solo tienes un intento para completar este cuestionario</li>
+            }
+          </ul>
+        </div>
+
+        <!-- Questions -->
+        <div class="space-y-8">
+          @for (question of questionnaire()?.questions; track question._id; let i = $index) {
+            <div class="border-b border-gray-200 pb-8 last:border-b-0">
+              <!-- Question Header -->
+              <div class="flex items-start justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">
+                  {{ i + 1 }}. {{ question.questionText }}
+                  @if (question.required) {
+                    <span class="text-red-500">*</span>
+                  }
+                </h3>
+                <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
+                  {{ question.points }} pts
+                </span>
+              </div>
+
+              <!-- Multiple Choice -->
+              @if (question.type === 'MULTIPLE_CHOICE') {
+                <div class="space-y-2">
+                  @for (option of question.options; track option._id) {
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        [name]="'question-' + question._id"
+                        [value]="option._id"
+                        [checked]="answers[question._id!]?.selectedOptionId === option._id?.toString()"
+                        (change)="onMultipleChoiceChange(question._id!, option._id!.toString())"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span class="flex-1">{{ option.text }}</span>
+                    </label>
+                  }
+                </div>
+              }
+
+              <!-- Text Question -->
+              @if (question.type === 'TEXT') {
+                <textarea
+                  [value]="answers[question._id!]?.textAnswer || ''"
+                  (input)="onTextAnswerChange(question._id!, $any($event.target).value)"
+                  rows="4"
+                  placeholder="Escribe tu respuesta aquí..."
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                ></textarea>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-8 flex justify-end gap-4">
+          <button
+            (click)="goBack()"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+
+          <button
+            (click)="submitQuestionnaire()"
+            [disabled]="submitting()"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            @if (submitting()) {
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Enviando...</span>
+            } @else {
+              <span>Enviar Cuestionario</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

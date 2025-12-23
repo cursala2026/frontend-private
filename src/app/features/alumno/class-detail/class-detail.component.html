@@ -12,13 +12,34 @@
     <div class="flex items-center justify-center flex-1">
       <div class="bg-red-900 border border-red-600 rounded-lg p-6 text-center max-w-md mx-4">
         <h3 class="text-lg font-medium text-red-100 mb-2">Error al cargar la clase</h3>
-        <p class="text-red-300 mb-6">{{ error() }}</p>
-        <button
-          (click)="goBack()"
-          class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-        >
-          Volver
-        </button>
+        <p class="text-red-300 mb-4">{{ error() }}</p>
+        @if (errorReason()) {
+          <p class="text-red-200 text-sm mb-6">{{ errorReason() }}</p>
+        }
+        <div class="flex flex-col gap-3">
+          @if (getPendingQuestionnaireId()) {
+            <button
+              (click)="goToPendingQuestionnaire()"
+              class="inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+            >
+              Ir al Cuestionario Pendiente
+            </button>
+          }
+          @if (getPreviousClassId()) {
+            <button
+              (click)="goToPreviousClass()"
+              class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Ir a la Clase Anterior
+            </button>
+          }
+          <button
+            (click)="goBack()"
+            class="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Volver al Curso
+          </button>
+        </div>
       </div>
     </div>
   } @else if (classData() && courseData()) {
@@ -55,9 +76,6 @@
         }
       </div>
 
-      <span class="text-xs font-medium text-gray-300 shrink-0">
-        {{ getCurrentClassNumber() }}/{{ getTotalClasses() }}
-      </span>
     </header>
 
     <!-- Main Content -->
@@ -137,21 +155,19 @@
         @if (isSavingProgress()) {
           <span class="text-xs text-gray-400 animate-pulse">guardando...</span>
         }
-        <span class="px-3 py-1.5 bg-gray-700 text-gray-200 rounded text-xs font-semibold">
-          {{ getCurrentClassNumber() }} / {{ getTotalClasses() }}
-        </span>
       </div>
 
       <button
         (click)="goToNextClassWithCheck()"
-        [disabled]="!hasNextClass()"
-        [class]="hasNextClass() && isClassCompleted() 
+        [disabled]="!canContinue()"
+        [class]="canContinue() && isClassCompleted() 
           ? 'flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs'
           : 'flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed'"
+        [title]="hasVideo() && !isClassCompleted() ? 'Debes completar el video para continuar' : ''"
       >
-        @if (hasNextClass() && !isClassCompleted()) {
+        @if (canContinue() && !isClassCompleted()) {
           <span class="mr-1 text-xs hidden sm:inline">Siguiente</span>
-        } @else if (hasNextClass() && isClassCompleted()) {
+        } @else if (canContinue() && isClassCompleted()) {
           <span class="mr-1 text-xs hidden sm:inline">Continuar</span>
         }
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,12 +1,21 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { CourseProgressService, CourseProgress } from '../../../core/services/course-progress.service';
+import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
 import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { EnrollModalComponent } from '../../../shared/components/enroll-modal/enroll-modal.component';
 import { UnenrollModalComponent } from '../../../shared/components/unenroll-modal/unenroll-modal.component';
+
+interface CourseItem {
+  type: 'class' | 'questionnaire';
+  data: any;
+  index: number;
+}
 
 @Component({
   selector: 'app-course-detail',
@@ -14,16 +23,20 @@ import { UnenrollModalComponent } from '../../../shared/components/unenroll-moda
   imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent],
   templateUrl: './course-detail.component.html',
 })
-export class CourseDetailComponent implements OnInit {
+export class CourseDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private routerSubscription?: Subscription;
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
+  private questionnairesService = inject(QuestionnairesService);
   private info = inject(InfoService);
   private authService = inject(AuthService);
 
   course = signal<Course | null>(null);
   courseProgress = signal<CourseProgress | null>(null);
+  questionnaires = signal<Questionnaire[]>([]);
+  courseItems = signal<CourseItem[]>([]);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   showEnrollModal = signal<boolean>(false);
@@ -48,6 +61,7 @@ export class CourseDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Load course initially
     const courseId = this.route.snapshot.paramMap.get('courseId');
     if (courseId) {
       this.loadCourse(courseId);
@@ -55,21 +69,43 @@ export class CourseDetailComponent implements OnInit {
       this.error.set('ID de curso no válido');
       this.loading.set(false);
     }
+
+    // Reload course data when navigating back from child routes (questionnaire/class)
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        // Check if we navigated back to this course detail page
+        if (event.url.includes('/alumno/course-detail/') && !event.url.includes('/class/') && !event.url.includes('/questionnaire/')) {
+          const currentCourseId = this.route.snapshot.paramMap.get('courseId');
+          if (currentCourseId) {
+            // Reload course progress to reflect any changes from completing classes/questionnaires
+            this.loadCourseProgress(currentCourseId);
+          }
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.routerSubscription?.unsubscribe();
   }
 
   loadCourse(courseId: string): void {
     this.loading.set(true);
     this.error.set(null);
-    
+
     this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
         const courseData = response?.data || response;
         this.course.set(courseData);
-        this.loading.set(false);
-        
+
+        // Cargar cuestionarios del curso
+        this.loadQuestionnaires(courseId);
+
         // Cargar progreso del curso si el usuario está inscrito
         if (this.isEnrolled()) {
           this.loadCourseProgress(courseId);
+        } else {
+          this.loading.set(false);
         }
       },
       error: (error) => {
@@ -80,14 +116,86 @@ export class CourseDetailComponent implements OnInit {
     });
   }
 
+  loadQuestionnaires(courseId: string): void {
+    this.questionnairesService.getQuestionnairesByCourse(courseId).subscribe({
+      next: (response: any) => {
+        const questionnaires = response?.data || [];
+        // Solo mostrar cuestionarios activos
+        this.questionnaires.set(questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE'));
+        this.buildCourseItems();
+      },
+      error: (error) => {
+        console.error('Error loading questionnaires:', error);
+        // No mostrar error, simplemente continuar sin cuestionarios
+        this.questionnaires.set([]);
+        this.buildCourseItems();
+      }
+    });
+  }
+
+  buildCourseItems(): void {
+    const course = this.course();
+    const questionnaires = this.questionnaires();
+
+    if (!course || !course.classes) {
+      this.courseItems.set([]);
+      return;
+    }
+
+    const items: CourseItem[] = [];
+    const classes = course.classes || [];
+
+    // Ordenar clases por order
+    const sortedClasses = [...classes].sort((a: any, b: any) => a.order - b.order);
+
+    // Insertar clases y cuestionarios en orden
+    sortedClasses.forEach((classData: any, index: number) => {
+      // Agregar la clase
+      items.push({
+        type: 'class',
+        data: classData,
+        index: items.length
+      });
+
+      // Buscar cuestionarios que van después de esta clase
+      const questionnairesAfterClass = questionnaires.filter(q =>
+        q.position.type === 'BETWEEN_CLASSES' &&
+        q.position.afterClassId === classData._id
+      );
+
+      // Agregar cuestionarios después de la clase
+      questionnairesAfterClass.forEach(quest => {
+        items.push({
+          type: 'questionnaire',
+          data: quest,
+          index: items.length
+        });
+      });
+    });
+
+    // Agregar cuestionarios finales (exámenes)
+    const finalExams = questionnaires.filter(q => q.position.type === 'FINAL_EXAM');
+    finalExams.forEach(quest => {
+      items.push({
+        type: 'questionnaire',
+        data: quest,
+        index: items.length
+      });
+    });
+
+    this.courseItems.set(items);
+  }
+
   loadCourseProgress(courseId: string): void {
     this.progressService.getProgress(courseId).subscribe({
       next: (response: any) => {
         const progress = response?.data || response;
         this.courseProgress.set(progress);
+        this.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading course progress:', error);
+        this.loading.set(false);
       }
     });
   }
@@ -266,33 +374,35 @@ export class CourseDetailComponent implements OnInit {
 
   beginCourse(): void {
     const courseData = this.course();
-    if (!courseData || !courseData._id || !courseData.classes || courseData.classes.length === 0) {
-      this.info.showError('No hay clases disponibles');
+    const items = this.courseItems();
+
+    if (!courseData || !courseData._id || items.length === 0) {
+      this.info.showError('No hay contenido disponible');
       return;
     }
 
-    // Si hay progreso, ir a la última clase en progreso o la siguiente no completada
-    const progress = this.courseProgress();
-    if (progress && progress.currentClassId) {
-      // Ir a la clase actual
-      this.router.navigate(['/alumno/course-detail', courseData._id, 'class', progress.currentClassId]);
-      return;
-    }
-
-    // Si no hay progreso, buscar la primera clase no completada
-    if (progress && progress.classesProgress && progress.classesProgress.length > 0) {
-      for (let i = 0; i < courseData.classes.length; i++) {
-        const cls = courseData.classes[i];
-        if (!this.isClassCompleted(cls._id!)) {
-          this.router.navigate(['/alumno/course-detail', courseData._id, 'class', cls._id]);
+    // Buscar el primer item (clase o cuestionario) no completado
+    for (const item of items) {
+      if (item.type === 'class') {
+        if (!this.isClassCompleted(item.data._id)) {
+          this.router.navigate(['/alumno/course-detail', courseData._id, 'class', item.data._id]);
+          return;
+        }
+      } else if (item.type === 'questionnaire') {
+        if (!this.isQuestionnaireCompleted(item.data._id)) {
+          this.router.navigate(['/alumno/course-detail', courseData._id, 'questionnaire', item.data._id]);
           return;
         }
       }
     }
 
-    // Si no hay progreso, ir a la primera clase
-    const firstClass = courseData.classes[0];
-    this.router.navigate(['/alumno/course-detail', courseData._id, 'class', firstClass._id]);
+    // Si todo está completado, ir al primer item
+    const firstItem = items[0];
+    if (firstItem.type === 'class') {
+      this.router.navigate(['/alumno/course-detail', courseData._id, 'class', firstItem.data._id]);
+    } else {
+      this.router.navigate(['/alumno/course-detail', courseData._id, 'questionnaire', firstItem.data._id]);
+    }
   }
 
   /**
@@ -300,7 +410,12 @@ export class CourseDetailComponent implements OnInit {
    */
   hasProgress(): boolean {
     const progress = this.courseProgress();
-    return progress !== null && progress.classesProgress && progress.classesProgress.length > 0;
+    if (!progress) return false;
+
+    const hasClassProgress = progress.classesProgress && progress.classesProgress.length > 0;
+    const hasQuestionnaireProgress = progress.questionnairesProgress && progress.questionnairesProgress.length > 0;
+
+    return hasClassProgress || hasQuestionnaireProgress || false;
   }
 
   /**
@@ -313,11 +428,54 @@ export class CourseDetailComponent implements OnInit {
   }
 
   /**
-   * Obtiene el progreso general del curso
+   * Obtiene el número de cuestionarios completados
+   */
+  getCompletedQuestionnairesCount(): number {
+    const progress = this.courseProgress();
+    if (!progress || !progress.questionnairesProgress) return 0;
+    return progress.questionnairesProgress.filter(qp => qp.completed).length;
+  }
+
+  /**
+   * Obtiene el número total de items completados (clases + cuestionarios)
+   */
+  getTotalCompletedItems(): number {
+    return this.getCompletedClassesCount() + this.getCompletedQuestionnairesCount();
+  }
+
+  /**
+   * Obtiene el progreso general del curso (incluye clases y cuestionarios)
    */
   getOverallProgress(): number {
     const progress = this.courseProgress();
     return progress?.overallProgress || 0;
+  }
+
+  /**
+   * Navega al siguiente item del curso (clase o cuestionario)
+   */
+  goToNextItem(): void {
+    const courseData = this.course();
+    const items = this.courseItems();
+
+    if (!courseData || !courseData._id || items.length === 0) {
+      return;
+    }
+
+    // Buscar el primer item no completado
+    for (const item of items) {
+      const isCompleted = item.type === 'class'
+        ? this.isClassCompleted(item.data._id)
+        : this.isQuestionnaireCompleted(item.data._id);
+
+      if (!isCompleted) {
+        this.goToItem(item);
+        return;
+      }
+    }
+
+    // Si todos están completados, volver al detalle del curso
+    this.info.showSuccess('¡Felicidades! Has completado todo el curso');
   }
 
   goToClass(classData: any, classIndex: number): void {
@@ -340,6 +498,86 @@ export class CourseDetailComponent implements OnInit {
     }
 
     this.router.navigate(['/alumno/course-detail', course._id, 'class', classId]);
+  }
+
+  /**
+   * Verifica si un cuestionario está completado
+   */
+  isQuestionnaireCompleted(questionnaireId: string): boolean {
+    const progress = this.courseProgress();
+    if (!progress || !progress.questionnairesProgress || progress.questionnairesProgress.length === 0) return false;
+
+    const questionnaireProgress = progress.questionnairesProgress.find(
+      (qp: any) => qp.questionnaireId === questionnaireId
+    );
+    return questionnaireProgress?.completed || false;
+  }
+
+  /**
+   * Verifica si el usuario puede acceder a un item del curso (clase o cuestionario)
+   */
+  canAccessItem(itemIndex: number): boolean {
+    const items = this.courseItems();
+    if (itemIndex === 0) return true; // Primer item siempre disponible
+
+    // Verificar que todos los items anteriores estén completados
+    for (let i = 0; i < itemIndex; i++) {
+      const item = items[i];
+      if (item.type === 'class') {
+        if (!this.isClassCompleted(item.data._id)) {
+          return false;
+        }
+      } else if (item.type === 'questionnaire') {
+        if (!this.isQuestionnaireCompleted(item.data._id)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Navega a un cuestionario
+   */
+  goToQuestionnaire(questionnaire: Questionnaire, itemIndex: number): void {
+    const course = this.course();
+    if (!course || !course._id) {
+      this.info.showError('Información del curso inválida');
+      return;
+    }
+
+    // Verificar si puede acceder a este cuestionario
+    if (!this.canAccessItem(itemIndex)) {
+      this.info.showInfo('Debes completar los elementos anteriores para acceder a este cuestionario');
+      return;
+    }
+
+    this.router.navigate(['/alumno/course-detail', course._id, 'questionnaire', questionnaire._id]);
+  }
+
+  /**
+   * Navega a una clase o cuestionario dependiendo del tipo
+   */
+  goToItem(item: CourseItem): void {
+    if (item.type === 'class') {
+      this.goToClass(item.data, item.index);
+    } else {
+      this.goToQuestionnaire(item.data, item.index);
+    }
+  }
+
+  /**
+   * Obtiene el mejor puntaje para un cuestionario
+   */
+  getQuestionnaireBestScore(questionnaireId: string): number | null {
+    const progress = this.courseProgress();
+    if (!progress || !progress.questionnairesProgress || progress.questionnairesProgress.length === 0) return null;
+
+    const questionnaireProgress = progress.questionnairesProgress.find(
+      (qp: any) => qp.questionnaireId === questionnaireId
+    );
+    return questionnaireProgress?.bestScore || null;
   }
 }
 

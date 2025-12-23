@@ -12,11 +12,20 @@ export interface ClassProgress {
   lastWatchedAt: Date;
 }
 
+export interface QuestionnaireProgress {
+  questionnaireId: string;
+  completed: boolean;
+  bestScore?: number; // 0-100
+  attempts: number;
+  lastAttemptAt?: Date;
+}
+
 export interface CourseProgress {
   _id?: string;
   userId: string;
   courseId: string;
   classesProgress: ClassProgress[];
+  questionnairesProgress?: QuestionnaireProgress[]; // Optional for backward compatibility
   currentClassId?: string;
   overallProgress: number; // 0-100
   startedAt: Date;

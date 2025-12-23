@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ClassesService } from '../../../core/services/classes.service';
 import { CoursesService } from '../../../core/services/courses.service';
 import { CourseProgressService, ClassProgress } from '../../../core/services/course-progress.service';
+import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
 import { environment } from '../../../core/config/environment';
 import { Subject, interval, takeUntil } from 'rxjs';
 
@@ -19,14 +20,17 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   private classesService = inject(ClassesService);
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
+  private questionnairesService = inject(QuestionnairesService);
   private destroy$ = new Subject<void>();
 
   @ViewChild('videoPlayer') videoPlayerRef!: ElementRef<HTMLVideoElement>;
 
   classData = signal<any>(null);
   courseData = signal<any>(null);
+  questionnaires = signal<Questionnaire[]>([]);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
+  errorReason = signal<string | null>(null);
   courseId = signal<string>('');
   classId = signal<string>('');
   Math = Math;
@@ -58,6 +62,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         this.classId.set(classId);
         this.loadClassData(courseId, classId);
         this.loadClassProgress(courseId, classId);
+        this.loadQuestionnaires(courseId);
       } else {
         this.error.set('Parámetros inválidos');
         this.loading.set(false);
@@ -120,27 +125,79 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loading.set(true);
     this.error.set(null);
 
-    // Cargar datos del curso
-    this.coursesService.getCourseById(courseId).subscribe({
+    // Verificar acceso primero
+    this.progressService.canAccessClass(courseId, classId).subscribe({
       next: (response: any) => {
-        const course = response?.data || response;
-        this.courseData.set(course);
-        
-        // Encontrar la clase en el curso
-        if (course.classes && course.classes.length > 0) {
-          const foundClass = course.classes.find((c: any) => c._id === classId);
-          if (foundClass) {
-            this.classData.set(foundClass);
-          } else {
-            this.error.set('Clase no encontrada');
-          }
+        const accessResult = response?.data || response;
+        if (!accessResult.canAccess) {
+          this.error.set('No puedes acceder a esta clase');
+          this.errorReason.set(accessResult.reason || 'Debes completar las clases anteriores');
+          this.loading.set(false);
+          return;
         }
-        this.loading.set(false);
+
+        // Si tiene acceso, cargar datos del curso
+        this.coursesService.getCourseById(courseId).subscribe({
+          next: (response: any) => {
+            const course = response?.data || response;
+            this.courseData.set(course);
+            
+            // Encontrar la clase en el curso
+            if (course.classes && course.classes.length > 0) {
+              const foundClass = course.classes.find((c: any) => c._id === classId);
+              if (foundClass) {
+                this.classData.set(foundClass);
+              } else {
+                this.error.set('Clase no encontrada');
+              }
+            }
+            this.loading.set(false);
+          },
+          error: (err) => {
+            console.error('Error loading class:', err);
+            this.error.set('No se pudo cargar la clase');
+            this.loading.set(false);
+          }
+        });
       },
       error: (err) => {
-        console.error('Error loading class:', err);
-        this.error.set('No se pudo cargar la clase');
-        this.loading.set(false);
+        console.error('Error checking access:', err);
+        // Si falla la verificación, intentar cargar de todas formas
+        this.coursesService.getCourseById(courseId).subscribe({
+          next: (response: any) => {
+            const course = response?.data || response;
+            this.courseData.set(course);
+            
+            if (course.classes && course.classes.length > 0) {
+              const foundClass = course.classes.find((c: any) => c._id === classId);
+              if (foundClass) {
+                this.classData.set(foundClass);
+              } else {
+                this.error.set('Clase no encontrada');
+              }
+            }
+            this.loading.set(false);
+          },
+          error: (err) => {
+            console.error('Error loading class:', err);
+            this.error.set('No se pudo cargar la clase');
+            this.loading.set(false);
+          }
+        });
+      }
+    });
+  }
+
+  loadQuestionnaires(courseId: string): void {
+    this.questionnairesService.getQuestionnairesByCourse(courseId).subscribe({
+      next: (response: any) => {
+        const questionnaires = response?.data || [];
+        // Solo cuestionarios activos
+        this.questionnaires.set(questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE'));
+      },
+      error: (err) => {
+        console.error('Error loading questionnaires:', err);
+        this.questionnaires.set([]);
       }
     });
   }
@@ -160,14 +217,51 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  goToPreviousClass(): void {
+  getPreviousClassId(): string | null {
     const classes = this.courseData()?.classes;
-    if (!classes) return;
+    if (!classes) return null;
 
     const currentIndex = classes.findIndex((c: any) => c._id === this.classId());
     if (currentIndex > 0) {
-      const previousClass = classes[currentIndex - 1];
-      this.router.navigate(['/alumno/course-detail', this.courseId(), 'class', previousClass._id]);
+      return classes[currentIndex - 1]._id;
+    }
+    return null;
+  }
+
+  goToPreviousClass(): void {
+    const prevClassId = this.getPreviousClassId();
+    if (prevClassId) {
+      this.router.navigate(['/alumno/course-detail', this.courseId(), 'class', prevClassId]);
+    } else {
+      this.goBack();
+    }
+  }
+
+  getPendingQuestionnaireId(): string | null {
+    const course = this.courseData();
+    const currentClassId = this.classId();
+    if (!course || !course.classes) return null;
+
+    const currentIndex = course.classes.findIndex((c: any) => c._id === currentClassId);
+    if (currentIndex <= 0) return null;
+
+    const prevClassId = course.classes[currentIndex - 1]._id;
+    const questionnaires = this.questionnaires();
+    
+    const pendingQuestionnaire = questionnaires.find((q: Questionnaire) => 
+      q.position?.type === 'BETWEEN_CLASSES' && 
+      q.position?.afterClassId === prevClassId
+    );
+
+    return pendingQuestionnaire?._id || null;
+  }
+
+  goToPendingQuestionnaire(): void {
+    const questionnaireId = this.getPendingQuestionnaireId();
+    if (questionnaireId) {
+      this.router.navigate(['/alumno/course-detail', this.courseId(), 'questionnaire', questionnaireId]);
+    } else {
+      this.goBack();
     }
   }
 
@@ -369,15 +463,73 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
+   * Verificar si hay un cuestionario después de la clase actual
+   */
+  getQuestionnaireAfterClass(): Questionnaire | null {
+    const questionnaires = this.questionnaires();
+    const currentClassId = this.classId();
+    
+    if (!questionnaires || questionnaires.length === 0) {
+      return null;
+    }
+
+    // Buscar cuestionarios que van después de esta clase
+    const questionnaireAfter = questionnaires.find(q =>
+      q.position.type === 'BETWEEN_CLASSES' &&
+      q.position.afterClassId === currentClassId
+    );
+
+    return questionnaireAfter || null;
+  }
+
+  /**
+   * Verificar si la clase tiene video
+   */
+  hasVideo(): boolean {
+    return !!this.classData()?.videoUrl;
+  }
+
+  /**
+   * Verificar si el botón continuar debe estar habilitado
+   */
+  canContinue(): boolean {
+    // Si no hay siguiente clase ni cuestionario, no puede continuar
+    if (!this.hasNextClass() && !this.getQuestionnaireAfterClass()) {
+      return false;
+    }
+
+    // Si la clase tiene video, solo puede continuar si está completada
+    if (this.hasVideo()) {
+      return this.isClassCompleted();
+    }
+
+    // Si no tiene video, puede continuar siempre
+    return true;
+  }
+
+  /**
    * Ir a la siguiente clase con verificación de completado
    */
   goToNextClassWithCheck(): void {
+    // Verificar si hay un cuestionario después de esta clase
+    const questionnaireAfter = this.getQuestionnaireAfterClass();
+    
+    if (questionnaireAfter) {
+      // Navegar al cuestionario
+      this.router.navigate([
+        '/alumno/course-detail',
+        this.courseId(),
+        'questionnaire',
+        questionnaireAfter._id
+      ]);
+      return;
+    }
+
+    // Si no hay cuestionario, ir a la siguiente clase
     if (!this.hasNextClass()) return;
 
-    // Si no está completada la clase actual, mostrar advertencia pero permitir avanzar
-    // (el backend validará si realmente puede acceder)
+    // Si no está completada la clase actual, guardar progreso antes de cambiar
     if (!this.isClassCompleted()) {
-      // Guardar progreso actual antes de cambiar
       this.saveProgress(true);
     }
 

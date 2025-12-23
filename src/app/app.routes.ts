@@ -110,6 +110,22 @@ export const routes: Routes = [
       {
         path: 'students',
         loadComponent: () => import('./features/profesor/students/teacher-students.component').then(m => m.TeacherStudentsComponent)
+      },
+      {
+        path: 'questionnaires',
+        loadComponent: () => import('./features/profesor/questionnaires/teacher-questionnaires.component').then(m => m.TeacherQuestionnairesComponent)
+      },
+      {
+        path: 'questionnaires/new',
+        loadComponent: () => import('./features/profesor/questionnaires/questionnaire-edit/questionnaire-edit.component').then(m => m.QuestionnaireEditComponent)
+      },
+      {
+        path: 'questionnaires/:id/edit',
+        loadComponent: () => import('./features/profesor/questionnaires/questionnaire-edit/questionnaire-edit.component').then(m => m.QuestionnaireEditComponent)
+      },
+      {
+        path: 'questionnaires/:id/results',
+        loadComponent: () => import('./features/profesor/questionnaires/questionnaire-results/questionnaire-results.component').then(m => m.QuestionnaireResultsComponent)
       }
     ]
   },
@@ -135,6 +151,10 @@ export const routes: Routes = [
       {
         path: 'course-detail/:courseId/class/:classId',
         loadComponent: () => import('./features/alumno/class-detail/class-detail.component').then(m => m.ClassDetailComponent)
+      },
+      {
+        path: 'course-detail/:courseId/questionnaire/:questionnaireId',
+        loadComponent: () => import('./features/alumno/questionnaire-take/questionnaire-take.component').then(m => m.QuestionnaireTakeComponent)
       },
       {
         path: 'profile',

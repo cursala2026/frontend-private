@@ -1,0 +1,381 @@
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+      {{ isEditMode ? 'Editar Cuestionario' : 'Nuevo Cuestionario' }}
+    </h1>
+    <p class="text-gray-600">{{ isEditMode ? 'Modifica los detalles del cuestionario' : 'Crea un nuevo cuestionario para tu curso' }}</p>
+  </div>
+
+  @if (loading()) {
+    <div class="bg-white rounded-lg shadow-md p-8">
+      <div class="animate-pulse space-y-4">
+        <div class="h-10 bg-gray-200 rounded"></div>
+        <div class="h-10 bg-gray-200 rounded"></div>
+        <div class="h-32 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="questionnaireForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Basic Information Card -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Información Básica</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Course Selection -->
+          <div class="md:col-span-2">
+            <label for="courseId" class="block text-sm font-medium text-gray-700 mb-2">
+              Curso <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="courseId"
+              formControlName="courseId"
+              (change)="onCourseChange()"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              [class.border-red-500]="questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched"
+            >
+              <option value="">Selecciona un curso</option>
+              @for (course of courses(); track course._id) {
+                <option [value]="course._id">{{ course.name }}</option>
+              }
+            </select>
+            @if (questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched) {
+              <p class="mt-1 text-sm text-red-600">El curso es requerido</p>
+            }
+          </div>
+
+          <!-- Title -->
+          <div class="md:col-span-2">
+            <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+              Título del Cuestionario <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              formControlName="title"
+              placeholder="Ej: Examen del Módulo 1"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              [class.border-red-500]="questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched"
+            />
+            @if (questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched) {
+              <p class="mt-1 text-sm text-red-600">El título es requerido</p>
+            }
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+              Descripción
+            </label>
+            <textarea
+              id="description"
+              formControlName="description"
+              rows="3"
+              placeholder="Descripción opcional del cuestionario"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            ></textarea>
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+              Estado
+            </label>
+            <select
+              id="status"
+              formControlName="status"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="ACTIVE">Activo</option>
+              <option value="INACTIVE">Inactivo</option>
+              <option value="DRAFT">Borrador</option>
+            </select>
+          </div>
+
+          <!-- Position Type -->
+          <div>
+            <label for="positionType" class="block text-sm font-medium text-gray-700 mb-2">
+              Posición
+            </label>
+            <select
+              id="positionType"
+              formControlName="positionType"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="BETWEEN_CLASSES">Entre Clases</option>
+              <option value="FINAL_EXAM">Examen Final</option>
+            </select>
+          </div>
+
+          <!-- After Class (only for BETWEEN_CLASSES) -->
+          @if (questionnaireForm.get('positionType')?.value === 'BETWEEN_CLASSES') {
+            <div class="md:col-span-2">
+              <label for="afterClassId" class="block text-sm font-medium text-gray-700 mb-2">
+                Después de la Clase
+              </label>
+              @if (loadingClasses()) {
+                <div class="h-10 bg-gray-200 rounded animate-pulse"></div>
+              } @else {
+                <select
+                  id="afterClassId"
+                  formControlName="afterClassId"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Selecciona una clase</option>
+                  @for (classItem of classes(); track classItem._id) {
+                    <option [value]="classItem._id">{{ classItem.order }}. {{ classItem.name }}</option>
+                  }
+                </select>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Configuration Card -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Configuración</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Passing Score -->
+          <div>
+            <label for="passingScore" class="block text-sm font-medium text-gray-700 mb-2">
+              Nota Mínima (%)
+            </label>
+            <input
+              type="number"
+              id="passingScore"
+              formControlName="passingScore"
+              min="0"
+              max="100"
+              placeholder="Ej: 70"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <!-- Max Retries -->
+          <div>
+            <label for="maxRetries" class="block text-sm font-medium text-gray-700 mb-2">
+              Máximo de Intentos
+            </label>
+            <input
+              type="number"
+              id="maxRetries"
+              formControlName="maxRetries"
+              min="1"
+              placeholder="Dejar vacío para ilimitado"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+            />
+          </div>
+
+          <!-- Allow Retries -->
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="allowRetries"
+              formControlName="allowRetries"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label for="allowRetries" class="ml-2 block text-sm text-gray-700">
+              Permitir Reintentos
+            </label>
+          </div>
+
+          <!-- Show Correct Answers -->
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="showCorrectAnswers"
+              formControlName="showCorrectAnswers"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label for="showCorrectAnswers" class="ml-2 block text-sm text-gray-700">
+              Mostrar Respuestas Correctas
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Questions Card -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">Preguntas</h2>
+          <button
+            type="button"
+            (click)="addQuestion()"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Agregar Pregunta
+          </button>
+        </div>
+
+        <div formArrayName="questions" class="space-y-6">
+          @for (question of questions.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-6 bg-gray-50">
+              <!-- Question Header -->
+              <div class="flex items-start justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Pregunta {{ i + 1 }}</h3>
+                @if (questions.length > 1) {
+                  <button
+                    type="button"
+                    (click)="removeQuestion(i)"
+                    class="text-red-600 hover:text-red-700"
+                    title="Eliminar pregunta"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                }
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Question Type -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Pregunta <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    formControlName="type"
+                    (change)="onQuestionTypeChange(i)"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="MULTIPLE_CHOICE">Opción Múltiple</option>
+                    <option value="TEXT">Texto Libre</option>
+                  </select>
+                </div>
+
+                <!-- Points -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Puntos <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="points"
+                    min="1"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <!-- Question Text -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Enunciado de la Pregunta <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    formControlName="questionText"
+                    rows="2"
+                    placeholder="Escribe aquí la pregunta"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  ></textarea>
+                </div>
+
+                <!-- Required Checkbox -->
+                <div class="md:col-span-2 flex items-center">
+                  <input
+                    type="checkbox"
+                    formControlName="required"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label class="ml-2 block text-sm text-gray-700">
+                    Pregunta Obligatoria
+                  </label>
+                </div>
+
+                <!-- Multiple Choice Options -->
+                @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
+                  <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                      <h4 class="text-sm font-medium text-gray-700">Opciones de Respuesta</h4>
+                      <button
+                        type="button"
+                        (click)="addOption(i)"
+                        class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
+                      >
+                        + Agregar Opción
+                      </button>
+                    </div>
+
+                    <div formArrayName="options" class="space-y-2">
+                      @for (option of getQuestionOptions(i).controls; track $index; let j = $index) {
+                        <div [formGroupName]="j" class="flex items-center gap-2">
+                          <!-- Radio button for correct answer -->
+                          <input
+                            type="radio"
+                            [name]="'correctOption' + i"
+                            [value]="j.toString()"
+                            [formControl]="$any(question.get('correctOptionId'))"
+                            [checked]="question.get('correctOptionId')?.value === j.toString()"
+                            class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                            title="Marcar como respuesta correcta"
+                          />
+
+                          <!-- Option text -->
+                          <input
+                            type="text"
+                            formControlName="text"
+                            placeholder="Opción {{ j + 1 }}"
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          />
+
+                          <!-- Remove button -->
+                          @if (getQuestionOptions(i).length > 2) {
+                            <button
+                              type="button"
+                              (click)="removeOption(i, j)"
+                              class="text-red-600 hover:text-red-700"
+                              title="Eliminar opción"
+                            >
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-2">
+                      💡 Selecciona el círculo junto a la opción correcta
+                    </p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex justify-end gap-4">
+        <button
+          type="button"
+          (click)="cancel()"
+          class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          [disabled]="saving() || questionnaireForm.invalid"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          @if (saving()) {
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Guardando...</span>
+          } @else {
+            <span>{{ isEditMode ? 'Actualizar Cuestionario' : 'Crear Cuestionario' }}</span>
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

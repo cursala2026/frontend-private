@@ -35,6 +35,10 @@ export class TeacherLayoutComponent {
     {
       label: 'Mis Alumnos',
       route: '/profesor/students'
+    },
+    {
+      label: 'Cuestionarios',
+      route: '/profesor/questionnaires'
     }
   ];
 
