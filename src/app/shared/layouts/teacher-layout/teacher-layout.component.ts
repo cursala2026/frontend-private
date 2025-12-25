@@ -1,7 +1,9 @@
-import { Component, signal, inject, HostListener } from '@angular/core';
+import { Component, signal, inject, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 
 interface MenuItem {
   label: string;
@@ -15,13 +17,24 @@ interface MenuItem {
   templateUrl: './teacher-layout.component.html',
   
 })
-export class TeacherLayoutComponent {
+export class TeacherLayoutComponent implements OnInit {
   protected authService = inject(AuthService);
   private router = inject(Router);
+  private viewModeService = inject(ViewModeService);
 
   isMobileMenuOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  ngOnInit(): void {
+    // Asegurar que el modo de vista esté inicializado
+    this.viewModeService.initializeViewMode();
+  }
+
+  // Verificar si el usuario es admin
+  get isAdmin(): boolean {
+    return this.authService.hasRole(UserRole.ADMIN);
+  }
 
   menuItems: MenuItem[] = [
     {
@@ -33,12 +46,12 @@ export class TeacherLayoutComponent {
       route: '/profesor/classes'
     },
     {
-      label: 'Mis Alumnos',
-      route: '/profesor/students'
+      label: 'Mis Cuestionarios',
+      route: '/profesor/questionnaires'
     },
     {
-      label: 'Cuestionarios',
-      route: '/profesor/questionnaires'
+      label: 'Mis Alumnos',
+      route: '/profesor/students'
     }
   ];
 
@@ -57,6 +70,12 @@ export class TeacherLayoutComponent {
 
   goToProfile(): void {
     this.router.navigate(['/profesor/profile']);
+    this.closeUserMenu();
+  }
+
+  switchToAdminMode(): void {
+    this.viewModeService.setViewMode('admin');
+    this.router.navigate(['/admin']);
     this.closeUserMenu();
   }
 

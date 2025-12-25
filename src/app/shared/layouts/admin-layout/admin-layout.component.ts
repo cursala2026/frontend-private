@@ -1,7 +1,8 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -9,13 +10,19 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, RouterModule],
   templateUrl: './admin-layout.component.html',
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private viewModeService = inject(ViewModeService);
 
   isSidebarOpen = signal<boolean>(true);
   isUserMenuOpen = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  ngOnInit(): void {
+    // Asegurar que el modo de vista esté inicializado
+    this.viewModeService.initializeViewMode();
+  }
 
   // Getter para construir la URL completa de la imagen de perfil
   get userProfileImageUrl(): string | null {
@@ -68,6 +75,12 @@ export class AdminLayoutComponent {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  switchToProfesorMode(): void {
+    this.viewModeService.setViewMode('profesor');
+    this.isUserMenuOpen.set(false);
+    this.router.navigate(['/profesor']);
   }
 
   isActiveRoute(route: string): boolean {

@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { ViewModeService } from '../services/view-mode.service';
 import { UserRole } from '../models/user-role.enum';
 
 /**
@@ -53,3 +54,38 @@ export const studentOrTeacherGuard: CanActivateFn = createRoleGuard([
   UserRole.PROFESOR,
   UserRole.ALUMNO
 ]);
+
+/**
+ * Guard para PROFESOR o ADMIN en modo profesor
+ * Permite que los admins accedan a las rutas de profesor cuando están en modo profesor
+ */
+export const profesorOrAdminInProfesorModeGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const viewModeService = inject(ViewModeService);
+  const router = inject(Router);
+
+  // Verificar autenticación primero
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/login'], {
+      queryParams: { returnUrl: state.url }
+    });
+    return false;
+  }
+
+  // Inicializar el modo de vista si no está inicializado
+  viewModeService.initializeViewMode();
+
+  // Si es profesor, permitir acceso
+  if (authService.hasRole(UserRole.PROFESOR)) {
+    return true;
+  }
+
+  // Si es admin y está en modo profesor, permitir acceso
+  if (authService.hasRole(UserRole.ADMIN) && viewModeService.isProfesorMode()) {
+    return true;
+  }
+
+  // Si no cumple las condiciones, redirigir
+  router.navigate(['/unauthorized']);
+  return false;
+};

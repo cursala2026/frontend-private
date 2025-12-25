@@ -1,6 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
 
@@ -28,6 +30,7 @@ interface Student {
 })
 export class TeacherStudentsComponent implements OnInit {
   private authService = inject(AuthService);
+  private viewModeService = inject(ViewModeService);
   private http = inject(HttpClient);
   
   user = this.authService.currentUser;
@@ -36,6 +39,7 @@ export class TeacherStudentsComponent implements OnInit {
   groupedStudents = signal<Map<string, Student[]>>(new Map());
 
   ngOnInit(): void {
+    this.viewModeService.initializeViewMode();
     this.loadStudents();
   }
 
@@ -47,30 +51,54 @@ export class TeacherStudentsComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.http.get<any>(`${environment.apiUrl}/user/getStudentsByTeacherCourses/${currentUser._id}`).subscribe({
-      next: (response: any) => {
-        const data = response?.data || [];
-        this.students.set(Array.isArray(data) ? data : []);
-        
-        // Agrupar estudiantes por curso
-        const grouped = new Map<string, Student[]>();
-        this.students().forEach(student => {
-          const courseName = student.courseName;
-          if (!grouped.has(courseName)) {
-            grouped.set(courseName, []);
-          }
-          grouped.get(courseName)!.push(student);
-        });
-        this.groupedStudents.set(grouped);
-        
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading students:', error);
-        this.students.set([]);
-        this.loading.set(false);
+
+    // Si el usuario es admin y está en modo profesor, cargar estudiantes de todos los cursos
+    // Si es profesor normal, cargar solo estudiantes de sus cursos
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      // Admin en modo profesor: usar el nuevo endpoint que obtiene todos los estudiantes
+      this.http.get<any>(`${environment.apiUrl}/user/getAllStudentsFromAllCourses`).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.processStudents(data);
+        },
+        error: (error) => {
+          console.error('Error loading all students:', error);
+          this.students.set([]);
+          this.loading.set(false);
+        }
+      });
+    } else {
+      // Profesor normal: usar el endpoint existente
+      this.http.get<any>(`${environment.apiUrl}/user/getStudentsByTeacherCourses/${currentUser._id}`).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.processStudents(data);
+        },
+        error: (error) => {
+          console.error('Error loading students:', error);
+          this.students.set([]);
+          this.loading.set(false);
+        }
+      });
+    }
+  }
+
+
+  processStudents(data: Student[]): void {
+    this.students.set(Array.isArray(data) ? data : []);
+    
+    // Agrupar estudiantes por curso
+    const grouped = new Map<string, Student[]>();
+    this.students().forEach(student => {
+      const courseName = student.courseName;
+      if (!grouped.has(courseName)) {
+        grouped.set(courseName, []);
       }
+      grouped.get(courseName)!.push(student);
     });
+    this.groupedStudents.set(grouped);
+    
+    this.loading.set(false);
   }
 
   getStudentImageUrl(profilePhotoUrl?: string): string {

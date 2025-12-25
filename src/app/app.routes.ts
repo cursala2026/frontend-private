@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
-import { adminGuard, profesorGuard, alumnoGuard } from './core/guards/role.guard';
+import { adminGuard, profesorGuard, alumnoGuard, profesorOrAdminInProfesorModeGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // Ruta raíz - redirige al login
@@ -68,7 +68,7 @@ export const routes: Routes = [
   // Rutas de Profesor (con navbar layout)
   {
     path: 'profesor',
-    canActivate: [authGuard, profesorGuard],
+    canActivate: [authGuard, profesorOrAdminInProfesorModeGuard],
     loadComponent: () => import('./shared/layouts/teacher-layout/teacher-layout.component').then(m => m.TeacherLayoutComponent),
     children: [
       {

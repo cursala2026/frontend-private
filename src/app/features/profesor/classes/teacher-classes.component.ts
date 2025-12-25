@@ -5,6 +5,8 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClassesService, ClassData } from '../../../core/services/classes.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 
 interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
@@ -22,6 +24,7 @@ export class TeacherClassesComponent implements OnInit {
   private authService = inject(AuthService);
   private classesService = inject(ClassesService);
   private coursesService = inject(CoursesService);
+  private viewModeService = inject(ViewModeService);
   private route = inject(ActivatedRoute);
   router = inject(Router);
   
@@ -65,18 +68,38 @@ export class TeacherClassesComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.coursesService.getTeacherCourses(currentUser._id).subscribe({
-      next: (response: any) => {
-        const data = response?.data || [];
-        this.courses.set(Array.isArray(data) ? data : []);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading courses:', error);
-        this.courses.set([]);
-        this.loading.set(false);
-      }
-    });
+    
+    // Si el usuario es admin y está en modo profesor, cargar todos los cursos
+    // Si es profesor normal, cargar solo sus cursos asignados
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      // Admin en modo profesor: cargar todos los cursos
+      this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.courses.set(Array.isArray(data) ? data : []);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.courses.set([]);
+          this.loading.set(false);
+        }
+      });
+    } else {
+      // Profesor normal: cargar solo sus cursos asignados
+      this.coursesService.getTeacherCourses(currentUser._id).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.courses.set(Array.isArray(data) ? data : []);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.courses.set([]);
+          this.loading.set(false);
+        }
+      });
+    }
   }
 
   onCourseChange(): void {

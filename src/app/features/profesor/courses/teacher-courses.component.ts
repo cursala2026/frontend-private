@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 
 @Component({
   selector: 'app-teacher-courses',
@@ -14,6 +16,7 @@ export class TeacherCoursesComponent implements OnInit {
   private authService = inject(AuthService);
   private coursesService = inject(CoursesService);
   private router = inject(Router);
+  private viewModeService = inject(ViewModeService);
   
   user = this.authService.currentUser;
   courses = signal<any[]>([]);
@@ -31,19 +34,43 @@ export class TeacherCoursesComponent implements OnInit {
     }
 
     this.loading.set(true);
-    this.coursesService.getTeacherCourses(currentUser._id).subscribe({
-      next: (response: any) => {
-        const data = response?.data || [];
-        // El backend ya incluye isMainTeacher en cada curso
-        this.courses.set(Array.isArray(data) ? data : []);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading courses:', error);
-        this.courses.set([]);
-        this.loading.set(false);
-      }
-    });
+    
+    // Si el usuario es admin y está en modo profesor, cargar todos los cursos
+    // Si es profesor normal, cargar solo sus cursos asignados
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      // Admin en modo profesor: cargar todos los cursos
+      this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          // Marcar todos los cursos como editables para admin
+          const coursesWithEditFlag = Array.isArray(data) 
+            ? data.map((course: any) => ({ ...course, isMainTeacher: true }))
+            : [];
+          this.courses.set(coursesWithEditFlag);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.courses.set([]);
+          this.loading.set(false);
+        }
+      });
+    } else {
+      // Profesor normal: cargar solo sus cursos asignados
+      this.coursesService.getTeacherCourses(currentUser._id).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          // El backend ya incluye isMainTeacher en cada curso
+          this.courses.set(Array.isArray(data) ? data : []);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.courses.set([]);
+          this.loading.set(false);
+        }
+      });
+    }
   }
 
   openCourseEdit(course: Course): void {

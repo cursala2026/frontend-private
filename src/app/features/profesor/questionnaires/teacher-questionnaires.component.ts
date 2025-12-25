@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
 import { CoursesService } from '../../../core/services/courses.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { InfoService } from '../../../core/services/info.service';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 
@@ -23,6 +25,7 @@ export class TeacherQuestionnairesComponent implements OnInit {
   private questionnairesService = inject(QuestionnairesService);
   private coursesService = inject(CoursesService);
   private authService = inject(AuthService);
+  private viewModeService = inject(ViewModeService);
   private infoService = inject(InfoService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -66,17 +69,36 @@ export class TeacherQuestionnairesComponent implements OnInit {
       return;
     }
 
-    this.coursesService.getTeacherCourses(currentUser._id).subscribe({
-      next: (response) => {
-        this.courses.set(response?.data || []);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading courses:', error);
-        this.infoService.showError('Error al cargar los cursos');
-        this.loading.set(false);
-      }
-    });
+    // Si el usuario es admin y está en modo profesor, cargar todos los cursos
+    // Si es profesor normal, cargar solo sus cursos asignados
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      // Admin en modo profesor: cargar todos los cursos
+      this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.courses.set(Array.isArray(data) ? data : []);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.infoService.showError('Error al cargar los cursos');
+          this.loading.set(false);
+        }
+      });
+    } else {
+      // Profesor normal: cargar solo sus cursos asignados
+      this.coursesService.getTeacherCourses(currentUser._id).subscribe({
+        next: (response) => {
+          this.courses.set(response?.data || []);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.infoService.showError('Error al cargar los cursos');
+          this.loading.set(false);
+        }
+      });
+    }
   }
 
   onCourseChange(): void {

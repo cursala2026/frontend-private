@@ -78,6 +78,15 @@
               
               <!-- Menu Options -->
               <button
+                (click)="switchToProfesorMode()"
+                class="w-full flex items-center px-4 py-3 text-sm text-indigo-400 hover:bg-gray-700 transition-colors border-b border-gray-700"
+              >
+                <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Ver como Profesor
+              </button>
+              <button
                 (click)="navigateToProfile()"
                 class="w-full flex items-center px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors"
               >

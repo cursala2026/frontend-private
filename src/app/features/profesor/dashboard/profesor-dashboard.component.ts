@@ -2,6 +2,8 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ViewModeService } from '../../../core/services/view-mode.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { ClassesService } from '../../../core/services/classes.service';
 import { forkJoin, of } from 'rxjs';
@@ -16,6 +18,7 @@ import { catchError, map } from 'rxjs/operators';
 })
 export class ProfesorDashboardComponent implements OnInit {
   private authService = inject(AuthService);
+  private viewModeService = inject(ViewModeService);
   private coursesService = inject(CoursesService);
   private classesService = inject(ClassesService);
 
@@ -28,8 +31,21 @@ export class ProfesorDashboardComponent implements OnInit {
   totalStudents = signal<number>(0);
   loading = signal<boolean>(true);
 
+  // Verificar si es admin en modo profesor
+  get isAdminInProfesorMode(): boolean {
+    return this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode();
+  }
+
   ngOnInit(): void {
-    this.loadStatistics();
+    // Inicializar el modo de vista
+    this.viewModeService.initializeViewMode();
+    
+    // Solo cargar estadísticas si no es admin en modo profesor
+    if (!this.isAdminInProfesorMode) {
+      this.loadStatistics();
+    } else {
+      this.loading.set(false);
+    }
   }
 
   loadStatistics(): void {
