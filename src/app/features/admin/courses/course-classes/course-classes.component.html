@@ -18,16 +18,6 @@
           </h1>
           <p class="mt-2 text-sm text-gray-600">Administra las clases de este curso</p>
         </div>
-        <a
-          [routerLink]="['/admin/classes', 'new', 'edit']"
-          [queryParams]="{ courseId: courseId }"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-all shadow-sm hover:shadow-md"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nueva Clase
-        </a>
       </div>
     </div>
 
@@ -62,18 +52,6 @@
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No hay clases</h3>
         <p class="mt-1 text-sm text-gray-500">Este curso aún no tiene clases. Crea la primera clase.</p>
-        <div class="mt-6">
-          <a
-            [routerLink]="['/admin/classes', 'new', 'edit']"
-            [queryParams]="{ courseId: courseId }"
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nueva Clase
-          </a>
-        </div>
       </div>
     }
 
@@ -141,15 +119,6 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex items-center justify-end space-x-2">
-                      <a
-                        [routerLink]="['/admin/classes', getClassId(classItem), 'edit']"
-                        class="text-indigo-600 hover:text-indigo-900"
-                        title="Editar"
-                      >
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                      </a>
                       <button
                         (click)="toggleClassStatus(getClassId(classItem))"
                         [class]="classItem.status === 'ACTIVE' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'"

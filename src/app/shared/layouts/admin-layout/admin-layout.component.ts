@@ -51,11 +51,6 @@ export class AdminLayoutComponent {
       icon: 'M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z',
       route: '/admin/courses'
     },
-    {
-      label: 'Clases',
-      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      route: '/admin/classes'
-    },
   ];
 
   toggleSidebar(): void {

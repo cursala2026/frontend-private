@@ -116,12 +116,6 @@ export class CoursesComponent implements OnInit {
     selectable: false,
     actions: [
       {
-        label: 'Ver Clases',
-        iconSvg: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        handler: (row) => this.viewClasses(row),
-        class: 'btn-info'
-      },
-      {
         label: 'Editar',
         iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
         handler: (row) => this.editCourse(row),
@@ -501,10 +495,6 @@ export class CoursesComponent implements OnInit {
         this.infoService.showError(errorMsg);
       }
     });
-  }
-
-  viewClasses(course: any): void {
-    this.router.navigate(['/admin/classes'], { queryParams: { courseId: course._id } });
   }
 
   openTeacherAssignmentModal(course: any): void {

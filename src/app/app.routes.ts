@@ -55,14 +55,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
       },
       {
-        path: 'classes',
-        loadComponent: () => import('./features/admin/classes/classes.component').then(m => m.ClassesComponent)
-      },
-      {
-        path: 'classes/:id/edit',
-        loadComponent: () => import('./features/admin/classes/class-edit/class-edit.component').then(m => m.ClassEditComponent)
-      },
-      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
