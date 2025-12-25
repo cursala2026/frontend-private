@@ -6,7 +6,9 @@
   >
     <!-- Logo -->
     <div class="flex items-center justify-between h-16 px-6 bg-gray-900">
-      <h1 class="text-xl font-bold">Admin Panel</h1>
+      <a routerLink="/admin" class="flex items-center hover:opacity-80 transition-opacity">
+        <img src="/logo/cursala-negativo.svg" alt="Cursala Logo" class="h-8 w-auto">
+      </a>
       <button
         (click)="toggleSidebar()"
         class="lg:hidden text-gray-400 hover:text-white focus:outline-none"

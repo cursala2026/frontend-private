@@ -28,7 +28,25 @@
         </div>
 
         <!-- Usuario y acciones -->
-        <div class="hidden sm:ml-6 sm:flex sm:items-center">
+        <div class="hidden sm:ml-6 sm:flex sm:items-center gap-4">
+          <!-- Notificación de exámenes pendientes -->
+          @if (pendingExamsCount() > 0) {
+            <button
+              (click)="goToPendingExams()"
+              class="relative inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              title="Exámenes pendientes de corregir"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{{ pendingExamsCount() }}</span>
+              <span class="absolute -top-1 -right-1 flex h-5 w-5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-5 w-5 bg-red-500"></span>
+              </span>
+            </button>
+          }
+          
           <!-- User Menu Dropdown -->
           @if (user(); as currentUser) {
             <div class="relative user-menu-container">
@@ -125,7 +143,24 @@
         </div>
 
         <!-- Mobile menu button -->
-        <div class="flex items-center sm:hidden">
+        <div class="flex items-center gap-2 sm:hidden">
+          <!-- Notificación móvil de exámenes pendientes -->
+          @if (pendingExamsCount() > 0) {
+            <button
+              (click)="goToPendingExams()"
+              class="relative inline-flex items-center p-2 text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors"
+              title="Exámenes pendientes"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-xs text-white flex items-center justify-center">{{ pendingExamsCount() > 9 ? '9+' : pendingExamsCount() }}</span>
+              </span>
+            </button>
+          }
+          
           <button
             (click)="toggleMobileMenu()"
             class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"

@@ -1,0 +1,114 @@
+<div class="px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Mis Certificados</h1>
+      <p class="text-gray-600">Lista de certificados obtenidos por completar cursos</p>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="bg-white rounded-lg shadow p-8 text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+        <p class="text-gray-600">Cargando certificados...</p>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading() && certificates().length === 0) {
+      <div class="bg-white rounded-lg shadow p-12 text-center">
+        <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No tienes certificados aún</h3>
+        <p class="text-gray-600 mb-6">Completa cursos para obtener certificados de aprobación</p>
+        <a routerLink="/alumno/courses" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+          Ver Mis Cursos
+        </a>
+      </div>
+    }
+
+    <!-- Certificates List -->
+    @if (!loading() && certificates().length > 0) {
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        @for (certificate of certificates(); track certificate.certificateId) {
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+            <!-- Certificate Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+              <div class="flex items-center justify-between mb-2">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                <span class="text-xs bg-white/20 px-2 py-1 rounded">Certificado</span>
+              </div>
+              <h3 class="text-lg font-bold mb-1">{{ certificate.courseName }}</h3>
+              <p class="text-sm text-indigo-100">Emitido el {{ formatDate(certificate.generatedAt) }}</p>
+            </div>
+
+            <!-- Certificate Body -->
+            <div class="p-6">
+              <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-1">Código de verificación:</p>
+                <p class="font-mono text-xs bg-gray-100 p-2 rounded break-all">{{ certificate.verificationCode }}</p>
+              </div>
+
+              <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-1">URL pública:</p>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    [value]="getPublicUrl(certificate)" 
+                    readonly
+                    class="flex-1 text-xs bg-gray-100 p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    (click)="viewPublicUrl(certificate)"
+                    class="px-3 py-2 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition flex items-center gap-1"
+                    title="Abrir en nueva pestaña"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-2">
+                <button
+                  (click)="downloadCertificate(certificate)"
+                  [disabled]="downloading() === certificate.verificationCode"
+                  class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  @if (downloading() === certificate.verificationCode) {
+                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Descargando...</span>
+                  } @else {
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Descargar PDF</span>
+                  }
+                </button>
+                <button
+                  (click)="viewPublicUrl(certificate)"
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center justify-center gap-2"
+                  title="Ver certificado público"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+

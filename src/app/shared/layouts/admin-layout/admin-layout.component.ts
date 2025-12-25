@@ -58,6 +58,11 @@ export class AdminLayoutComponent implements OnInit {
       icon: 'M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z',
       route: '/admin/courses'
     },
+    {
+      label: 'Datos Bancarios',
+      icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+      route: '/admin/bank-accounts'
+    },
   ];
 
   toggleSidebar(): void {

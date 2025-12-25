@@ -57,17 +57,15 @@
                 </p>
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                   <p class="text-sm text-yellow-800 font-medium">
-                    ⚠️ Debes esperar a que el profesor califique el examen antes de poder continuar con el curso.
+                    ⚠️ Debes esperar a que el profesor califique el examen antes de poder ver los resultados y continuar con el curso.
                   </p>
                 </div>
-                @if (currentSubmission()?.autoGradedScore !== undefined) {
-                  <div class="text-sm text-gray-600 mt-4">
-                    <p>Puntuación automática (preguntas de opción múltiple): {{ currentSubmission()?.autoGradedScore?.toFixed(1) }}%</p>
-                    <p class="text-xs text-gray-500 mt-1">La calificación final se calculará cuando el profesor califique las preguntas de texto.</p>
-                  </div>
-                }
+                <p class="text-sm text-gray-600 mt-4">
+                  Recibirás una notificación cuando el profesor haya calificado tu examen.
+                </p>
               </div>
-            } @else {
+            } @else if (currentSubmission()?.status === 'GRADED') {
+              <!-- Only show score and results when GRADED -->
               <div class="mb-6">
                 <div [class]="getScoreColor() + ' text-6xl font-bold mb-2'">
                   {{ getScore().toFixed(1) }}%
@@ -124,7 +122,9 @@
                 Volver al Curso
               </button>
 
-              @if (canRetry() && (currentSubmission()?.status === 'SUBMITTED' || (currentSubmission()?.status === 'GRADED' && !isPassed()))) {
+              <!-- Only allow retry if GRADED and not passed, or if questionnaire allows retries while waiting -->
+              <!-- But don't allow retry if status is SUBMITTED and maxRetries is 1 (only one attempt) -->
+              @if (currentSubmission()?.status === 'GRADED' && canRetry() && !isPassed()) {
                 <button
                   (click)="retry()"
                   class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -133,7 +133,8 @@
                 </button>
               }
 
-              @if (isPassed() && getNextClassId()) {
+              <!-- Only show continue button if GRADED and passed -->
+              @if (currentSubmission()?.status === 'GRADED' && isPassed() && getNextClassId()) {
                 <button
                   (click)="goToNextClass()"
                   class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -145,9 +146,9 @@
           </div>
         </div>
 
-        <!-- Answers Review (if showCorrectAnswers is true AND no retries available) -->
-        <!-- Don't show answers if student can retry to avoid giving them exam information -->
-        @if (questionnaire()?.showCorrectAnswers && !canRetry()) {
+        <!-- Answers Review (only show if GRADED and showCorrectAnswers is true AND no retries available) -->
+        <!-- Don't show answers if status is SUBMITTED (waiting for grading) or if student can retry -->
+        @if (currentSubmission()?.status === 'GRADED' && questionnaire()?.showCorrectAnswers && !canRetry()) {
           <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-xl font-bold mb-4">Revisión de Respuestas</h3>
 

@@ -25,16 +25,12 @@ export class StudentLayoutComponent {
 
   menuItems: MenuItem[] = [
     {
-      label: 'Dashboard',
-      route: '/alumno'
-    },
-    {
       label: 'Mis Cursos',
       route: '/alumno/courses'
     },
     {
-      label: 'Calificaciones',
-      route: '/alumno/grades'
+      label: 'Mis Certificados',
+      route: '/alumno/certificates'
     }
   ];
 

@@ -75,31 +75,84 @@
                       </div>
                     </div>
 
-                    <!-- Right: Progress -->
-                    <div class="flex items-center gap-3 ml-4">
-                      <!-- Progress info -->
-                      <div class="text-right">
-                        <span class="text-sm font-medium" [class]="student.progress === 100 ? 'text-green-600' : 'text-gray-700'">
-                          {{ student.completedClasses }}/{{ student.totalClasses }} clases
-                        </span>
-                      </div>
-                      <!-- Progress circle -->
-                      <div class="relative w-10 h-10">
-                        <svg class="w-10 h-10 transform -rotate-90">
-                          <circle cx="20" cy="20" r="16" stroke="#e5e7eb" stroke-width="3" fill="none"></circle>
-                          <circle cx="20" cy="20" r="16" 
-                            [attr.stroke]="student.progress === 100 ? '#10b981' : '#6366f1'" 
-                            stroke-width="3" 
-                            fill="none"
-                            stroke-linecap="round"
-                            [attr.stroke-dasharray]="100.53"
-                            [attr.stroke-dashoffset]="100.53 - (100.53 * student.progress / 100)">
-                          </circle>
-                        </svg>
-                        <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold" 
-                          [class]="student.progress === 100 ? 'text-green-600' : 'text-gray-700'">
-                          {{ student.progress }}%
-                        </span>
+                    <!-- Right: Progress and Notifications -->
+                    <div class="flex items-center gap-4 ml-4">
+                      <!-- Pending Exams Notification -->
+                      @if (hasPendingExams(student.userId)) {
+                        @let exams = getPendingExamsForStudent(student.userId);
+                        <div class="flex flex-col items-end gap-1">
+                          <button
+                            (click)="goToExam(exams[0])"
+                            class="relative inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                            [title]="exams.length === 1 ? '1 examen pendiente de corregir' : exams.length + ' exámenes pendientes de corregir'"
+                          >
+                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>{{ exams.length }}</span>
+                            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                          </button>
+                          @if (exams.length > 1) {
+                            <p class="text-xs text-gray-500">Click para corregir</p>
+                          }
+                        </div>
+                      }
+                      
+                      <!-- Progress Bar -->
+                      <div class="min-w-[200px] max-w-[300px] flex flex-col gap-2">
+                        <!-- Videos Progress -->
+                        <div class="flex flex-col gap-1">
+                          <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-1 text-gray-600">
+                              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                              </svg>
+                              <span class="font-medium">Videos</span>
+                            </div>
+                            <span class="font-semibold" [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'text-green-600' : 'text-gray-700'">
+                              {{ student.completedClasses }}/{{ student.totalClasses }}
+                            </span>
+                          </div>
+                          <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              class="h-2 rounded-full transition-all duration-300"
+                              [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'bg-green-500' : 'bg-indigo-500'"
+                              [style.width.%]="student.totalClasses > 0 ? (student.completedClasses / student.totalClasses * 100) : 0">
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Questionnaires Progress -->
+                        <div class="flex flex-col gap-1">
+                          <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-1 text-gray-600">
+                              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                              </svg>
+                              <span class="font-medium">Cuestionarios</span>
+                            </div>
+                            <span class="font-semibold" [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'text-green-600' : 'text-gray-700'">
+                              {{ student.completedQuestionnaires }}/{{ student.totalQuestionnaires }}
+                            </span>
+                          </div>
+                          <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              class="h-2 rounded-full transition-all duration-300"
+                              [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'bg-green-500' : 'bg-purple-500'"
+                              [style.width.%]="student.totalQuestionnaires > 0 ? (student.completedQuestionnaires / student.totalQuestionnaires * 100) : 0">
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Overall Progress Percentage -->
+                        <div class="text-right">
+                          <span class="text-xs font-semibold" [class]="student.progress === 100 ? 'text-green-600' : 'text-gray-500'">
+                            Progreso total: {{ student.progress }}%
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

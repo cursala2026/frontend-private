@@ -1,7 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
+import { QuestionnairesService } from '../../../core/services/questionnaires.service';
 import { UserRole } from '../../../core/models/user-role.enum';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
@@ -20,6 +23,20 @@ interface Student {
   progress: number;
   completedClasses: number;
   totalClasses: number;
+  completedQuestionnaires: number;
+  totalQuestionnaires: number;
+}
+
+interface PendingExam {
+  submissionId: string;
+  questionnaireId: string;
+  questionnaireTitle: string;
+  courseId: string;
+  courseName: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  submittedAt: Date;
 }
 
 @Component({
@@ -28,19 +45,42 @@ interface Student {
   imports: [CommonModule],
   templateUrl: './teacher-students.component.html',
 })
-export class TeacherStudentsComponent implements OnInit {
+export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private viewModeService = inject(ViewModeService);
   private http = inject(HttpClient);
+  private questionnairesService = inject(QuestionnairesService);
+  private router = inject(Router);
   
   user = this.authService.currentUser;
   students = signal<Student[]>([]);
   loading = signal<boolean>(true);
   groupedStudents = signal<Map<string, Student[]>>(new Map());
+  pendingExams = signal<PendingExam[]>([]);
+  pendingExamsByStudent = signal<Map<string, PendingExam[]>>(new Map());
+  private routerSubscription?: Subscription;
 
   ngOnInit(): void {
     this.viewModeService.initializeViewMode();
     this.loadStudents();
+    this.loadPendingExams();
+    
+    // Actualizar cuando se navega (especialmente después de calificar)
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.loadPendingExams();
+      });
+    
+    // También escuchar evento personalizado cuando se califica un examen
+    window.addEventListener('exam-graded', () => {
+      this.loadPendingExams();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routerSubscription?.unsubscribe();
+    window.removeEventListener('exam-graded', () => {});
   }
 
   loadStudents(): void {
@@ -127,6 +167,44 @@ export class TeacherStudentsComponent implements OnInit {
       courseName,
       students
     }));
+  }
+
+  loadPendingExams(): void {
+    this.questionnairesService.getPendingGradingByTeacher().subscribe({
+      next: (response: any) => {
+        const exams = response?.data || [];
+        this.pendingExams.set(Array.isArray(exams) ? exams : []);
+        
+        // Agrupar exámenes por estudiante
+        const byStudent = new Map<string, PendingExam[]>();
+        this.pendingExams().forEach(exam => {
+          const studentId = exam.studentId;
+          if (!byStudent.has(studentId)) {
+            byStudent.set(studentId, []);
+          }
+          byStudent.get(studentId)!.push(exam);
+        });
+        this.pendingExamsByStudent.set(byStudent);
+      },
+      error: (error) => {
+        console.error('Error loading pending exams:', error);
+        this.pendingExams.set([]);
+        this.pendingExamsByStudent.set(new Map());
+      }
+    });
+  }
+
+  getPendingExamsForStudent(studentId: string): PendingExam[] {
+    return this.pendingExamsByStudent().get(studentId) || [];
+  }
+
+  hasPendingExams(studentId: string): boolean {
+    return this.getPendingExamsForStudent(studentId).length > 0;
+  }
+
+  goToExam(exam: PendingExam): void {
+    // Navegar a la página de resultados del cuestionario para calificar
+    this.router.navigate(['/profesor/questionnaires', exam.questionnaireId, 'results']);
   }
 }
 

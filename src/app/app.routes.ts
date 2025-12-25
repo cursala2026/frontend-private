@@ -35,6 +35,10 @@ export const routes: Routes = [
     path: 'unauthorized',
     loadComponent: () => import('./features/auth/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent)
   },
+  {
+    path: 'certificate/:verificationCode',
+    loadComponent: () => import('./features/public/certificate-view/certificate-view.component').then(m => m.CertificateViewComponent)
+  },
 
   // Rutas de Admin (con sidebar layout)
   {
@@ -53,6 +57,10 @@ export const routes: Routes = [
       {
         path: 'courses',
         loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
+      },
+      {
+        path: 'bank-accounts',
+        loadComponent: () => import('./features/admin/bank-accounts/bank-accounts.component').then(m => m.BankAccountsComponent)
       },
       {
         path: 'profile',
@@ -153,8 +161,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
       {
-        path: 'grades',
-        loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
+        path: 'certificates',
+        loadComponent: () => import('./features/alumno/certificates/student-certificates.component').then(m => m.StudentCertificatesComponent)
       }
     ]
   },

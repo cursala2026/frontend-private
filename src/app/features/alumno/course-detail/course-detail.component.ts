@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { CourseProgressService, CourseProgress } from '../../../core/services/course-progress.service';
 import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
+import { CertificateService } from '../../../core/services/certificate.service';
 import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { EnrollModalComponent } from '../../../shared/components/enroll-modal/enroll-modal.component';
@@ -30,6 +31,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
   private questionnairesService = inject(QuestionnairesService);
+  private certificateService = inject(CertificateService);
   private info = inject(InfoService);
   private authService = inject(AuthService);
 
@@ -44,6 +46,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   isEnrolling = signal<boolean>(false);
   isUnenrolling = signal<boolean>(false);
   enrollError = signal<string | null>(null);
+  
+  // Certificate state
+  certificateExists = signal<boolean>(false);
+  certificateLoading = signal<boolean>(false);
+  certificateVerificationCode = signal<string | null>(null);
 
   currentUser = this.authService.currentUser;
   isEnrolled = computed(() => {
@@ -104,6 +111,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         // Cargar progreso del curso si el usuario está inscrito
         if (this.isEnrolled()) {
           this.loadCourseProgress(courseId);
+          // Verificar si existe certificado si el curso está completado
+          this.checkCertificateExists(courseId);
         } else {
           this.loading.set(false);
         }
@@ -192,6 +201,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         const progress = response?.data || response;
         this.courseProgress.set(progress);
         this.loading.set(false);
+        // Si el curso está completado, verificar certificado
+        if (progress?.overallProgress === 100) {
+          this.checkCertificateExists(courseId);
+        }
       },
       error: (error) => {
         console.error('Error loading course progress:', error);
@@ -280,7 +293,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/alumno']);
+    this.router.navigate(['/alumno/courses']);
   }
 
   openEnrollModal(): void {
@@ -478,7 +491,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     this.info.showSuccess('¡Felicidades! Has completado todo el curso');
   }
 
-  goToClass(classData: any, classIndex: number): void {
+  goToClass(classData: any, itemIndex: number): void {
     const course = this.course();
     if (!course || !course._id) {
       this.info.showError('Información del curso inválida');
@@ -491,9 +504,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Verificar si puede acceder a esta clase
-    if (!this.canAccessClass(classIndex)) {
-      this.info.showInfo('Debes completar las clases anteriores para acceder a esta clase');
+    // Verificar si puede acceder a esta clase usando canAccessItem que considera cuestionarios
+    if (!this.canAccessItem(itemIndex)) {
+      this.info.showInfo('Debes completar los elementos anteriores (clases y cuestionarios) para acceder a esta clase');
       return;
     }
 
@@ -578,6 +591,129 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       (qp: any) => qp.questionnaireId === questionnaireId
     );
     return questionnaireProgress?.bestScore || null;
+  }
+
+  checkCertificateExists(courseId: string): void {
+    const user = this.currentUser();
+    if (!user?._id) return;
+
+    this.certificateService.checkCertificateExists(user._id, courseId).subscribe({
+      next: (response: any) => {
+        const check = response?.data;
+        if (check?.exists && check?.certificate) {
+          this.certificateExists.set(true);
+          this.certificateVerificationCode.set(check.certificate.verificationCode);
+        } else {
+          this.certificateExists.set(false);
+        }
+      },
+      error: (error) => {
+        console.error('Error checking certificate:', error);
+        // Si hay error, asumimos que no existe
+        this.certificateExists.set(false);
+      }
+    });
+  }
+
+  async downloadCertificate(): Promise<void> {
+    const user = this.currentUser();
+    const course = this.course();
+    
+    if (!user?._id || !course?._id) {
+      this.info.showError('Error: No se pudo obtener la información del usuario o curso');
+      return;
+    }
+
+    this.certificateLoading.set(true);
+
+    try {
+      // Si ya existe un certificado, descargarlo directamente
+      if (this.certificateExists() && this.certificateVerificationCode()) {
+        await this.downloadCertificatePDF(this.certificateVerificationCode()!);
+        this.certificateLoading.set(false);
+        return;
+      }
+
+      // Si no existe, generar uno nuevo
+      const teacherId = course.mainTeacher || course.mainTeacherInfo?.teacherId;
+      if (!teacherId) {
+        this.info.showError('Error: No se encontró el profesor del curso');
+        this.certificateLoading.set(false);
+        return;
+      }
+
+      // Generar el certificado
+      this.certificateService.generateCertificate(user._id, course._id, teacherId).subscribe({
+        next: async (response: any) => {
+          const certificate = response?.data;
+          if (certificate?.verificationCode) {
+            this.certificateExists.set(true);
+            this.certificateVerificationCode.set(certificate.verificationCode);
+            // Descargar el certificado
+            await this.downloadCertificatePDF(certificate.verificationCode);
+            this.info.showSuccess('Certificado generado y descargado exitosamente');
+            
+            // Abrir la URL pública del certificado en una nueva pestaña
+            const publicUrl = `/certificate/${certificate.verificationCode}`;
+            window.open(publicUrl, '_blank');
+          } else {
+            this.info.showError('Error: No se pudo generar el certificado');
+          }
+          this.certificateLoading.set(false);
+        },
+        error: (error) => {
+          console.error('Error generating certificate:', error);
+          let errorMessage = 'Error al generar el certificado';
+          if (error?.error?.message) {
+            errorMessage = error.error.message;
+          }
+          this.info.showError(errorMessage);
+          this.certificateLoading.set(false);
+        }
+      });
+    } catch (error) {
+      console.error('Error in downloadCertificate:', error);
+      this.info.showError('Error al procesar la solicitud del certificado');
+      this.certificateLoading.set(false);
+    }
+  }
+
+  private downloadCertificatePDF(verificationCode: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.certificateService.downloadCertificate(verificationCode).subscribe({
+        next: (blob: Blob) => {
+          // Crear un enlace temporal para descargar el PDF
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          const courseName = this.course()?.name || 'curso';
+          link.download = `certificado-${courseName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error downloading certificate:', error);
+          this.info.showError('Error al descargar el certificado');
+          reject(error);
+        }
+      });
+    });
+  }
+
+  getCertificatePublicUrl(): string {
+    const verificationCode = this.certificateVerificationCode();
+    if (!verificationCode) return '';
+    return `${window.location.origin}/certificate/${verificationCode}`;
+  }
+
+  openCertificatePublicUrl(): void {
+    const verificationCode = this.certificateVerificationCode();
+    if (!verificationCode) return;
+    const publicUrl = `/certificate/${verificationCode}`;
+    window.open(publicUrl, '_blank');
   }
 }
 

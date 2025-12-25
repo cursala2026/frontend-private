@@ -167,9 +167,9 @@ export class QuestionnaireTakeComponent implements OnInit {
     // Check if there's a submitted (pending grading) submission
     const submitted = sortedSubmissions.find(s => s.status === 'SUBMITTED');
     if (submitted) {
-      // Always show results for submitted (pending grading) submissions
+      // Show waiting message but don't show results/answers until graded
       this.currentSubmission.set(submitted);
-      this.showResults.set(true);
+      this.showResults.set(true); // Show waiting message, but template will hide results/answers
       return;
     }
 

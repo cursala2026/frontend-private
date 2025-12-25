@@ -182,6 +182,12 @@ export class QuestionnaireResultsComponent implements OnInit {
         this.loadGradeReport();
         this.loadPendingSubmissions();
         this.savingGrade.set(false);
+        // Forzar actualización de la notificación en el layout
+        // Esto se hará automáticamente cuando se navegue, pero también podemos disparar un evento
+        setTimeout(() => {
+          // Pequeño delay para asegurar que el backend haya actualizado
+          window.dispatchEvent(new Event('exam-graded'));
+        }, 500);
       },
       error: (error) => {
         console.error('Error saving grade:', error);
@@ -244,6 +250,19 @@ export class QuestionnaireResultsComponent implements OnInit {
     } else {
       return 'text-red-600';
     }
+  }
+
+  getStudentImageUrl(profilePhotoUrl?: string): string {
+    if (!profilePhotoUrl) return '';
+    if (profilePhotoUrl.startsWith('http://') || profilePhotoUrl.startsWith('https://')) {
+      return profilePhotoUrl;
+    }
+    return `https://cursala.b-cdn.net/profile-images/${encodeURIComponent(profilePhotoUrl)}`;
+  }
+
+  handleImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 
   goBack(): void {

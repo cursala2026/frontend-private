@@ -76,6 +76,7 @@ export interface GradeReportEntry {
   studentId: string;
   studentName: string;
   studentEmail: string;
+  profilePhotoUrl?: string;
   attemptCount: number;
   bestScore: number | null;
   lastAttempt: Date | null;
@@ -189,6 +190,13 @@ export class QuestionnairesService {
    */
   getPendingGrading(questionnaireId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${questionnaireId}/pending-grading`);
+  }
+
+  /**
+   * Obtener todos los exámenes pendientes de calificar para el profesor actual
+   */
+  getPendingGradingByTeacher(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/submissions/pending-grading/teacher`);
   }
 
   /**

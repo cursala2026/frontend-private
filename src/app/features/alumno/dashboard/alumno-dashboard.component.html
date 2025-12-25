@@ -24,7 +24,7 @@
           <div class="ml-5 w-0 flex-1">
             <dl>
               <dt class="text-sm font-medium text-gray-500 truncate">Cursos Inscritos</dt>
-              <dd class="text-lg font-semibold text-gray-900">--</dd>
+              <dd class="text-lg font-semibold text-gray-900">{{ enrolledCoursesCount() }}</dd>
             </dl>
           </div>
         </div>
@@ -42,7 +42,7 @@
           <div class="ml-5 w-0 flex-1">
             <dl>
               <dt class="text-sm font-medium text-gray-500 truncate">Cursos Completados</dt>
-              <dd class="text-lg font-semibold text-gray-900">--</dd>
+              <dd class="text-lg font-semibold text-gray-900">{{ completedCoursesCount() }}</dd>
             </dl>
           </div>
         </div>
@@ -60,7 +60,13 @@
           <div class="ml-5 w-0 flex-1">
             <dl>
               <dt class="text-sm font-medium text-gray-500 truncate">Promedio General</dt>
-              <dd class="text-lg font-semibold text-gray-900">--</dd>
+              <dd class="text-lg font-semibold text-gray-900">
+                @if (averageGrade() !== null) {
+                  {{ averageGrade() }}%
+                } @else {
+                  --
+                }
+              </dd>
             </dl>
           </div>
         </div>
