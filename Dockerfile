@@ -1,19 +1,22 @@
 # Stage 1: Build de la aplicación Angular
-FROM node:24-alpine AS builder
+ARG NODE_VERSION=24-alpine
+FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /app
 
 # Copiar package.json y package-lock.json
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-# Instalar dependencias
-RUN npm ci --legacy-peer-deps
+# Instalar dependencias con cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps
 
 # Copiar el código fuente
 COPY . .
 
-# Build de producción
-RUN npm run build:prod
+# Build para desarrollo local (usa environment.ts con localhost)
+ENV NODE_ENV=development
+RUN npm run build
 
 # Stage 2: Servidor Nginx para servir la aplicación
 FROM nginx:alpine
