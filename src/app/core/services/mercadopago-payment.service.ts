@@ -149,4 +149,30 @@ export class MercadoPagoPaymentService {
 
     return this.createPaymentPreference(preferenceData);
   }
+
+  /**
+   * Obtiene estadísticas de pagos de Mercado Pago
+   */
+  getPaymentStats(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/stats`);
+  }
+
+  /**
+   * Obtiene lista de todos los pagos de Mercado Pago
+   */
+  getAllPayments(limit: number = 50): Observable<any> {
+    return this.http.get(`${this.apiUrl}/all?limit=${limit}`);
+  }
+
+  /**
+   * Elimina pagos antiguos
+   */
+  // bulk delete removed per UI change
+
+  /**
+   * Elimina un pago específico
+   */
+  deletePayment(paymentId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${paymentId}`);
+  }
 }

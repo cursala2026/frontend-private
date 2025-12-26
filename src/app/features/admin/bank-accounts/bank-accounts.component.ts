@@ -1,101 +1,208 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { BankAccountService, BankAccount, UpdateBankAccountDto } from '../../../core/services/bank-account.service';
 import { InfoService } from '../../../core/services/info.service';
+import { MercadoPagoPaymentService } from '../../../core/services/mercadopago-payment.service';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { ModalBankAccountsComponent } from './modal-bank-accounts/modal-bank-accounts.component';
+import { TableComponent, TableColumn, TableAction } from '../../../shared/components/table/table.component';
 
 @Component({
   selector: 'app-bank-accounts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './bank-accounts.component.html',
-  styleUrl: './bank-accounts.component.css'
+  imports: [CommonModule, ConfirmModalComponent, ModalBankAccountsComponent, TableComponent],
+  templateUrl: './bank-accounts.component.html'
 })
 export class BankAccountsComponent implements OnInit {
-  private bankAccountService = inject(BankAccountService);
   private info = inject(InfoService);
-  private fb = inject(FormBuilder);
+  private mercadoPagoService = inject(MercadoPagoPaymentService);
 
-  bankAccounts = signal<BankAccount[]>([]);
-  loading = signal<boolean>(true);
-  saving = signal<string | null>(null);
+  // Lista de pagos de Mercado Pago
+  payments = signal<any[]>([]);
+  loadingPayments = signal<boolean>(true);
   
-  // Formularios para cada cuenta (usando un Map para manejar múltiples formularios)
-  accountForms: Map<string, FormGroup> = new Map();
+  // Control para abrir modal de cuentas bancarias
+  showBankAccountsModal = signal<boolean>(false);
+  @ViewChild(ModalBankAccountsComponent) modalRef?: ModalBankAccountsComponent;
+  
+  // Eliminación de pagos (solo por item individual)
+  deletingPayment = signal<string | null>(null);
+  
+  // Modal de confirmación para eliminar pago
+  showDeleteModal = signal<boolean>(false);
+  paymentToDelete = signal<any>(null);
+  deleteModalConfig: ConfirmModalConfig = {
+    title: 'Eliminar Pago',
+    message: '',
+    confirmText: 'Eliminar Pago',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-red-600',
+    icon: 'danger'
+  };
+  
+  // Nota: los formularios y carga de cuentas ahora los maneja el componente modal
+
+  // Configuración de columnas para la tabla
+  tableColumns: TableColumn[] = [
+    {
+      header: 'ID de Pago',
+      field: 'paymentId',
+      cellClass: 'font-medium text-gray-900'
+    },
+    {
+      header: 'Estado',
+      render: (row: any) => this.getStatusText(row.status),
+      cellClass: (row: any) => this.getStatusClass(row.status) + ' inline-flex px-2 py-1 text-xs font-semibold rounded-full'
+    },
+    {
+      header: 'Monto',
+      render: (row: any) => `$${row.transactionAmount?.toLocaleString('es-AR') || '0'}`,
+      cellClass: 'text-gray-900'
+    },
+    {
+      header: 'Estudiante',
+      field: 'studentEmail',
+      cellClass: 'text-gray-500'
+    },
+    {
+      header: 'Curso',
+      render: (row: any) => row.courseName || row.courseId,
+      cellClass: 'text-gray-500'
+    },
+    {
+      header: 'Fecha',
+      render: (row: any) => this.formatDate(row.createdAt),
+      cellClass: 'text-gray-500'
+    }
+  ];
+
+  // Acciones disponibles por fila
+  tableActions: TableAction[] = [
+    {
+      tooltip: 'Eliminar pago',
+      icon: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
+      onClick: (row: any) => this.deletePayment(row),
+      isLoading: (row: any) => this.deletingPayment() === row.paymentId,
+      disabled: (row: any) => this.deletingPayment() === row.paymentId,
+      class: 'text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
+    }
+  ];
 
   ngOnInit() {
-    this.loadBankAccounts();
+    this.loadPayments();
   }
 
-  loadBankAccounts() {
-    this.loading.set(true);
-    this.bankAccountService.getAllBankAccounts().subscribe({
+  loadPayments() {
+    this.loadingPayments.set(true);
+    this.mercadoPagoService.getAllPayments(100).subscribe({
       next: (response) => {
-        const accounts = response?.data || [];
-        this.bankAccounts.set(accounts);
-        
-        // Inicializar formularios para cada cuenta
-        accounts.forEach(account => {
-          const form = this.fb.group({
-            cbu: [account.cbu, [Validators.required, Validators.pattern(/^\d{22}$/)]],
-            alias: [account.alias, [Validators.required, Validators.minLength(3), Validators.maxLength(20)]]
-          });
-          this.accountForms.set(account._id, form);
-        });
-        
-        this.loading.set(false);
+        this.payments.set(response?.data || []);
+        this.loadingPayments.set(false);
       },
       error: (error) => {
-        console.error('Error loading bank accounts:', error);
-        this.info.showError('Error al cargar las cuentas bancarias');
-        this.loading.set(false);
+        console.error('Error loading payments:', error);
+        this.info.showError('Error al cargar los pagos');
+        this.loadingPayments.set(false);
       }
     });
   }
 
-  getForm(accountId: string): FormGroup | null {
-    return this.accountForms.get(accountId) || null;
+
+  deletePayment(payment: any) {
+    this.paymentToDelete.set(payment);
+    this.deleteModalConfig = {
+      title: 'Eliminar Pago',
+      message: `¿Estás seguro de que quieres eliminar el pago ${payment.paymentId}?`,
+      confirmText: 'Eliminar Pago',
+      cancelText: 'Cancelar',
+      confirmButtonClass: 'bg-red-600',
+      icon: 'danger'
+    };
+    this.showDeleteModal.set(true);
   }
 
-  updateBankAccount(accountId: string) {
-    const form = this.accountForms.get(accountId);
-    if (!form || form.invalid) {
-      this.info.showError('Por favor, completa todos los campos correctamente');
+  confirmDeletePayment() {
+    const payment = this.paymentToDelete();
+    if (!payment) return;
+
+    this.showDeleteModal.set(false);
+    this.deletingPayment.set(payment.paymentId);
+
+    this.mercadoPagoService.deletePayment(payment.paymentId).subscribe({
+      next: (response) => {
+        this.info.showSuccess('Pago eliminado exitosamente');
+        this.deletingPayment.set(null);
+        this.paymentToDelete.set(null);
+        // Recargar la lista de pagos
+        this.loadPayments();
+      },
+      error: (error) => {
+        console.error('Error deleting payment:', error);
+        this.info.showError('Error al eliminar el pago');
+        this.deletingPayment.set(null);
+        this.paymentToDelete.set(null);
+      }
+    });
+  }
+
+  cancelDeletePayment() {
+    this.showDeleteModal.set(false);
+    this.paymentToDelete.set(null);
+  }
+
+  openBankAccountsModal() {
+    // Prefer calling modal.open() to ensure it loads accounts immediately
+    if (this.modalRef && typeof this.modalRef.open === 'function') {
+      this.modalRef.open();
       return;
     }
+    this.showBankAccountsModal.set(true);
+  }
 
-    this.saving.set(accountId);
-    const updateData: UpdateBankAccountDto = {
-      cbu: form.value.cbu,
-      alias: form.value.alias
-    };
+  closeBankAccountsModal() {
+    this.showBankAccountsModal.set(false);
+  }
 
-    this.bankAccountService.updateBankAccount(accountId, updateData).subscribe({
-      next: (response) => {
-        const updatedAccount = response.data;
-        // Actualizar la cuenta en la lista
-        const accounts = this.bankAccounts();
-        const index = accounts.findIndex(a => a._id === accountId);
-        if (index !== -1) {
-          accounts[index] = updatedAccount;
-          this.bankAccounts.set([...accounts]);
-        }
-        this.info.showSuccess('Cuenta bancaria actualizada exitosamente');
-        this.saving.set(null);
-      },
-      error: (error) => {
-        console.error('Error updating bank account:', error);
-        const errorMessage = error?.error?.message || 'Error al actualizar la cuenta bancaria';
-        this.info.showError(errorMessage);
-        this.saving.set(null);
-      }
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-AR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 
-  hasError(form: FormGroup | null, field: string, errorType: string): boolean {
-    if (!form) return false;
-    const control = form.get(field);
-    return !!(control && control.hasError(errorType) && (control.dirty || control.touched));
+  getStatusClass(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   }
+
+  getStatusText(status: string): string {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'Aprobado';
+      case 'pending':
+        return 'Pendiente';
+      case 'rejected':
+        return 'Rechazado';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status || 'Desconocido';
+    }
+  }
+
+  // Las validaciones de formulario para cuentas bancarias las maneja el componente modal.
 }
 

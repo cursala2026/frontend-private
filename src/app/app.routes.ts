@@ -63,6 +63,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/bank-accounts/bank-accounts.component').then(m => m.BankAccountsComponent)
       },
       {
+        path: 'public-data',
+        loadComponent: () => import('./features/admin/public-data/public-data.component').then(m => m.PublicDataComponent)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
