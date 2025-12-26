@@ -1,0 +1,91 @@
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+    @if (loading()) {
+      <!-- Loading State -->
+      <div class="text-center py-12">
+        <svg class="animate-spin h-16 w-16 text-green-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-gray-600 text-lg">Verificando tu pago...</p>
+      </div>
+    } @else {
+      <!-- Success State -->
+      <div class="text-center">
+        <!-- Success Icon -->
+        <div class="mb-6">
+          <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <svg class="w-16 h-16 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">
+          ¡Pago Exitoso!
+        </h1>
+
+        <!-- Message -->
+        <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+          <p class="text-lg text-green-800 font-medium mb-3">
+            Tu pago ha sido procesado correctamente
+          </p>
+          <p class="text-green-700">
+            Ya tienes acceso al curso y puedes comenzar a estudiar de inmediato.
+          </p>
+          <p class="text-green-700 mt-2">
+            Recibirás un correo electrónico con la confirmación de tu compra y los detalles de acceso.
+          </p>
+        </div>
+
+        <!-- Payment Details -->
+        @if (paymentId()) {
+          <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
+            <p class="text-gray-600">
+              <strong>ID de transacción:</strong> {{ paymentId() }}
+            </p>
+            @if (externalReference()) {
+              <p class="text-gray-600 mt-1">
+                <strong>Referencia:</strong> {{ externalReference() }}
+              </p>
+            }
+          </div>
+        }
+
+        <!-- Information -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+          <p class="text-blue-800 text-sm">
+            <strong>Duración del acceso:</strong> 3 meses desde la fecha de compra
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            (click)="goToCourses()"
+            class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+          >
+            Ir a Mis Cursos
+          </button>
+          <button
+            (click)="goToHome()"
+            class="px-8 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+
+        <!-- Support Info -->
+        <div class="mt-8 pt-6 border-t border-gray-200">
+          <p class="text-sm text-gray-500">
+            ¿Tienes alguna pregunta? Contáctanos a
+            <a href="mailto:info@cursala.com.ar" class="text-green-600 hover:text-green-700 font-medium">
+              info@cursala.com.ar
+            </a>
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

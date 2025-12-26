@@ -10,7 +10,6 @@ import { InfoService } from '../../../core/services/info.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './student-certificates.component.html',
-  styleUrl: './student-certificates.component.css'
 })
 export class StudentCertificatesComponent implements OnInit {
   private certificateService = inject(CertificateService);

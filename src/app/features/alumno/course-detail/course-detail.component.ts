@@ -11,6 +11,7 @@ import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { EnrollModalComponent } from '../../../shared/components/enroll-modal/enroll-modal.component';
 import { UnenrollModalComponent } from '../../../shared/components/unenroll-modal/unenroll-modal.component';
+import { PurchaseModalComponent } from '../../../shared/components/purchase-modal/purchase-modal.component';
 
 interface CourseItem {
   type: 'class' | 'questionnaire';
@@ -21,7 +22,7 @@ interface CourseItem {
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent],
+  imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent, PurchaseModalComponent],
   templateUrl: './course-detail.component.html',
 })
 export class CourseDetailComponent implements OnInit, OnDestroy {
@@ -42,6 +43,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   showEnrollModal = signal<boolean>(false);
+  showPurchaseModal = signal<boolean>(false);
   showUnenrollModal = signal<boolean>(false);
   isEnrolling = signal<boolean>(false);
   isUnenrolling = signal<boolean>(false);
@@ -302,6 +304,17 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       this.showEnrollModal.set(true);
       this.enrollError.set(null);
     }
+  }
+
+  openPurchaseModal(): void {
+    const courseData = this.course();
+    if (courseData && courseData.price && courseData.price > 0) {
+      this.showPurchaseModal.set(true);
+    }
+  }
+
+  closePurchaseModal(): void {
+    this.showPurchaseModal.set(false);
   }
 
   closeEnrollModal(): void {

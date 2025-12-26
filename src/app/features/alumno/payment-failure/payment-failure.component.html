@@ -1,0 +1,82 @@
+<div class="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+    <div class="text-center">
+      <!-- Error Icon -->
+      <div class="mb-6">
+        <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-16 h-16 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">
+        Pago no Completado
+      </h1>
+
+      <!-- Message -->
+      <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+        <p class="text-lg text-red-800 font-medium mb-3">
+          No se pudo procesar tu pago
+        </p>
+        <p class="text-red-700">
+          El proceso de pago no se completó exitosamente. Esto puede deberse a:
+        </p>
+        <ul class="text-red-700 text-left mt-3 ml-6 space-y-1">
+          <li>• Fondos insuficientes</li>
+          <li>• Datos de tarjeta incorrectos</li>
+          <li>• Cancelación del proceso</li>
+          <li>• Problemas técnicos temporales</li>
+        </ul>
+      </div>
+
+      <!-- Payment Details -->
+      @if (paymentId()) {
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
+          <p class="text-gray-600">
+            <strong>ID de transacción:</strong> {{ paymentId() }}
+          </p>
+          @if (externalReference()) {
+            <p class="text-gray-600 mt-1">
+              <strong>Referencia:</strong> {{ externalReference() }}
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Information -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+        <p class="text-blue-800 text-sm">
+          No se realizó ningún cargo a tu cuenta. Puedes intentar nuevamente cuando lo desees.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          (click)="retryPayment()"
+          class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+        >
+          Intentar Nuevamente
+        </button>
+        <button
+          (click)="goToCourses()"
+          class="px-8 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+        >
+          Ver Cursos
+        </button>
+      </div>
+
+      <!-- Support Info -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-500">
+          ¿Necesitas ayuda? Contáctanos a
+          <a href="mailto:info@cursala.com.ar" class="text-red-600 hover:text-red-700 font-medium">
+            info@cursala.com.ar
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

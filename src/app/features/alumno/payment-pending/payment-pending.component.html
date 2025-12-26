@@ -1,0 +1,88 @@
+<div class="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8">
+    <div class="text-center">
+      <!-- Pending Icon -->
+      <div class="mb-6">
+        <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-16 h-16 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">
+        Pago Pendiente
+      </h1>
+
+      <!-- Message -->
+      <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 mb-6">
+        <p class="text-lg text-yellow-800 font-medium mb-3">
+          Tu pago está siendo procesado
+        </p>
+        <p class="text-yellow-700">
+          Estamos esperando la confirmación del pago. Esto puede demorar algunos minutos o hasta 48 horas dependiendo del medio de pago seleccionado.
+        </p>
+      </div>
+
+      <!-- Payment Details -->
+      @if (paymentId()) {
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
+          <p class="text-gray-600">
+            <strong>ID de transacción:</strong> {{ paymentId() }}
+          </p>
+          @if (externalReference()) {
+            <p class="text-gray-600 mt-1">
+              <strong>Referencia:</strong> {{ externalReference() }}
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Information -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <p class="text-blue-800 text-sm mb-2">
+          <strong>¿Qué sucede ahora?</strong>
+        </p>
+        <ul class="text-blue-700 text-sm text-left ml-6 space-y-1">
+          <li>• Recibirás un email cuando se confirme el pago</li>
+          <li>• El acceso al curso se activará automáticamente</li>
+          <li>• Puedes revisar el estado en "Mis Cursos"</li>
+        </ul>
+      </div>
+
+      <!-- Information for cash payments -->
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-8">
+        <p class="text-orange-800 text-sm">
+          <strong>Pagos en efectivo:</strong> Si elegiste pagar en efectivo (Rapipago, Pago Fácil, etc.), recuerda realizar el pago en el local correspondiente para completar la transacción.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button
+          (click)="goToCourses()"
+          class="px-8 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+        >
+          Ver Mis Cursos
+        </button>
+        <button
+          (click)="goToHome()"
+          class="px-8 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+        >
+          Volver al Inicio
+        </button>
+      </div>
+
+      <!-- Support Info -->
+      <div class="mt-8 pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-500">
+          ¿Tienes alguna pregunta? Contáctanos a
+          <a href="mailto:info@cursala.com.ar" class="text-yellow-600 hover:text-yellow-700 font-medium">
+            info@cursala.com.ar
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -163,6 +163,18 @@ export const routes: Routes = [
       {
         path: 'certificates',
         loadComponent: () => import('./features/alumno/certificates/student-certificates.component').then(m => m.StudentCertificatesComponent)
+      },
+      {
+        path: 'payment/success',
+        loadComponent: () => import('./features/alumno/payment-success/payment-success.component').then(m => m.PaymentSuccessComponent)
+      },
+      {
+        path: 'payment/failure',
+        loadComponent: () => import('./features/alumno/payment-failure/payment-failure.component').then(m => m.PaymentFailureComponent)
+      },
+      {
+        path: 'payment/pending',
+        loadComponent: () => import('./features/alumno/payment-pending/payment-pending.component').then(m => m.PaymentPendingComponent)
       }
     ]
   },

@@ -518,6 +518,7 @@
 
               @if (courseData.price && courseData.price > 0) {
                 <button
+                  (click)="openPurchaseModal()"
                   class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-md hover:shadow-lg mb-4"
                 >
                   Comprar Curso
@@ -597,5 +598,15 @@
     (closeModal)="closeUnenrollModal()"
     (confirmUnenroll)="confirmUnenroll()"
   ></app-unenroll-modal>
+
+  <!-- Purchase Modal -->
+  <app-purchase-modal
+    [isOpen]="showPurchaseModal()"
+    [courseId]="course()?._id || ''"
+    [courseName]="course()?.name || ''"
+    [coursePrice]="course()?.price || 0"
+    [maxInstallments]="course()?.maxInstallments || 12"
+    (onCancel)="closePurchaseModal()"
+  ></app-purchase-modal>
 </div>
 
