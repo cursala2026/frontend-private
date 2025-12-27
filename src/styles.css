@@ -7,8 +7,18 @@
 	--color-brand-secondary-text: #1c2434;
 	--color-brand-tertiary: #262626;
 	--color-brand-tertiary-light: #7e7d82;
+	--color-brand-tertiary-lighten: #b0afb5; 
 }
 
+body {
+    z-index: 1;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--color-brand-tertiary);
+    font-family: Titillium Web, sans-serif;
+    font-weight: 400;
+}
+ 
 @layer components {
 	/* Clases utilitarias que usan las utilidades generadas por @theme */
 	.text-brand-primary { @apply text-brand-primary; }
