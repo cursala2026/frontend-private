@@ -1,24 +1,27 @@
 <div class="min-h-screen bg-gray-100">
   <!-- Navbar -->
-  <nav class="bg-white shadow-lg">
+  <nav class="bg-white shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <!-- Logo y navegación principal -->
         <div class="flex">
           <!-- Logo -->
-          <a routerLink="/alumno" class="shrink-0 flex items-center hover:opacity-80 transition-opacity">
+          <a routerLink="/alumno" class="shrink-0 flex items-center transition-opacity">
             <img src="logo/cursala.svg" alt="Cursala" class="h-8 w-auto">
+            <span class="bg-brand-secondary text-brand-tertiary px-1 py-0.5 ml-3 mr-5 mt-4 text-[10px] leading-3 uppercase">
+              Campus Virtual
+            </span>            
           </a>
           <!-- Desktop Navigation -->
           <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
             @for (item of menuItems; track item.route) {
               <a
                 [routerLink]="item.route"
-                [class.border-indigo-500]="isActiveRoute(item.route)"
-                [class.text-gray-900]="isActiveRoute(item.route)"
+                [class.border-brand-primary]="isActiveRoute(item.route)"
+                [class.text-brand-primary]="isActiveRoute(item.route)"
                 [class.border-transparent]="!isActiveRoute(item.route)"
-                [class.text-gray-500]="!isActiveRoute(item.route)"
-                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium hover:border-gray-300 hover:text-gray-700"
+                [class.text-brand-tertiary]="!isActiveRoute(item.route)"
+                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium  hover:border-transparent hover:text-brand-primary"
               >
                 {{ item.label }}
               </a>
@@ -34,22 +37,22 @@
               <!-- User Info Button -->
               <button
                 (click)="toggleUserMenu()"
-                class="flex items-center space-x-2 px-2 py-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150"
+                class="cursor-pointer flex items-center space-x-2 px-2 py-2 rounded-lg hover:bg-gray-100  transition-colors duration-150"
               >
                 @if (userProfileImageUrl) {
                   <img 
                     [src]="userProfileImageUrl" 
                     alt="Foto de perfil"
-                    class="h-10 w-10 rounded-full object-cover border-2 border-gray-200 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                    class="h-10 w-10 rounded-full object-cover border-2 border-brand-primary cursor-pointer"
                     (error)="onImageError($event)"
                   />
                 } @else {
-                  <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold cursor-pointer shadow-sm hover:shadow-md transition-shadow">
+                  <div class="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold cursor-pointer uppercase">
                     {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
                   </div>
                 }
                 <svg 
-                  class="h-4 w-4 text-gray-500 transition-transform duration-200" 
+                  class="h-4 w-4 text-brand-tertiary-lighten transition-transform duration-200" 
                   [class.rotate-180]="isUserMenuOpen()"
                   fill="none" 
                   viewBox="0 0 24 24" 
@@ -61,9 +64,9 @@
 
               <!-- Dropdown Menu -->
               @if (isUserMenuOpen()) {
-                <div class="absolute right-0 mt-2 w-64 rounded-xl shadow-2xl bg-white border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div class="absolute right-0 mt-2 w-56 rounded-md shadow-xs bg-white ring-opacity-5 z-50 overflow-hidden">
                   <!-- User Info Section -->
-                  <div class="px-5 py-4 bg-gradient-to-br from-indigo-50 to-purple-50 border-b border-gray-200">
+                  <div class="px-4 py-3 border-b border-gray-200 bg-white">
                     <div class="flex items-center space-x-3">
                       @if (userProfileImageUrl) {
                         <img 
@@ -81,9 +84,10 @@
                         <p class="text-sm font-semibold text-gray-900 truncate">
                           {{ currentUser.username || currentUser.firstName + ' ' + currentUser.lastName }}
                         </p>
-                        <p class="text-xs text-gray-600 truncate mt-0.5">
+                        <p class="text-xs text-brand-tertiary-light truncate leading-4">
                           {{ currentUser.email }}
                         </p>
+                        <span class="uppercase bg-brand-tertiary text-center text-[9px] px-1 text-white/80 rounded-xs">alumno</span>
                       </div>
                     </div>
                   </div>
