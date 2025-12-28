@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50">
+<div class="">
   @if (loading()) {
     <!-- Loading State -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -22,7 +22,7 @@
         <p class="text-red-700 mb-4">{{ error() }}</p>
         <button
           (click)="goBack()"
-          class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          class="cursor-pointer inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
         >
           Volver al dashboard
         </button>
@@ -34,7 +34,7 @@
       <!-- Back Button -->
       <button
         (click)="goBack()"
-        class="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        class="cursor-pointer mb-6 flex items-center text-gray-600 hover:text-brand-primary transition-colors"
       >
         <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -43,7 +43,7 @@
       </button>
 
       <!-- Hero Section with Image -->
-      <div class="relative h-96 rounded-lg overflow-hidden shadow-xl mb-8">
+      <div class="relative h-96 rounded-lg overflow-hidden shadow-sm mb-8">
         @if (getCourseImageUrl(courseData.imageUrl)) {
           <img 
             [src]="getCourseImageUrl(courseData.imageUrl)" 
@@ -52,9 +52,9 @@
             (error)="$event.target.style.display='none'"
           />
         } @else {
-          <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600"></div>
+          <div class="w-full h-full bg-linear-to-br from-indigo-500 to-purple-600"></div>
         }
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+        <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
         <div class="absolute bottom-0 left-0 right-0 p-8">
           <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">{{ courseData.name }}</h1>
           <div class="flex flex-wrap items-center gap-4 text-white/90">
@@ -92,14 +92,14 @@
         <div class="lg:col-span-2 space-y-6">
           <!-- Description -->
           @if (courseData.longDescription) {
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white rounded-lg shadow-sm p-8">
               <h2 class="text-2xl font-bold text-gray-900 mb-4">Descripción del Curso</h2>
               <div class="prose max-w-none text-gray-600 whitespace-pre-line">
                 {{ courseData.longDescription }}
               </div>
             </div>
           } @else if (courseData.description) {
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white rounded-lg shadow-sm p-8">
               <h2 class="text-2xl font-bold text-gray-900 mb-4">Descripción del Curso</h2>
               <p class="text-gray-600">{{ courseData.description }}</p>
             </div>
@@ -107,7 +107,7 @@
 
           <!-- Course Details (solo mostrar si hay datos) -->
           @if (courseData.startDate || (courseData.days && courseData.days.length > 0) || courseData.time || courseData.registrationOpenDate) {
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
               <h2 class="text-2xl font-bold text-gray-900 mb-6">Información del Curso</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               @if (courseData.startDate) {
@@ -140,7 +140,7 @@
 
           <!-- Teachers Section -->
           @if (courseData.mainTeacherInfo || (courseData.teacherInfo && courseData.teacherInfo.length > 0)) {
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
               <h2 class="text-2xl font-bold text-gray-900 mb-6">Profesores del Curso</h2>
               
               <!-- Main Teacher -->
@@ -152,19 +152,19 @@
                     </svg>
                     <p class="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Profesor Principal</p>
                   </div>
-                  <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-5 border-2 border-indigo-200">
+                  <div class="bg-linear-to-r from-indigo-50 to-purple-50 rounded-lg p-5 border-2 border-indigo-200">
                     <div class="flex items-start space-x-4">
-                      <div class="relative h-20 w-20 flex-shrink-0">
+                      <div class="relative h-20 w-20 shrink-0">
                         @if (courseData.mainTeacherInfo.profilePhotoUrl) {
                           <img 
                             [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
                             [alt]="courseData.mainTeacherInfo.teacherName"
-                            class="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md"
+                            class="h-20 w-20 rounded-full object-cover border-4 border-white"
                             (error)="handleImageError($event)"
                           />
                         }
                         <div 
-                          class="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-md absolute inset-0"
+                          class="h-20 w-20 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-md absolute inset-0"
                           [style.display]="courseData.mainTeacherInfo.profilePhotoUrl ? 'none' : 'flex'"
                         >
                           {{ courseData.mainTeacherInfo.firstName.charAt(0) }}{{ courseData.mainTeacherInfo.lastName.charAt(0) }}
@@ -194,7 +194,7 @@
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @for (teacher of courseData.teacherInfo; track teacher.teacherId) {
                       <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div class="relative h-12 w-12 flex-shrink-0">
+                        <div class="relative h-12 w-12 shrink-0">
                           @if (teacher.profilePhotoUrl) {
                             <img 
                               [src]="getTeacherImageUrl(teacher.profilePhotoUrl)" 
@@ -204,7 +204,7 @@
                             />
                           }
                           <div 
-                            class="h-12 w-12 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-300 absolute inset-0"
+                            class="h-12 w-12 rounded-full bg-linear-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-300 absolute inset-0"
                             [style.display]="teacher.profilePhotoUrl ? 'none' : 'flex'"
                           >
                             {{ teacher.firstName.charAt(0) }}{{ teacher.lastName.charAt(0) }}
@@ -243,7 +243,7 @@
         <div class="lg:col-span-1">
           @if (isEnrolled()) {
             <!-- Enrolled View -->
-            <div class="bg-white rounded-lg shadow-md p-6 sticky top-8 border-2 border-green-500">
+            <div class="bg-white rounded-lg shadow-md p-6 sticky top-8 border-2 border-brand-primary">
               <!-- Progreso del curso -->
               <div class="text-center mb-6">
                 @if (getOverallProgress() === 100) {
@@ -260,7 +260,7 @@
                   <button
                     (click)="downloadCertificate()"
                     [disabled]="certificateLoading()"
-                    class="w-full mt-4 px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full mt-4 px-4 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     @if (certificateLoading()) {
                       <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -339,8 +339,8 @@
                 <button
                   (click)="beginCourse()"
                   [class]="getOverallProgress() === 100 
-                    ? 'w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-md hover:shadow-lg mb-4 flex items-center justify-center gap-2'
-                    : 'w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-md hover:shadow-lg mb-4 flex items-center justify-center gap-2'"
+                    ? 'cursor-pointer w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold mb-4 flex items-center justify-center gap-2'
+                    : 'cursor-pointer w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold mb-4 flex items-center justify-center gap-2'"
                 >
                   @if (getOverallProgress() === 100) {
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -380,19 +380,19 @@
                               : 'w-full flex items-start p-3 rounded-lg bg-gray-50 border border-gray-200 text-left cursor-not-allowed opacity-60'"
                           >
                             @if (item.data._id && isClassCompleted(item.data._id)) {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm shrink-0">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
                             } @else if (canAccessItem(item.index)) {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-semibold text-sm shrink-0">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 </svg>
                               </div>
                             } @else {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-400 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-400 font-semibold text-sm shrink-0">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
@@ -407,7 +407,7 @@
                               </p>
                             </div>
                             @if (canAccessItem(item.index)) {
-                              <svg class="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg class="w-4 h-4 text-gray-400 shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                               </svg>
                             }
@@ -424,19 +424,19 @@
                               : 'w-full flex items-start p-3 rounded-lg bg-gray-50 border border-gray-200 text-left cursor-not-allowed opacity-60'"
                           >
                             @if (item.data._id && isQuestionnaireCompleted(item.data._id)) {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm shrink-0">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
                             } @else if (canAccessItem(item.index)) {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-semibold text-sm shrink-0">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                               </div>
                             } @else {
-                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-400 font-semibold text-sm flex-shrink-0">
+                              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-400 font-semibold text-sm shrink-0">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
@@ -459,7 +459,7 @@
                               </p>
                             </div>
                             @if (canAccessItem(item.index)) {
-                              <svg class="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg class="w-4 h-4 text-gray-400 shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                               </svg>
                             }
@@ -489,7 +489,7 @@
               <div class="mt-6 pt-4 border-t border-gray-200 text-center">
                 <button
                   (click)="openUnenrollModal()"
-                  class="text-sm text-gray-400 hover:text-red-500 transition-colors"
+                  class="cursor-pointer text-sm text-gray-400 hover:text-red-500 transition-colors"
                 >
                   Desinscribirse del curso
                 </button>

@@ -1,10 +1,10 @@
-<div class="min-h-screen bg-gray-50 py-8">
-  <div class="max-w-4xl mx-auto px-4">
+<div class=" py-2">
+  <div class="mx-auto py-2">
     <!-- Header -->
     <div class="mb-6">
       <button
         (click)="goBack()"
-        class="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors mb-4"
+        class="cursor-pointer flex items-center gap-2 text-brand-tertiary-light hover:text-brand-primary transition-colors mb-4"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -16,9 +16,9 @@
         <div class="h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
         <div class="h-6 bg-gray-200 rounded w-2/3 animate-pulse"></div>
       } @else {
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ questionnaire()?.title }}</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-brand-tertiary mb-2">{{ questionnaire()?.title }}</h1>
         @if (questionnaire()?.description) {
-          <p class="text-gray-600">{{ questionnaire()?.description }}</p>
+          <p class="text-brand-tertiary text-xl">{{ questionnaire()?.description }}</p>
         }
       }
     </div>
@@ -39,7 +39,7 @@
       <!-- Results View -->
       <div class="space-y-6">
         <!-- Score Card -->
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 ">
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-4">Resultado del Cuestionario</h2>
 
@@ -67,7 +67,7 @@
             } @else if (currentSubmission()?.status === 'GRADED') {
               <!-- Only show score and results when GRADED -->
               <div class="mb-6">
-                <div [class]="getScoreColor() + ' text-6xl font-bold mb-2'">
+                <div [class]="getScoreColor() + ' text-7xl font-bold mb-2'">
                   {{ getScore().toFixed(1) }}%
                 </div>
                 <div class="text-lg">

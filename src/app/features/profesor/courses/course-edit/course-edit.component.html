@@ -1,14 +1,14 @@
-<div class="max-w-4xl mx-auto space-y-6">
+<div class="space-y-4 max-w-3xl mx-auto">
   <!-- Header -->
-  <div class="bg-white shadow rounded-lg p-6">
-    <div class="flex items-center justify-between">
+  <div class="relative overflow-hidden bg-linear-to-tr from-brand-tertiary/60 to-brand-tertiary-lighten/30 rounded-xl">
+    <div class="px-4 py-6 sm:px-6 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Editar Curso</h1>
-        <p class="mt-1 text-sm text-gray-500">Modifica la información del curso</p>
+        <h1 class="text-xl sm:text-3xl font-bold text-white">Editar Curso</h1>
+        <p class="text-white text-sm">Modifica la información del curso</p>
       </div>
       <button
         (click)="cancel()"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
       >
         Cancelar
       </button>
@@ -16,15 +16,42 @@
   </div>
 
   @if (loading()) {
-    <div class="bg-white shadow rounded-lg p-12 text-center">
+    <div class="bg-white shadow-xs  rounded-lg p-12 text-center">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
       <p class="mt-4 text-gray-500">Cargando curso...</p>
     </div>
   } @else {
-    <form [formGroup]="courseForm" (ngSubmit)="onSubmit()" class="bg-white shadow rounded-lg p-6 space-y-6">
+    <form [formGroup]="courseForm" (ngSubmit)="onSubmit()" class="bg-white mx-auto shadow-xs rounded-lg p-8 space-y-6 ">
+      
+      <!-- Header Section -->
+      <div class="border-b-2 border-b-brand-primary pb-2">
+        <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+          <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+            1
+          </span>
+          Datos básicos del Curso
+        </h2>
+      </div>
+      <!-- Name -->
+      <div class="mb-8">
+        <label for="name" class="block text-base font-bold text-brand-tertiary mb-2">
+          Nombre del Curso <span class="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="name"
+          formControlName="name"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+          placeholder="Nombre del curso"
+        />
+        @if (courseForm.get('name')?.invalid && courseForm.get('name')?.touched) {
+          <p class="mt-1 text-sm text-red-600">El nombre es requerido</p>
+        }
+      </div>
+
       <!-- Image Section -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+      <div class="mb-8">
+        <label class="block text-base font-bold text-brand-tertiary mb-2">
           Imagen del Curso
         </label>
         <div class="flex items-center space-x-4">
@@ -38,73 +65,68 @@
               />
             </div>
           }
-          <div>
+          <div class="">
             <input
               type="file"
               accept="image/*"
               (change)="onImageSelected($event)"
-              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all"
             />
             <p class="mt-1 text-xs text-gray-500">PNG, JPG hasta 10MB</p>
           </div>
         </div>
       </div>
 
-      <!-- Name -->
-      <div>
-        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-          Nombre del Curso <span class="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          id="name"
-          formControlName="name"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Nombre del curso"
-        />
-        @if (courseForm.get('name')?.invalid && courseForm.get('name')?.touched) {
-          <p class="mt-1 text-sm text-red-600">El nombre es requerido</p>
-        }
-      </div>
+      
 
       <!-- Description -->
-      <div>
-        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+      <div class="mb-8">
+        <label for="description" class="block text-base font-bold text-brand-tertiary mb-2">
           Descripción Corta
         </label>
         <textarea
           id="description"
           formControlName="description"
           rows="3"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="Descripción breve del curso"
         ></textarea>
       </div>
 
       <!-- Long Description -->
-      <div>
-        <label for="longDescription" class="block text-sm font-medium text-gray-700 mb-2">
+      <div class="mb-8">
+        <label for="longDescription" class="block text-base font-bold text-brand-tertiary mb-2">
           Descripción Larga
         </label>
         <textarea
           id="longDescription"
           formControlName="longDescription"
-          rows="5"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          rows="6"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="Descripción detallada del curso"
         ></textarea>
       </div>
 
-      <!-- Grid: Modality, Price, Max Installments -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label for="modality" class="block text-sm font-medium text-gray-700 mb-2">
+      <!-- Header Section -->
+      <div class="border-b-2 border-b-brand-primary pb-2 mt-10">
+        <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+          <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+            2
+          </span>
+          Datos del Cursado
+        </h2>
+      </div>
+
+      <!-- Modalidad -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="col-span-2">
+          <label for="modality" class="block text-base font-bold text-brand-tertiary mb-2">
             Modalidad
           </label>
           <select
             id="modality"
             formControlName="modality"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           >
             <option value="">Seleccionar...</option>
             <option value="Presencial">Presencial</option>
@@ -112,9 +134,115 @@
             <option value="Híbrido">Híbrido</option>
           </select>
         </div>
+      </div>
+
+
+      <!-- Días, Hora -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+       
+        <div>
+          <label for="days" class="block text-base font-bold text-brand-tertiary mb-2">
+            Días de la Semana
+          </label>
+          <input
+            type="text"
+            id="days"
+            formControlName="days"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            placeholder="Lunes, Miércoles, Viernes"
+          />
+        </div>
 
         <div>
-          <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="time" class="block text-base font-bold text-brand-tertiary mb-2">
+            Horario (HH:mm)
+          </label>
+          <input
+            type="text"
+            id="time"
+            formControlName="time"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            placeholder="18:00"
+          />
+        </div>
+      </div>
+
+      <!-- Fechas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+
+        
+        <!-- Fecha de Inicio -->
+        <div>
+          <label for="startDate" class="block text-base font-bold text-brand-tertiary mb-2">
+            Fecha de Inicio
+          </label>
+          <input
+            type="date"
+            id="startDate"
+            formControlName="startDate"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+          />
+        </div>
+
+        <!-- Fecha de inscripción -->
+        <div class="">
+          <label for="registrationOpenDate" class="block text-base font-bold text-brand-tertiary mb-2">
+            Fecha de Apertura de Inscripciones
+          </label>
+          <input
+            type="date"
+            id="registrationOpenDate"
+            formControlName="registrationOpenDate"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+          />
+        </div>
+      </div>
+
+      <!-- Días, Hora,  -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <label for="numberOfClasses" class="block text-base font-bold text-brand-tertiary mb-2">
+            Número de Clases
+          </label>
+          <input
+            type="number"
+            id="numberOfClasses"
+            formControlName="numberOfClasses"
+            min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            placeholder="0"
+          />
+        </div>
+
+        <div>
+          <label for="duration" class="block text-base font-bold text-brand-tertiary mb-2">
+            Duración (horas)
+          </label>
+          <input
+            type="number"
+            id="duration"
+            formControlName="duration"
+            min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <!-- Header Section -->
+      <div class="border-b-2 border-b-brand-primary pb-2 mt-10">
+        <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+          <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+            3
+          </span>
+          Precio y Financiación
+        </h2>
+      </div>
+
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div>
+          <label for="price" class="block text-base font-bold text-brand-tertiary mb-2">
             Precio
           </label>
           <input
@@ -123,13 +251,13 @@
             formControlName="price"
             min="0"
             step="0.01"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="0"
           />
         </div>
 
         <div>
-          <label for="maxInstallments" class="block text-sm font-medium text-gray-700 mb-2">
+          <label for="maxInstallments" class="block text-base font-bold text-brand-tertiary mb-2">
             Máximo de Cuotas
           </label>
           <input
@@ -137,125 +265,49 @@
             id="maxInstallments"
             formControlName="maxInstallments"
             min="1"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="1"
           />
         </div>
-      </div>
 
       <!-- Interest Free Checkbox -->
-      <div class="flex items-center">
+      <div>
+        <label for="price" class="block text-base font-bold text-brand-tertiary mb-2">
+            Con o sin interés
+          </label>
+        
+          <div class="flex items-center mt-4">
         <input
           type="checkbox"
           id="interestFree"
           formControlName="interestFree"
-          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+          class="h-4 w-4 text-indigo-600 focus:ring-brand-primary border-gray-300 rounded"
         />
-        <label for="interestFree" class="ml-2 block text-sm text-gray-700">
+        <label for="interestFree" class="block text-base ml-2 font-normal text-brand-tertiary">
           Sin Interés
         </label>
       </div>
-
-      <!-- Grid: Days, Time -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="days" class="block text-sm font-medium text-gray-700 mb-2">
-            Días de la Semana
-          </label>
-          <input
-            type="text"
-            id="days"
-            formControlName="days"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Lunes, Miércoles, Viernes"
-          />
-        </div>
-
-        <div>
-          <label for="time" class="block text-sm font-medium text-gray-700 mb-2">
-            Horario (HH:mm)
-          </label>
-          <input
-            type="text"
-            id="time"
-            formControlName="time"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="18:00"
-          />
-        </div>
+      </div>
+      
       </div>
 
-      <!-- Grid: Start Date, Registration Date -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">
-            Fecha de Inicio
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            formControlName="startDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
 
-        <div>
-          <label for="registrationOpenDate" class="block text-sm font-medium text-gray-700 mb-2">
-            Fecha de Apertura de Inscripciones
-          </label>
-          <input
-            type="date"
-            id="registrationOpenDate"
-            formControlName="registrationOpenDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-      </div>
+      
 
-      <!-- Grid: Number of Classes, Duration -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label for="numberOfClasses" class="block text-sm font-medium text-gray-700 mb-2">
-            Número de Clases
-          </label>
-          <input
-            type="number"
-            id="numberOfClasses"
-            formControlName="numberOfClasses"
-            min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="0"
-          />
-        </div>
-
-        <div>
-          <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
-            Duración (horas)
-          </label>
-          <input
-            type="number"
-            id="duration"
-            formControlName="duration"
-            min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="0"
-          />
-        </div>
-      </div>
-
+      
       <!-- Submit Button -->
-      <div class="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+      <div class="flex justify-center space-x-4 py-8 bg-brand-tertiary-lighten/10 border-t border-gray-400">
         <button
           type="button"
           (click)="cancel()"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
         >
           Cancelar
         </button>
         <button
           type="submit"
           [disabled]="saving() || courseForm.invalid"
-          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white  "
         >
           @if (saving()) {
             <span class="flex items-center">
