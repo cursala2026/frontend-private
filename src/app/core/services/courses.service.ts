@@ -103,6 +103,7 @@ export interface UpdateCourseDto {
   duration?: number;
   imageFile?: File;
   programFile?: File;
+  showOnHome?: boolean;
 }
 
 @Injectable({
@@ -207,6 +208,7 @@ export class CoursesService {
     if (course.duration !== undefined) formData.append('duration', course.duration.toString());
     if (course.imageFile) formData.append('imageFile', course.imageFile);
     if (course.programFile) formData.append('programFile', course.programFile);
+    if (course.showOnHome !== undefined) formData.append('showOnHome', course.showOnHome.toString());
 
     return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }
@@ -217,6 +219,12 @@ export class CoursesService {
 
   togglePublishedStatus(id: string, isPublished: boolean): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${id}/published`, { isPublished });
+  }
+
+  updateShowOnHome(id: string, showOnHome: boolean): Observable<any> {
+    const formData = new FormData();
+    formData.append('showOnHome', showOnHome.toString());
+    return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }
 
   deleteCourse(id: string): Observable<any> {

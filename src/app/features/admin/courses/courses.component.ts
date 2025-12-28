@@ -93,6 +93,14 @@ export class CoursesComponent implements OnInit {
         onChange: (row: any, newValue: boolean) => this.handlePublishToggle(row, newValue)
       },
       {
+        key: 'showOnHome',
+        label: 'En Home',
+        type: 'switch',
+        align: 'center',
+        width: '10%',
+        onChange: (row: any, newValue: boolean) => this.handleShowOnHomeToggle(row, newValue)
+      },
+      {
         key: 'assignedTeachers',
         label: 'Profesor Principal',
         type: 'text',
@@ -477,6 +485,26 @@ export class CoursesComponent implements OnInit {
         course.isPublished = !newValue;
         console.error('Error toggling published status:', error);
         const errorMsg = error?.error?.message || 'Error al cambiar el estado de publicación del curso';
+        this.infoService.showError(errorMsg);
+        this.loadCourses(); // Recargar para asegurar consistencia
+      }
+    });
+  }
+
+  handleShowOnHomeToggle(course: any, newValue: boolean): void {
+    // Actualizar directamente el estado sin confirmación (visual feedback inmediato)
+    course.showOnHome = newValue;
+
+    this.coursesService.updateShowOnHome(course._id, newValue).subscribe({
+      next: () => {
+        // Éxito - el cambio ya está reflejado visualmente
+        this.infoService.showSuccess(`Curso ${newValue ? 'mostrado en home' : 'ocultado de home'} exitosamente`);
+      },
+      error: (error) => {
+        // Revertir el cambio en caso de error
+        course.showOnHome = !newValue;
+        console.error('Error toggling show on home status:', error);
+        const errorMsg = error?.error?.message || 'Error al cambiar la visibilidad en home del curso';
         this.infoService.showError(errorMsg);
         this.loadCourses(); // Recargar para asegurar consistencia
       }
