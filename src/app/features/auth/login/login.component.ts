@@ -4,6 +4,7 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { InfoService } from '../../../core/services/info.service';
+import { environment } from '../../../core/config/environment';
 
 @Component({
   selector: 'app-login',
@@ -102,6 +103,10 @@ export class LoginComponent {
     } else {
       this.router.navigate([this.returnUrl]);
     }
+  }
+
+  goToPublicFrontend(): void {
+    window.location.href = environment.publicFrontend;
   }
 
   /**
