@@ -1,26 +1,26 @@
 <div class="space-y-4">
   <!-- Header Section -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow rounded-lg">
-    <div class="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+  <div class="relative overflow-hidden bg-linear-to-tr from-[#2777a8] to-[#9ed4f0] rounded-xl">
+    <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center justify-between">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-white">Mis Clases</h1>
-        <p class="text-indigo-100 text-sm">Gestiona las clases de tus cursos</p>
+        <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Clases</h1>
+        <p class="text-white text-sm">Gestiona las clases de tus cursos</p>
       </div>
     </div>
   </div>
 
   <!-- Course Selector -->
-  <div class="bg-white shadow rounded-lg p-6">
+  <div class="bg-white shadow-sm rounded-lg p-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="flex-1">
-        <label for="courseSelect" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="courseSelect" class="block text-base font-bold text-brand-tertiary mb-2">
           Selecciona un Curso
         </label>
         <select
           id="courseSelect"
           [(ngModel)]="selectedCourseId"
           (change)="onCourseChange()"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          class="max-w-2xl cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
         >
           <option value="">-- Selecciona un curso --</option>
           @for (course of courses(); track course._id) {
@@ -31,9 +31,9 @@
       @if (selectedCourseId) {
         <button
           (click)="openClassCreate()"
-          class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center gap-2 whitespace-nowrap"
+          class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Nueva Clase
@@ -45,12 +45,12 @@
   <!-- Classes Section -->
   <div>
     @if (!selectedCourseId) {
-      <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+        <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">Selecciona un curso</h3>
-        <p class="mt-1 text-sm text-gray-500">Elige un curso de la lista para ver sus clases</p>
+        <h3 class="mt-2 text-base font-bold text-brand-tertiary">Selecciona un curso</h3>
+        <p class="mt-1 text-sm text-brand-tertiary">Elige un curso de la lista para ver sus clases</p>
       </div>
     } @else if (loadingClasses()) {
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -67,14 +67,14 @@
       </div>
     } @else if (classes().length === 0) {
       <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No hay clases en este curso</h3>
-        <p class="mt-1 text-sm text-gray-500 mb-4">Este curso aún no tiene clases creadas.</p>
+        <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay clases en este curso</h3>
+        <p class="mt-1 text-sm text-brand-tertiary mb-4">Este curso aún no tiene clases creadas.</p>
         <button
           (click)="openClassCreate()"
-          class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="group mt-4 md:mt-8 w-auto mx-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
         >
           <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -84,9 +84,9 @@
       </div>
     } @else {
       <!-- Course Info -->
-      <div class="mb-4 bg-indigo-50 px-4 py-3 rounded-lg border border-indigo-100">
-        <h2 class="text-xl font-bold text-indigo-900">{{ getSelectedCourseName() }}</h2>
-        <p class="text-sm text-indigo-600 mt-1">{{ classes().length }} {{ classes().length === 1 ? 'clase' : 'clases' }} en este curso</p>
+      <div class="mb-4 bg-white px-6 py-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-brand-primary">{{ getSelectedCourseName() }}</h2>
+        <p class="text-sm text-brand-primary/80 mt-1">{{ classes().length }} {{ classes().length === 1 ? 'clase' : 'clases' }} en este curso</p>
       </div>
 
       <!-- Classes Grid -->
@@ -97,7 +97,7 @@
             class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
           >
             <!-- Class Image -->
-            <div class="relative h-48 bg-gradient-to-br from-indigo-400 to-purple-500 overflow-hidden">
+            <div class="relative h-48 bg-linear-to-br from-indigo-400 to-purple-500 overflow-hidden">
               @if (getClassImageUrl(classItem.imageUrl)) {
                 <img
                   [src]="getClassImageUrl(classItem.imageUrl)"
@@ -106,15 +106,15 @@
                   (error)="handleImageError($event)"
                 />
               }
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
               <div class="absolute bottom-4 left-4 right-4">
-                <h3 class="text-white font-bold text-lg line-clamp-2">{{ classItem.name }}</h3>
+                <h3 class="text-white font-bold text-xl line-clamp-2">{{ classItem.name }}</h3>
               </div>
 
               <!-- Delete Button -->
               <button
                 (click)="deleteClass($event, classItem)"
-                class="absolute top-4 left-4 bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors duration-200 z-10"
+                class="cursor-pointer absolute top-4 left-4 bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors duration-200 z-10"
                 title="Eliminar clase"
               >
                 <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,8 +123,8 @@
               </button>
 
               @if (classItem.status === 'ACTIVE') {
-                <div class="absolute top-4 right-4 bg-green-500 px-3 py-1 rounded-full">
-                  <span class="text-white font-semibold text-xs">Activa</span>
+                <div class="absolute top-4 right-4 bg-green-500 px-2 py-0.5 rounded-xs">
+                  <span class="text-white font-semibold text-xs leading-2.5">Activa</span>
                 </div>
               } @else {
                 <div class="absolute top-4 right-4 bg-gray-500 px-3 py-1 rounded-full">
@@ -136,14 +136,14 @@
             <!-- Class Info -->
             <div class="p-6">
               @if (classItem.description) {
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ classItem.description }}</p>
+                <p class="text-brand-tertiary text-sm mb-4 line-clamp-2">{{ classItem.description }}</p>
               }
               
-              <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                <span class="text-sm text-gray-500">
+              <div class="inline-flex items-center border border-brand-primary   transition-all group-hover:bg-brand-primary/10  py-2 rounded-full px-4">
+                <span class="text-sm text-brand-primary font-bold ">
                   Editar clase
                 </span>
-                <svg class="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-5 h-5 ml-2 text-brand-primary  transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>

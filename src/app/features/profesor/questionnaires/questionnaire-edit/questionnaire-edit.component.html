@@ -1,10 +1,16 @@
-<div class="container mx-auto px-4 py-8 max-w-5xl">
+<div class="space-y-4 max-w-3xl mx-auto">
   <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+  <div class="relative overflow-hidden bg-linear-to-tr from-brand-tertiary/60 to-brand-tertiary-lighten/30 rounded-xl">
+    <div class="px-4 py-6 sm:px-6 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div >
+      <h1 class="text-xl sm:text-3xl font-bold text-white">
       {{ isEditMode ? 'Editar Cuestionario' : 'Nuevo Cuestionario' }}
     </h1>
-    <p class="text-gray-600">{{ isEditMode ? 'Modifica los detalles del cuestionario' : 'Crea un nuevo cuestionario para tu curso' }}</p>
+    <p class="text-white text-sm">{{ isEditMode ? 'Modifica los detalles del cuestionario' : 'Crea un nuevo cuestionario para tu curso' }}</p>
+
+    </div>    
+  </div>
+
   </div>
 
   @if (loading()) {
@@ -18,20 +24,29 @@
   } @else {
     <form [formGroup]="questionnaireForm" (ngSubmit)="onSubmit()" class="space-y-6">
       <!-- Basic Information Card -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Información Básica</h2>
+      <div class="bg-white rounded-lg shadow-md p-8">
+      
+      <!-- Header Section -->
+      <div class="border-b-2 border-b-brand-primary pb-2 mb-4">
+        <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+          <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+            1
+          </span>
+          Información Básica
+        </h2>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Course Selection -->
           <div class="md:col-span-2">
-            <label for="courseId" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="courseId" class="block text-base font-bold text-brand-tertiary mb-2">
               Curso <span class="text-red-500">*</span>
             </label>
             <select
               id="courseId"
               formControlName="courseId"
               (change)="onCourseChange()"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
               [class.border-red-500]="questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched"
             >
               <option value="">Selecciona un curso</option>
@@ -46,7 +61,7 @@
 
           <!-- Title -->
           <div class="md:col-span-2">
-            <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="title" class="block text-base font-bold text-brand-tertiary mb-2">
               Título del Cuestionario <span class="text-red-500">*</span>
             </label>
             <input
@@ -54,7 +69,7 @@
               id="title"
               formControlName="title"
               placeholder="Ej: Examen del Módulo 1"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
               [class.border-red-500]="questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched"
             />
             @if (questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched) {
@@ -64,7 +79,7 @@
 
           <!-- Description -->
           <div class="md:col-span-2">
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="description" class="block text-base font-bold text-brand-tertiary mb-2">
               Descripción
             </label>
             <textarea
@@ -72,19 +87,19 @@
               formControlName="description"
               rows="3"
               placeholder="Descripción opcional del cuestionario"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             ></textarea>
           </div>
 
           <!-- Status -->
           <div>
-            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="status" class="block text-base font-bold text-brand-tertiary mb-2">
               Estado
             </label>
             <select
               id="status"
               formControlName="status"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             >
               <option value="ACTIVE">Activo</option>
               <option value="INACTIVE">Inactivo</option>
@@ -94,13 +109,13 @@
 
           <!-- Position Type -->
           <div>
-            <label for="positionType" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="positionType" class="block text-base font-bold text-brand-tertiary mb-2">
               Posición
             </label>
             <select
               id="positionType"
               formControlName="positionType"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             >
               <option value="BETWEEN_CLASSES">Entre Clases</option>
               <option value="FINAL_EXAM">Examen Final</option>
@@ -110,7 +125,7 @@
           <!-- After Class (only for BETWEEN_CLASSES) -->
           @if (questionnaireForm.get('positionType')?.value === 'BETWEEN_CLASSES') {
             <div class="md:col-span-2">
-              <label for="afterClassId" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="afterClassId" class="block text-base font-bold text-brand-tertiary mb-2">
                 Después de la Clase
               </label>
               @if (loadingClasses()) {
@@ -119,7 +134,7 @@
                 <select
                   id="afterClassId"
                   formControlName="afterClassId"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                 >
                   <option value="">Selecciona una clase</option>
                   @for (classItem of classes(); track classItem._id) {
@@ -130,16 +145,27 @@
             </div>
           }
         </div>
+
+        
       </div>
 
       <!-- Configuration Card -->
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Configuración</h2>
+        <!-- Header Section -->
+        <div class="border-b-2 border-b-brand-primary pb-2 mb-4">
+          <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+            <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+              2
+            </span>
+            Configuración
+          </h2>
+        </div>
+
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Passing Score -->
           <div>
-            <label for="passingScore" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="passingScore" class="block text-base font-bold text-brand-tertiary mb-2">
               Nota Mínima (%)
             </label>
             <input
@@ -149,13 +175,13 @@
               min="0"
               max="100"
               placeholder="Ej: 70"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             />
           </div>
 
           <!-- Max Retries -->
           <div>
-            <label for="maxRetries" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="maxRetries" class="block text-base font-bold text-brand-tertiary mb-2">
               Máximo de Intentos
             </label>
             <input
@@ -164,32 +190,32 @@
               formControlName="maxRetries"
               min="1"
               placeholder="Dejar vacío para ilimitado"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             />
           </div>
 
           <!-- Allow Retries -->
-          <div class="flex items-center">
+          <div class="cursor-pointer flex items-center">
             <input
               type="checkbox"
               id="allowRetries"
               formControlName="allowRetries"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label for="allowRetries" class="ml-2 block text-sm text-gray-700">
+            <label for="allowRetries" class="cursor-pointer ml-2 block text-sm text-gray-700">
               Permitir Reintentos
             </label>
           </div>
 
           <!-- Show Correct Answers -->
-          <div class="flex items-center">
+          <div class="cursor-pointer flex items-center">
             <input
               type="checkbox"
               id="showCorrectAnswers"
               formControlName="showCorrectAnswers"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label for="showCorrectAnswers" class="ml-2 block text-sm text-gray-700">
+            <label for="showCorrectAnswers" class="cursor-pointer ml-2 block text-sm text-gray-700">
               Mostrar Respuestas Correctas
             </label>
           </div>
@@ -198,31 +224,29 @@
 
       <!-- Questions Card -->
       <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gray-900">Preguntas</h2>
-          <button
-            type="button"
-            (click)="addQuestion()"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Agregar Pregunta
-          </button>
+        <!-- Header Section -->
+        <div class="border-b-2 border-b-brand-primary pb-2 mb-4">
+          <h2 class="text-xl font-bold flex items-center  text-brand-primary">
+            <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+              3
+            </span>
+            Preguntas
+          </h2>
         </div>
+
+      
 
         <div formArrayName="questions" class="space-y-6">
           @for (question of questions.controls; track $index; let i = $index) {
             <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-6 bg-gray-50">
               <!-- Question Header -->
-              <div class="flex items-start justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Pregunta {{ i + 1 }}</h3>
+              <div class="flex items-center gap-8 justify-between mb-4">
+                <h3 class="text-lg w-full text-brand-primary font-bold bg-brand-primary/10 px-4 py-2">Pregunta {{ i + 1 }}</h3>
                 @if (questions.length > 1) {
                   <button
                     type="button"
                     (click)="removeQuestion(i)"
-                    class="text-red-600 hover:text-red-700"
+                    class="cursor-pointer text-red-600 hover:text-red-700"
                     title="Eliminar pregunta"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,13 +259,13 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Question Type -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Tipo de Pregunta <span class="text-red-500">*</span>
                   </label>
                   <select
                     formControlName="type"
                     (change)="onQuestionTypeChange(i)"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   >
                     <option value="MULTIPLE_CHOICE">Opción Múltiple</option>
                     <option value="TEXT">Texto Libre</option>
@@ -250,27 +274,27 @@
 
                 <!-- Points -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Puntos <span class="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
                     formControlName="points"
                     min="1"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   />
                 </div>
 
                 <!-- Question Text -->
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Enunciado de la Pregunta <span class="text-red-500">*</span>
                   </label>
                   <textarea
                     formControlName="questionText"
                     rows="2"
                     placeholder="Escribe aquí la pregunta"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   ></textarea>
                 </div>
 
@@ -281,7 +305,7 @@
                     formControlName="required"
                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <label class="ml-2 block text-sm text-gray-700">
+                  <label class="block text-base font-bold text-brand-tertiary ml-2">
                     Pregunta Obligatoria
                   </label>
                 </div>
@@ -290,11 +314,11 @@
                 @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
                   <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200">
                     <div class="flex items-center justify-between mb-3">
-                      <h4 class="text-sm font-medium text-gray-700">Opciones de Respuesta</h4>
+                      <h4 class="block text-base font-bold text-brand-tertiary mb-2">Opciones de Respuesta</h4>
                       <button
                         type="button"
                         (click)="addOption(i)"
-                        class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
+                        class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary hover:bg-brand-primary/10 active:bg-brand-tertiary active:text-white"
                       >
                         + Agregar Opción
                       </button>
@@ -319,7 +343,7 @@
                             type="text"
                             formControlName="text"
                             placeholder="Opción {{ j + 1 }}"
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                           />
 
                           <!-- Remove button -->
@@ -327,7 +351,7 @@
                             <button
                               type="button"
                               (click)="removeOption(i, j)"
-                              class="text-red-600 hover:text-red-700"
+                              class="cursor-pointer text-red-600 hover:text-red-700"
                               title="Eliminar opción"
                             >
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,7 +363,7 @@
                       }
                     </div>
 
-                    <p class="text-xs text-gray-500 mt-2">
+                    <p class="text-sm text-brand-tertiary bg-brand-secondary/30 mt-4 p-3 ">
                       💡 Selecciona el círculo junto a la opción correcta
                     </p>
                   </div>
@@ -348,14 +372,27 @@
             </div>
           }
         </div>
+        <div class="mt-4 text-right w-full flex justify-end">
+          <button
+            type="button"
+            (click)="addQuestion()"
+            class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-primary border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary-dark hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Agregar Pregunta
+          </button>
+        </div>
+        
       </div>
 
       <!-- Form Actions -->
-      <div class="flex justify-end gap-4">
+      <div class="flex justify-center space-x-4 py-8 ">
         <button
           type="button"
           (click)="cancel()"
-          class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
         >
           Cancelar
         </button>
@@ -363,7 +400,7 @@
         <button
           type="submit"
           [disabled]="saving() || questionnaireForm.invalid"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
         >
           @if (saving()) {
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
