@@ -110,50 +110,94 @@ export class ProfileComponent {
     this.isSubmitting.set(true);
 
     const formData = this.profileForm.value;
+    const hasProfilePhoto = this.selectedProfileImage instanceof File;
     
-    // Construir updateData solo con campos que tienen valores
-    const updateData: any = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email
-    };
-
-    // Agregar campos opcionales solo si tienen valor
-    if (formData.phone && formData.phone.trim()) {
-      updateData.phone = formData.phone;
-    }
-    if (formData.dni && formData.dni.trim()) {
-      updateData.dni = formData.dni;
-    }
-    if (formData.birthDate && formData.birthDate.trim()) {
-      updateData.birthDate = formData.birthDate;
-    }
-    if (formData.professionalDescription && formData.professionalDescription.trim()) {
-      updateData.professionalDescription = formData.professionalDescription;
-    }
-
-    // Por ahora solo actualizamos datos sin imagen
-    // TODO: Implementar upload de imagen a través del endpoint /user/updateUserData
-    if (this.selectedProfileImage) {
-      this.infoService.showInfo('La actualización de imagen de perfil se implementará próximamente');
-    }
-
-    this.usersService.updateUser(currentUser._id, updateData).subscribe({
-      next: (response) => {
-        this.infoService.showSuccess('Perfil actualizado exitosamente');
-        this.isSubmitting.set(false);
-        
-        // Actualizar usuario en AuthService
-        if (response.data) {
-          localStorage.setItem('user', JSON.stringify(response.data));
-          window.location.reload(); // Recargar para actualizar el signal
-        }
-      },
-      error: (error) => {
-        this.infoService.showError(error.error?.message || 'Error al actualizar el perfil');
-        this.isSubmitting.set(false);
+    if (hasProfilePhoto) {
+      // Si hay foto, usar FormData y endpoint updateUserData
+      const formDataToSend = new FormData();
+      
+      // Agregar campos del formulario
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('email', formData.email);
+      
+      if (formData.phone && formData.phone.trim()) {
+        formDataToSend.append('phone', formData.phone);
       }
-    });
+      if (formData.dni && formData.dni.trim()) {
+        formDataToSend.append('dni', formData.dni);
+      }
+      if (formData.birthDate && formData.birthDate.trim()) {
+        formDataToSend.append('birthDate', formData.birthDate);
+      }
+      if (formData.professionalDescription && formData.professionalDescription.trim()) {
+        formDataToSend.append('professionalDescription', formData.professionalDescription);
+      }
+      
+      // Agregar la foto (verificar que no sea null)
+      if (this.selectedProfileImage) {
+        formDataToSend.append('photo', this.selectedProfileImage);
+      }
+      
+      this.usersService.updateUserData(currentUser._id, formDataToSend).subscribe({
+        next: (response) => {
+          this.infoService.showSuccess('Perfil actualizado exitosamente');
+          this.isSubmitting.set(false);
+          
+          // Actualizar usuario en AuthService
+          if (response.data) {
+            localStorage.setItem('user', JSON.stringify(response.data));
+            window.location.reload(); // Recargar para actualizar el signal
+          }
+          
+          // Limpiar la imagen seleccionada después de guardar
+          this.selectedProfileImage = null;
+        },
+        error: (error) => {
+          console.error('Error updating profile with photo:', error);
+          this.infoService.showError(error.error?.message || 'Error al actualizar el perfil');
+          this.isSubmitting.set(false);
+        }
+      });
+    } else {
+      // Sin foto, usar endpoint normal
+      const updateData: any = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email
+      };
+
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.phone && formData.phone.trim()) {
+        updateData.phone = formData.phone;
+      }
+      if (formData.dni && formData.dni.trim()) {
+        updateData.dni = formData.dni;
+      }
+      if (formData.birthDate && formData.birthDate.trim()) {
+        updateData.birthDate = formData.birthDate;
+      }
+      if (formData.professionalDescription && formData.professionalDescription.trim()) {
+        updateData.professionalDescription = formData.professionalDescription;
+      }
+
+      this.usersService.updateUser(currentUser._id, updateData).subscribe({
+        next: (response) => {
+          this.infoService.showSuccess('Perfil actualizado exitosamente');
+          this.isSubmitting.set(false);
+          
+          // Actualizar usuario en AuthService
+          if (response.data) {
+            localStorage.setItem('user', JSON.stringify(response.data));
+            window.location.reload(); // Recargar para actualizar el signal
+          }
+        },
+        error: (error) => {
+          this.infoService.showError(error.error?.message || 'Error al actualizar el perfil');
+          this.isSubmitting.set(false);
+        }
+      });
+    }
   }
 
   getUserInitials(): string {
