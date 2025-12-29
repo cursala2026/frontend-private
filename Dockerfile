@@ -14,6 +14,12 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copiar el código fuente
 COPY . .
 
+# Argumento para la URL del backend (con valor por defecto)
+ARG API_URL=https://app.cursala.com.ar/api/v1
+
+# Reemplazar la URL en el archivo de environment antes del build
+RUN sed -i "s|http://localhost:8080/api/v1|${API_URL}|g" src/environments/environment.prod.ts
+
 # Build para producción (usa environment.prod.ts)
 ENV NODE_ENV=production
 RUN npm run build:prod

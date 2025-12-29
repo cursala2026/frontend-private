@@ -40,3 +40,5 @@ jobs:
           tags: ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            API_URL=https://app.cursala.com.ar/api/v1
