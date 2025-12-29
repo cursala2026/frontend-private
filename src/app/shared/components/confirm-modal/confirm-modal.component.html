@@ -17,7 +17,7 @@
         <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <!-- Icon -->
-            <div [ngClass]="getIconClasses()" class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10">
+            <!-- <div [ngClass]="getIconClasses()" class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10">
               @if (config.icon === 'danger' || config.icon === 'warning') {
                 <svg class="h-6 w-6" [ngClass]="getIconColorClasses()" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -33,15 +33,15 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               }
-            </div>
+            </div> -->
 
             <!-- Content -->
             <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
-              <h3 class="text-lg font-semibold leading-6 text-gray-900">
+              <h3 class="text-xl font-bold leading-6 pt-2 pb-2 text-brand-tertiary">
                 {{ config.title }}
               </h3>
-              <div class="mt-2">
-                <p class="text-sm text-gray-500 whitespace-pre-line">
+              <div class="mt-2 pb-2">
+                <p class="text-sm text-brand-tertiary whitespace-pre-line">
                   {{ config.message }}
                 </p>
               </div>
@@ -50,19 +50,19 @@
         </div>
 
         <!-- Actions -->
-        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+        <div class="bg-brand-tertiary-lighten/10 border-t border-brand-tertiary-lighten/10 px-4 py-5 sm:flex sm:flex-row-reverse sm:px-6 gap-4">
           <button
             type="button"
             (click)="onConfirm()"
             [ngClass]="config.confirmButtonClass || 'bg-red-600 hover:bg-red-700'"
-            class="inline-flex w-full justify-center rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm sm:w-auto transition-colors"
+            class="cursor-pointer inline-flex w-full justify-center rounded-full px-5 py-3 text-sm font-bold text-white  sm:w-auto transition-colors"
           >
             {{ config.confirmText || 'Confirmar' }}
           </button>
           <button
             type="button"
             (click)="onCancel()"
-            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-colors"
+            class="cursor-pointer inline-flex w-full justify-center rounded-full px-5 py-3 bg-white border border-brand-tertiary-lighten/40 text-sm font-bold text-brand-tertiary hover:bg-gray-50  sm:w-auto transition-colors"
           >
             {{ config.cancelText || 'Cancelar' }}
           </button>
