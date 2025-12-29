@@ -6,7 +6,7 @@ import { ImageUploaderComponent } from '../image-uploader/image-uploader.compone
 export interface ModalField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox' | 'password' | 'image';
+  type: 'text' | 'email' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox' | 'password' | 'image' | 'file';
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -16,6 +16,7 @@ export interface ModalField {
   rows?: number; // For textarea
   imageShape?: 'circle' | 'rectangle'; // For image fields
   aspectRatio?: string; // For image fields
+  accept?: string; // For file fields (e.g., '.pdf', 'application/pdf')
 }
 
 export interface ModalConfig {
@@ -132,6 +133,57 @@ export class ModalDataTableComponent {
   onImageUploaded(imageData: string | File, fieldKey: string): void {
     if (this.form) {
       this.form.patchValue({ [fieldKey]: imageData });
+    }
+  }
+
+  onFileSelected(event: Event, fieldKey: string): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (this.form) {
+        this.form.patchValue({ [fieldKey]: file });
+      }
+    }
+  }
+
+  getProgramUrl(value: any): string {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      // Si ya es una URL completa (de Bunny CDN), usarla directamente
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        return value;
+      }
+      // Si es solo un filename (legacy), construir la URL completa
+      return `https://cursala.b-cdn.net/course-programs/${encodeURIComponent(value)}`;
+    }
+    return '';
+  }
+
+  getFileName(value: any): string {
+    if (!value) return '';
+    if (value instanceof File) {
+      return value.name;
+    }
+    if (typeof value === 'string') {
+      // Extraer solo el nombre del archivo sin la ruta
+      const urlParts = value.split('/');
+      return decodeURIComponent(urlParts[urlParts.length - 1]);
+    }
+    return '';
+  }
+
+  isFile(value: any): boolean {
+    return value instanceof File;
+  }
+
+  removeFile(fieldKey: string): void {
+    if (this.form) {
+      this.form.patchValue({ [fieldKey]: null });
+      // Resetear el input file
+      const fileInput = document.querySelector(`input[type="file"][data-field="${fieldKey}"]`) as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
     }
   }
 }

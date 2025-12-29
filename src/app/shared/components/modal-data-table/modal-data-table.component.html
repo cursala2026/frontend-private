@@ -61,7 +61,7 @@
                       }
                     </label>
 
-                    @if (config.mode === 'view') {
+                      @if (config.mode === 'view') {
                       <!-- View Mode -->
                       @if (field.key === 'profilePhotoUrl' || field.type === 'image') {
                         <div class="flex justify-start">
@@ -72,6 +72,20 @@
                             (error)="$event.target.src='https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'"
                           />
                         </div>
+                      } @else if (field.type === 'file') {
+                        @if (getFieldValue(field)) {
+                          <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <svg class="w-8 h-8 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-sm font-medium text-gray-900 truncate">{{ getFileName(getFieldValue(field)) }}</p>
+                              <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="text-sm text-gray-500">No hay archivo</div>
+                        }
                       } @else if (field.type === 'date') {
                         <div class="flex items-center gap-2 rounded-lg bg-gray-50 px-3 sm:px-4 py-2 sm:py-3">
                           <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,6 +142,70 @@
                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                             />
                             <span class="ml-2 text-sm text-gray-600">{{ field.placeholder }}</span>
+                          </div>
+                        }
+                        @case ('file') {
+                          <div class="space-y-3">
+                            <!-- Archivo existente -->
+                            @if (getFieldValue(field) && typeof getFieldValue(field) === 'string') {
+                              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                  <svg class="w-8 h-8 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  </svg>
+                                  <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">{{ getFileName(getFieldValue(field)) }}</p>
+                                    <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  (click)="removeFile(field.key)"
+                                  class="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0"
+                                  title="Eliminar archivo"
+                                >
+                                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            }
+                            <!-- Archivo nuevo seleccionado -->
+                            @if (getFieldValue(field) && isFile(getFieldValue(field))) {
+                              <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                  <svg class="w-8 h-8 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-blue-900 truncate">{{ getFileName(getFieldValue(field)) }}</p>
+                                    <p class="text-xs text-blue-600">Nuevo archivo a subir</p>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  (click)="removeFile(field.key)"
+                                  class="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0"
+                                  title="Quitar archivo"
+                                >
+                                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            }
+                            <!-- Input para seleccionar archivo -->
+                            <input
+                              type="file"
+                              [attr.data-field]="field.key"
+                              [accept]="field.accept || '.pdf'"
+                              (change)="onFileSelected($event, field.key)"
+                              class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:transition-all"
+                              [class.border-red-500]="isFieldInvalid(field)"
+                            />
+                            @if (field.placeholder) {
+                              <p class="text-xs text-gray-500 mt-1">{{ field.placeholder }}</p>
+                            }
                           </div>
                         }
                         @default {

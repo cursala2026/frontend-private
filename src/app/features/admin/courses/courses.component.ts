@@ -229,9 +229,22 @@ export class CoursesComponent implements OnInit {
       }
     }
 
+    // Preparar el programa del curso con la URL completa para el modal
+    let programFileUrl = null;
+    if (course.programUrl) {
+      // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
+      if (course.programUrl.startsWith('http')) {
+        programFileUrl = course.programUrl;
+      } else {
+        // Si es solo un filename (legacy), construir la URL completa
+        programFileUrl = `https://cursala.b-cdn.net/course-programs/${course.programUrl}`;
+      }
+    }
+
     this.selectedCourse = {
       ...course,
       imageFile: imageFileUrl,
+      programFile: programFileUrl,
       // Convertir days de array a string para el formulario
       days: course.days && Array.isArray(course.days) ? course.days.join(', ') : course.days
     };
@@ -250,6 +263,14 @@ export class CoursesComponent implements OnInit {
           placeholder: 'Seleccionar imagen',
           imageShape: 'rectangle',
           aspectRatio: '3:2 (rectangular)'
+        },
+        {
+          key: 'programFile',
+          label: 'Programa del Curso (PDF)',
+          type: 'file',
+          required: false,
+          placeholder: 'Formatos soportados: PDF. Tamaño máximo: 50MB',
+          accept: '.pdf,application/pdf'
         },
         {
           key: 'name',
@@ -393,13 +414,34 @@ export class CoursesComponent implements OnInit {
     }
 
     // Procesar los datos antes de enviar
-    const processedData = {
+    const processedData: any = {
       ...formData,
       // Convertir days de string a array si es necesario
       days: formData.days && typeof formData.days === 'string'
         ? formData.days.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0)
         : formData.days
     };
+
+    // Manejar programFile: incluir solo si es un File, o si es null (para eliminarlo)
+    if (formData.programFile instanceof File) {
+      processedData.programFile = formData.programFile;
+    } else if (formData.programFile === null || formData.programFile === undefined) {
+      // Si es null, significa que el usuario quiere eliminar el programa
+      // Enviar null o undefined para que el backend lo elimine (depende de cómo esté implementado)
+      // Por ahora, no incluimos programFile si es null para mantener el comportamiento actual
+      delete processedData.programFile;
+    } else {
+      // Si es una URL string, no incluir programFile (no hay cambios en el programa)
+      delete processedData.programFile;
+    }
+
+    // Solo incluir imageFile si es un File (no una URL string)
+    if (formData.imageFile instanceof File) {
+      processedData.imageFile = formData.imageFile;
+    } else {
+      // Mantener la imagen si no hay cambios (el backend maneja esto)
+      delete processedData.imageFile;
+    }
 
     if (isCreate) {
       this.coursesService.createCourse(processedData).subscribe({
