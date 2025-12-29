@@ -107,6 +107,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         const courseData = response?.data || response;
         this.course.set(courseData);
 
+        // Construir items del curso inmediatamente después de cargar el curso
+        // Esto asegura que las clases se muestren incluso si no hay cuestionarios
+        this.buildCourseItems();
+
         // Cargar cuestionarios del curso
         this.loadQuestionnaires(courseId);
 
@@ -154,7 +158,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }
 
     const items: CourseItem[] = [];
-    const classes = course.classes || [];
+    // Filtrar solo clases activas
+    const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
 
     // Ordenar clases por order
     const sortedClasses = [...classes].sort((a: any, b: any) => a.order - b.order);
@@ -203,8 +208,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         const progress = response?.data || response;
         this.courseProgress.set(progress);
         this.loading.set(false);
-        // Si el curso está completado, verificar certificado
-        if (progress?.overallProgress === 100) {
+        // Si el curso está completado (>= 100%), verificar certificado
+        if (progress?.overallProgress >= 100) {
           this.checkCertificateExists(courseId);
         }
       },
@@ -216,13 +221,28 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Normaliza un ID a string (puede ser ObjectId, string, o objeto con _id)
+   */
+  private normalizeId(id: any): string {
+    if (!id) return '';
+    if (typeof id === 'string') return id;
+    if (id._id) return String(id._id);
+    if (id.toString) return id.toString();
+    return String(id);
+  }
+
+  /**
    * Verifica si una clase está completada
    */
   isClassCompleted(classId: string): boolean {
     const progress = this.courseProgress();
     if (!progress || !progress.classesProgress) return false;
     
-    const classProgress = progress.classesProgress.find(cp => cp.classId === classId);
+    const normalizedClassId = this.normalizeId(classId);
+    const classProgress = progress.classesProgress.find(cp => {
+      const cpClassId = this.normalizeId(cp.classId);
+      return cpClassId === normalizedClassId;
+    });
     return classProgress?.completed || false;
   }
 
@@ -445,21 +465,61 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Obtiene el número de clases completadas
+   * Obtiene el número de clases completadas (filtrando duplicados)
    */
   getCompletedClassesCount(): number {
     const progress = this.courseProgress();
-    if (!progress || !progress.classesProgress) return 0;
-    return progress.classesProgress.filter(cp => cp.completed).length;
+    const course = this.course();
+    if (!progress || !progress.classesProgress || !course || !course.classes) return 0;
+    
+    // Obtener IDs únicos de clases del curso (solo activas)
+    const courseClassIds = new Set(
+      course.classes
+        .filter((c: any) => c.status === 'ACTIVE')
+        .map((c: any) => this.normalizeId(c._id))
+    );
+    
+    // Filtrar clases completadas que realmente existen en el curso y eliminar duplicados
+    const completedClassIds = new Set<string>();
+    progress.classesProgress.forEach(cp => {
+      if (cp.completed) {
+        const classId = this.normalizeId(cp.classId);
+        if (courseClassIds.has(classId)) {
+          completedClassIds.add(classId);
+        }
+      }
+    });
+    
+    return completedClassIds.size;
   }
 
   /**
-   * Obtiene el número de cuestionarios completados
+   * Obtiene el número de cuestionarios completados (filtrando duplicados)
    */
   getCompletedQuestionnairesCount(): number {
     const progress = this.courseProgress();
-    if (!progress || !progress.questionnairesProgress) return 0;
-    return progress.questionnairesProgress.filter(qp => qp.completed).length;
+    const questionnaires = this.questionnaires();
+    if (!progress || !progress.questionnairesProgress || !questionnaires) return 0;
+    
+    // Obtener IDs únicos de cuestionarios activos
+    const activeQuestionnaireIds = new Set(
+      questionnaires
+        .filter(q => q.status === 'ACTIVE')
+        .map(q => this.normalizeId(q._id))
+    );
+    
+    // Filtrar cuestionarios completados que realmente existen y eliminar duplicados
+    const completedQuestionnaireIds = new Set<string>();
+    progress.questionnairesProgress.forEach(qp => {
+      if (qp.completed) {
+        const questionnaireId = this.normalizeId(qp.questionnaireId);
+        if (activeQuestionnaireIds.has(questionnaireId)) {
+          completedQuestionnaireIds.add(questionnaireId);
+        }
+      }
+    });
+    
+    return completedQuestionnaireIds.size;
   }
 
   /**
@@ -533,9 +593,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     const progress = this.courseProgress();
     if (!progress || !progress.questionnairesProgress || progress.questionnairesProgress.length === 0) return false;
 
-    const questionnaireProgress = progress.questionnairesProgress.find(
-      (qp: any) => qp.questionnaireId === questionnaireId
-    );
+    const normalizedQuestionnaireId = this.normalizeId(questionnaireId);
+    const questionnaireProgress = progress.questionnairesProgress.find((qp: any) => {
+      const qpQuestionnaireId = this.normalizeId(qp.questionnaireId);
+      return qpQuestionnaireId === normalizedQuestionnaireId;
+    });
     return questionnaireProgress?.completed || false;
   }
 
