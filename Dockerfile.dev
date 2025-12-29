@@ -1,0 +1,26 @@
+# Dockerfile para desarrollo local con hot-reload
+ARG NODE_VERSION=24-alpine
+FROM node:${NODE_VERSION}
+
+WORKDIR /app
+
+# Copiar package.json y package-lock.json
+COPY package.json package-lock.json ./
+
+# Instalar dependencias con cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps
+
+# Copiar el código fuente
+COPY . .
+
+# Exponer puerto 4200 (puerto por defecto de Angular)
+EXPOSE 4200
+
+# Variables de entorno para desarrollo
+ENV NODE_ENV=development
+
+# Comando para iniciar el servidor de desarrollo con hot-reload
+# --host 0.0.0.0 permite acceder desde fuera del contenedor
+# --poll habilita polling para sistemas de archivos que no soportan file watching (útil en Windows/Mac con Docker)
+CMD ["npm", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]

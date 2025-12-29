@@ -14,9 +14,9 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copiar el código fuente
 COPY . .
 
-# Build para desarrollo local (usa environment.ts con localhost)
-ENV NODE_ENV=development
-RUN npm run build
+# Build para producción (usa environment.prod.ts)
+ENV NODE_ENV=production
+RUN npm run build:prod
 
 # Stage 2: Servidor Nginx para servir la aplicación
 FROM nginx:alpine
