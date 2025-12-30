@@ -46,9 +46,24 @@ export class ForgotPasswordComponent {
       next: (data) => {
         this.isLoading = false;
         const expiresIn = data?.expiresIn;
-        this.info.showSuccess('Correo de restablecimiento enviado. Revisa tu bandeja.');
-        // Redirigir a la pantalla de reset para que peguen el token (si no llega por email)
-        this.router.navigate(['/reset-password'], { queryParams: { email } });
+        const tokenForDev = data?.tokenForDev;
+        const resetUrlForDev = data?.resetUrlForDev;
+        
+        // En desarrollo, si el email falló, mostrar el token
+        if (tokenForDev) {
+          console.log('🔧 [DESARROLLO] Token de restablecimiento:', tokenForDev);
+          console.log('🔗 [DESARROLLO] URL de restablecimiento:', resetUrlForDev);
+          this.info.showSuccess('Token generado (email no enviado en desarrollo). Revisa la consola para obtener el token.');
+        } else {
+          this.info.showSuccess('Correo de restablecimiento enviado. Revisa tu bandeja.');
+        }
+        
+        // Redirigir a la pantalla de reset
+        const queryParams: any = { email };
+        if (tokenForDev) {
+          queryParams.token = tokenForDev;
+        }
+        this.router.navigate(['/reset-password'], { queryParams });
       },
       error: (err) => {
         this.isLoading = false;
