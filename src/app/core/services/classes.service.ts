@@ -66,6 +66,7 @@ export interface UpdateClassDto {
 export class ClassesService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/class`;
+  private uploadUrl = `${environment.uploadUrl}/class`;
 
   getClassById(classId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${classId}`);
@@ -81,23 +82,23 @@ export class ClassesService {
 
   createClass(classData: CreateClassDto): Observable<any> {
     const formData = new FormData();
-    
+
     formData.append('name', classData.name);
     if (classData.description) formData.append('description', classData.description);
     formData.append('courseId', classData.courseId);
-    
+
     if (classData.imageFile) {
       formData.append('imageFile', classData.imageFile);
     } else if (classData.imageFileId) {
       formData.append('imageFileId', classData.imageFileId);
     }
-    
+
     if (classData.videoFile) {
       formData.append('videoFile', classData.videoFile);
     } else if (classData.videoFileId) {
       formData.append('videoFileId', classData.videoFileId);
     }
-    
+
     if (classData.supportMaterials && classData.supportMaterials.length > 0) {
       classData.supportMaterials.forEach((file) => {
         formData.append('supportMaterials', file);
@@ -105,32 +106,34 @@ export class ClassesService {
     } else if (classData.supportMaterialIds && classData.supportMaterialIds.length > 0) {
       formData.append('supportMaterialIds', JSON.stringify(classData.supportMaterialIds));
     }
-    
+
     if (classData.linkLive) {
       formData.append('linkLive', classData.linkLive);
     }
 
-    return this.http.post(this.apiUrl, formData);
+    // Usar uploadUrl si hay video, apiUrl en caso contrario
+    const url = classData.videoFile ? this.uploadUrl : this.apiUrl;
+    return this.http.post(url, formData);
   }
 
   updateClass(classId: string, classData: UpdateClassDto): Observable<any> {
     const formData = new FormData();
-    
+
     if (classData.name) formData.append('name', classData.name);
     if (classData.description !== undefined) formData.append('description', classData.description);
-    
+
     if (classData.imageFile) {
       formData.append('imageFile', classData.imageFile);
     } else if (classData.imageFileId) {
       formData.append('imageFileId', classData.imageFileId);
     }
-    
+
     if (classData.videoFile) {
       formData.append('videoFile', classData.videoFile);
     } else if (classData.videoFileId) {
       formData.append('videoFileId', classData.videoFileId);
     }
-    
+
     if (classData.supportMaterials && classData.supportMaterials.length > 0) {
       classData.supportMaterials.forEach((file) => {
         formData.append('supportMaterials', file);
@@ -138,7 +141,7 @@ export class ClassesService {
     } else if (classData.supportMaterialIds && classData.supportMaterialIds.length > 0) {
       formData.append('supportMaterialIds', JSON.stringify(classData.supportMaterialIds));
     }
-    
+
     if (classData.linkLive !== undefined) {
       formData.append('linkLive', classData.linkLive);
     }
@@ -151,7 +154,9 @@ export class ClassesService {
       formData.append('deleteCurrentImage', classData.deleteCurrentImage);
     }
 
-    return this.http.patch(`${this.apiUrl}/${classId}`, formData);
+    // Usar uploadUrl si hay video, apiUrl en caso contrario
+    const url = classData.videoFile ? this.uploadUrl : this.apiUrl;
+    return this.http.patch(`${url}/${classId}`, formData);
   }
 
   deleteClass(classId: string): Observable<any> {

@@ -12,7 +12,7 @@ export interface UploadProgressEvent {
   providedIn: 'root'
 })
 export class VideoUploadProgressService {
-  private apiUrl = `${environment.apiUrl}/class`;
+  private uploadUrl = `${environment.uploadUrl}/class`;
   private authService = inject(AuthService);
 
   /**
@@ -26,9 +26,9 @@ export class VideoUploadProgressService {
     
     // EventSource no soporta headers personalizados, así que pasamos el token como query param
     // El backend deberá aceptar el token tanto en header como en query param
-    const url = token 
-      ? `${this.apiUrl}/${classId}/upload-progress?token=${encodeURIComponent(token)}`
-      : `${this.apiUrl}/${classId}/upload-progress`;
+    const url = token
+      ? `${this.uploadUrl}/${classId}/upload-progress?token=${encodeURIComponent(token)}`
+      : `${this.uploadUrl}/${classId}/upload-progress`;
 
     const eventSource = new EventSource(url, {
       withCredentials: true
