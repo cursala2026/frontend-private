@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,6 +6,10 @@ import { ClassesService, ClassData } from '../../../../core/services/classes.ser
 import { CoursesService, Course } from '../../../../core/services/courses.service';
 import { InfoService } from '../../../../core/services/info.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ViewModeService } from '../../../../core/services/view-mode.service';
+import { UserRole } from '../../../../core/models/user-role.enum';
+import { VideoUploadProgressService } from '../../../../core/services/video-upload-progress.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-teacher-class-edit',
@@ -13,7 +17,7 @@ import { AuthService } from '../../../../core/services/auth.service';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './class-edit.component.html'
 })
-export class TeacherClassEditComponent implements OnInit {
+export class TeacherClassEditComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private classesService = inject(ClassesService);
@@ -21,6 +25,8 @@ export class TeacherClassEditComponent implements OnInit {
   private info = inject(InfoService);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private viewModeService = inject(ViewModeService);
+  private videoUploadProgressService = inject(VideoUploadProgressService);
 
   classForm!: FormGroup;
   classData = signal<ClassData | null>(null);
@@ -30,11 +36,20 @@ export class TeacherClassEditComponent implements OnInit {
   saving = signal<boolean>(false);
   error = signal<string | null>(null);
 
+  // Signals para progreso de video
+  videoUploadProgress = signal<number>(0);
+  videoStatus = signal<'ready' | 'processing' | 'error' | null>(null);
+  isUploadingVideo = signal<boolean>(false);
+
   selectedImageFile: File | null = null;
   imagePreview: string | null = null;
+  originalImageUrl: string | null = null; // URL de la imagen original
+  deleteCurrentImage: boolean = false; // Flag para eliminar la imagen original
 
   selectedVideoFile: File | null = null;
   videoPreview: string | null = null;
+  originalVideoUrl: string | null = null; // URL del video original subido
+  deleteCurrentVideo: boolean = false; // Flag para eliminar el video original
 
   selectedSupportFiles: File[] = [];
   existingSupportMaterials: string[] = [];
@@ -43,6 +58,8 @@ export class TeacherClassEditComponent implements OnInit {
   classId: string | null = null;
   courseId: string | null = null;
   isEditMode = false;
+
+  private progressSubscription: Subscription | null = null;
 
   ngOnInit(): void {
     this.classId = this.route.snapshot.paramMap.get('id');
@@ -57,6 +74,12 @@ export class TeacherClassEditComponent implements OnInit {
 
     this.initializeForm();
     this.loadCourses();
+    
+    // Resetear flags
+    this.deleteCurrentVideo = false;
+    this.deleteCurrentImage = false;
+    this.originalVideoUrl = null;
+    this.originalImageUrl = null;
 
     if (this.isEditMode && this.classId) {
       this.loadClass();
@@ -87,15 +110,31 @@ export class TeacherClassEditComponent implements OnInit {
       return;
     }
 
-    this.coursesService.getTeacherCourses(currentUser._id).subscribe({
-      next: (response: any) => {
-        const data = response?.data || [];
-        this.courses.set(Array.isArray(data) ? data : []);
-      },
-      error: (error) => {
-        console.error('Error loading courses:', error);
-      }
-    });
+    // Si el usuario es admin y está en modo profesor, cargar todos los cursos
+    // Si es profesor normal, cargar solo sus cursos asignados
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      // Admin en modo profesor: cargar todos los cursos
+      this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.courses.set(Array.isArray(data) ? data : []);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+        }
+      });
+    } else {
+      // Profesor normal: cargar solo sus cursos asignados
+      this.coursesService.getTeacherCourses(currentUser._id).subscribe({
+        next: (response: any) => {
+          const data = response?.data || [];
+          this.courses.set(Array.isArray(data) ? data : []);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+        }
+      });
+    }
   }
 
   loadClass(): void {
@@ -124,11 +163,26 @@ export class TeacherClassEditComponent implements OnInit {
         // Cargar preview de imagen
         if (classData.imageUrl) {
           this.imagePreview = this.getClassImageUrl(classData.imageUrl);
+          this.originalImageUrl = classData.imageUrl;
         }
 
         // Cargar preview de video
         if (classData.videoUrl) {
-          this.videoPreview = this.getClassVideoUrl(classData.videoUrl);
+          this.originalVideoUrl = this.getClassVideoUrl(classData.videoUrl);
+          this.deleteCurrentVideo = false; // Resetear flag al cargar
+          // Solo mostrar el video original si no hay un video local seleccionado
+          if (!this.selectedVideoFile) {
+            this.videoPreview = this.originalVideoUrl;
+          }
+        }
+
+        // Verificar estado del video
+        if ((classData as any).videoStatus) {
+          this.videoStatus.set((classData as any).videoStatus);
+          // Si está procesando, conectar al SSE
+          if ((classData as any).videoStatus === 'processing') {
+            this.connectToProgressStream(classData._id);
+          }
         }
 
         // Cargar materiales de apoyo existentes
@@ -172,6 +226,7 @@ export class TeacherClassEditComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedImageFile = input.files[0];
+      this.deleteCurrentImage = false; // Si se selecciona nueva imagen, no eliminar la original
       this.classForm.patchValue({ imageFile: this.selectedImageFile });
       this.classForm.markAsDirty(); // Marcar formulario como modificado
       const reader = new FileReader();
@@ -182,17 +237,65 @@ export class TeacherClassEditComponent implements OnInit {
     }
   }
 
+  removeImage(): void {
+    this.imagePreview = null;
+    this.selectedImageFile = null;
+    this.deleteCurrentImage = true;
+    this.classForm.patchValue({ imageFile: null });
+    this.classForm.markAsDirty();
+  }
+
   onVideoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
+      // Limpiar el blob URL anterior si existe (solo si es un blob URL)
+      if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(this.videoPreview);
+      }
+      
       this.selectedVideoFile = input.files[0];
       this.classForm.patchValue({ videoFile: this.selectedVideoFile });
       this.classForm.markAsDirty(); // Marcar formulario como modificado
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.videoPreview = e.target.result;
-      };
-      reader.readAsDataURL(this.selectedVideoFile);
+      this.deleteCurrentVideo = false; // Si se selecciona un video nuevo, no eliminar el original
+      
+      // Usar createObjectURL en lugar de FileReader para videos grandes
+      // Esto evita cargar todo el video en memoria como base64
+      // Mostrar el video local seleccionado (tiene prioridad sobre el video original)
+      this.videoPreview = URL.createObjectURL(this.selectedVideoFile);
+    }
+  }
+
+  clearVideoPreview(): void {
+    // Limpiar blob URL si existe para evitar memory leaks
+    if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(this.videoPreview);
+    }
+    this.selectedVideoFile = null;
+    this.classForm.patchValue({ videoFile: null });
+    
+    // Si había un video original y no está marcado para eliminar, restaurarlo
+    if (this.originalVideoUrl && !this.deleteCurrentVideo) {
+      this.videoPreview = this.originalVideoUrl;
+    } else {
+      this.videoPreview = null;
+    }
+  }
+
+  toggleDeleteVideo(): void {
+    this.deleteCurrentVideo = !this.deleteCurrentVideo;
+    this.classForm.markAsDirty();
+    
+    // Si se marca para eliminar, ocultar el video
+    // Si se desmarca y hay video original, mostrarlo
+    if (this.deleteCurrentVideo) {
+      // Si hay un blob URL, limpiarlo
+      if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(this.videoPreview);
+      }
+      this.videoPreview = null;
+    } else if (this.originalVideoUrl && !this.selectedVideoFile) {
+      // Restaurar el video original si se desmarca y no hay video local
+      this.videoPreview = this.originalVideoUrl;
     }
   }
 
@@ -275,10 +378,6 @@ export class TeacherClassEditComponent implements OnInit {
     if (this.classForm.invalid) {
       return false;
     }
-    // En modo creación, verificar que haya imagen
-    if (!this.isEditMode && !this.selectedImageFile) {
-      return false;
-    }
     // En modo edición, verificar que haya cambios
     if (this.isEditMode && !this.hasChanges()) {
       return false;
@@ -290,12 +389,6 @@ export class TeacherClassEditComponent implements OnInit {
     if (this.classForm.invalid) {
       this.classForm.markAllAsTouched();
       this.info.showError('Por favor, completa todos los campos requeridos');
-      return;
-    }
-
-    // Validar que se haya incluido una imagen al crear
-    if (!this.isEditMode && !this.selectedImageFile) {
-      this.info.showError('La imagen es requerida para crear una nueva clase');
       return;
     }
 
@@ -313,9 +406,19 @@ export class TeacherClassEditComponent implements OnInit {
     if (this.selectedImageFile) {
       classData.imageFile = this.selectedImageFile;
     }
+    
+    // Si se debe eliminar la imagen y no hay nueva imagen
+    if (this.isEditMode && this.deleteCurrentImage && !this.selectedImageFile) {
+      classData.deleteCurrentImage = 'true';
+    }
 
     if (this.selectedVideoFile) {
       classData.videoFile = this.selectedVideoFile;
+    }
+
+    // Si se marca para eliminar el video original (solo en modo edición)
+    if (this.isEditMode && this.deleteCurrentVideo && !this.selectedVideoFile) {
+      classData.deleteCurrentVideo = 'true';
     }
 
     // Agregar archivos de apoyo
@@ -337,9 +440,17 @@ export class TeacherClassEditComponent implements OnInit {
     if (this.isEditMode && this.classId) {
       // Actualizar clase existente
       this.classesService.updateClass(this.classId, classData).subscribe({
-        next: () => {
-          this.info.showSuccess('Clase actualizada exitosamente');
-          // Navegar de vuelta con el curso seleccionado
+        next: (response) => {
+          const classResponse = response?.data || response;
+          const hasVideo = !!this.selectedVideoFile;
+          
+          if (hasVideo && classResponse?._id) {
+            // Si hay video, mostrar mensaje y navegar a la lista donde se verá el progreso
+            this.info.showSuccess('Clase actualizada. El video se está procesando en segundo plano...');
+          } else {
+            this.info.showSuccess('Clase actualizada exitosamente');
+          }
+          // Siempre navegar a la lista de clases
           this.router.navigate(['/profesor/classes'], {
             queryParams: { courseId: this.courseId }
           });
@@ -353,9 +464,17 @@ export class TeacherClassEditComponent implements OnInit {
     } else {
       // Crear nueva clase
       this.classesService.createClass(classData).subscribe({
-        next: () => {
-          this.info.showSuccess('Clase creada exitosamente');
-          // Navegar de vuelta con el curso seleccionado
+        next: (response) => {
+          const classResponse = response?.data || response;
+          const hasVideo = !!this.selectedVideoFile;
+          
+          if (hasVideo && classResponse?._id) {
+            // Si hay video, mostrar mensaje y navegar a la lista donde se verá el progreso
+            this.info.showSuccess('Clase creada. El video se está procesando en segundo plano...');
+          } else {
+            this.info.showSuccess('Clase creada exitosamente');
+          }
+          // Siempre navegar a la lista de clases
           this.router.navigate(['/profesor/classes'], {
             queryParams: { courseId: classData.courseId }
           });
@@ -371,6 +490,12 @@ export class TeacherClassEditComponent implements OnInit {
   }
 
   onCancel(): void {
+    // Limpiar suscripción si existe
+    if (this.progressSubscription) {
+      this.progressSubscription.unsubscribe();
+      this.progressSubscription = null;
+    }
+    
     // Navegar de vuelta con el curso seleccionado si existe
     if (this.courseId) {
       this.router.navigate(['/profesor/classes'], {
@@ -378,6 +503,72 @@ export class TeacherClassEditComponent implements OnInit {
       });
     } else {
       this.router.navigate(['/profesor/classes']);
+    }
+  }
+
+  /**
+   * Conecta al stream SSE para recibir actualizaciones de progreso
+   */
+  private connectToProgressStream(classId: string): void {
+    // Limpiar suscripción anterior si existe
+    if (this.progressSubscription) {
+      this.progressSubscription.unsubscribe();
+    }
+
+    this.videoUploadProgress.set(0);
+    this.isUploadingVideo.set(true);
+
+    this.progressSubscription = this.videoUploadProgressService.getUploadProgress(classId).subscribe({
+      next: (event) => {
+        if (event.error) {
+          this.videoStatus.set('error');
+          this.isUploadingVideo.set(false);
+          this.info.showError('Error al procesar el video: ' + event.error);
+          if (this.progressSubscription) {
+            this.progressSubscription.unsubscribe();
+            this.progressSubscription = null;
+          }
+        } else {
+          this.videoUploadProgress.set(event.percent);
+          if (event.percent >= 100) {
+            this.videoStatus.set('ready');
+            this.isUploadingVideo.set(false);
+            this.info.showSuccess('Video procesado exitosamente');
+            // Recargar datos de la clase para obtener el videoUrl actualizado
+            if (classId) {
+              this.loadClass();
+            }
+            if (this.progressSubscription) {
+              this.progressSubscription.unsubscribe();
+              this.progressSubscription = null;
+            }
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error en stream de progreso:', error);
+        this.videoStatus.set('error');
+        this.isUploadingVideo.set(false);
+        this.info.showError('Error al conectar con el servidor para el progreso del video');
+        if (this.progressSubscription) {
+          this.progressSubscription.unsubscribe();
+          this.progressSubscription = null;
+        }
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar suscripción al destruir el componente
+    if (this.progressSubscription) {
+      this.progressSubscription.unsubscribe();
+      this.progressSubscription = null;
+    }
+    
+    // Limpiar blob URLs para evitar memory leaks
+    if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(this.videoPreview);
+      this.videoPreview = null;
     }
   }
 }

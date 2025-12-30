@@ -25,6 +25,8 @@ export class CourseEditComponent implements OnInit {
   courseId: string | null = null;
   imagePreview: string | null = null;
   selectedImageFile: File | null = null;
+  deleteImage: boolean = false;
+  originalImageUrl: string | null = null;
 
   ngOnInit(): void {
     this.courseId = this.route.snapshot.paramMap.get('courseId');
@@ -97,6 +99,7 @@ export class CourseEditComponent implements OnInit {
         // Cargar preview de imagen
         if (courseData.imageUrl) {
           this.imagePreview = this.getCourseImageUrl(courseData.imageUrl);
+          this.originalImageUrl = courseData.imageUrl;
         }
 
         this.loading.set(false);
@@ -114,12 +117,21 @@ export class CourseEditComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.selectedImageFile = input.files[0];
+      this.deleteImage = false; // Si se selecciona nueva imagen, no eliminar
+      this.courseForm.markAsDirty();
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.imagePreview = e.target.result;
       };
       reader.readAsDataURL(this.selectedImageFile);
     }
+  }
+
+  removeImage(): void {
+    this.imagePreview = null;
+    this.selectedImageFile = null;
+    this.deleteImage = true;
+    this.courseForm.markAsDirty();
   }
 
   getCourseImageUrl(imageUrl?: string): string {
@@ -156,6 +168,11 @@ export class CourseEditComponent implements OnInit {
     // Agregar archivo de imagen si se seleccionó uno nuevo
     if (this.selectedImageFile) {
       processedData.imageFile = this.selectedImageFile;
+    }
+    
+    // Si se debe eliminar la imagen, enviar señal al backend
+    if (this.deleteImage && !this.selectedImageFile) {
+      processedData.deleteImage = true;
     }
 
     if (this.courseId) {

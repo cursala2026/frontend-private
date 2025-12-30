@@ -111,6 +111,14 @@
               @if (previousSubmissions().length > 0) {
                 <p>Total de intentos: {{ previousSubmissions().length }}</p>
               }
+              @if (getTimeElapsed()) {
+                <p class="mt-2">
+                  <span class="font-semibold text-blue-600">Tiempo de resolución: {{ getTimeElapsed() }}</span>
+                  @if (questionnaire()?.timeLimitMinutes) {
+                    <span class="text-gray-500 ml-2">(Límite: {{ questionnaire()?.timeLimitMinutes }} min)</span>
+                  }
+                </p>
+              }
             </div>
 
             <!-- Actions -->
@@ -228,11 +236,47 @@
     } @else {
       <!-- Questionnaire Form -->
       <div class="bg-white rounded-lg shadow-md p-6">
+        <!-- Timer Display -->
+        @if (questionnaire()?.timeLimitMinutes && timeRemaining() !== null) {
+          <div class="mb-6 p-4 rounded-lg border-2" 
+               [class.bg-red-50]="timeRemaining()! <= 60"
+               [class.border-red-500]="timeRemaining()! <= 60"
+               [class.bg-orange-50]="timeRemaining()! > 60 && timeRemaining()! <= 300"
+               [class.border-orange-500]="timeRemaining()! > 60 && timeRemaining()! <= 300"
+               [class.bg-blue-50]="timeRemaining()! > 300"
+               [class.border-blue-500]="timeRemaining()! > 300">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6" [class.text-red-600]="timeRemaining()! <= 60" 
+                     [class.text-orange-600]="timeRemaining()! > 60 && timeRemaining()! <= 300"
+                     [class.text-blue-600]="timeRemaining()! > 300"
+                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p class="text-sm font-semibold text-gray-700">Tiempo Restante:</p>
+                  <p [class]="getTimeRemainingClass() + ' text-2xl font-bold'">
+                    {{ formatTimeRemaining(timeRemaining()!) }}
+                  </p>
+                </div>
+              </div>
+              @if (timeExpired()) {
+                <div class="text-red-600 font-bold">
+                  ¡Tiempo Agotado!
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Instructions -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h3 class="font-semibold text-blue-900 mb-2">Instrucciones:</h3>
           <ul class="text-sm text-blue-800 space-y-1">
             <li>• Responde todas las preguntas obligatorias</li>
+            @if (questionnaire()?.timeLimitMinutes) {
+              <li>• Tienes {{ questionnaire()?.timeLimitMinutes }} minutos para completar el cuestionario</li>
+            }
             @if (questionnaire()?.passingScore) {
               <li>• Nota mínima para aprobar: {{ questionnaire()?.passingScore }}%</li>
             }

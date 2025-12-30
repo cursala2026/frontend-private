@@ -134,6 +134,54 @@
                             }
                           </select>
                         }
+                        @case ('multiselect') {
+                          <div class="space-y-3">
+                            <!-- Contenedor de opciones con checkboxes -->
+                            <div class="border border-gray-300 rounded-lg p-3 max-h-60 overflow-y-auto bg-gray-50" [class.border-red-500]="isFieldInvalid(field)">
+                              @if (field.options && field.options.length > 0) {
+                                <div class="space-y-2">
+                                  @for (option of field.options; track option.value) {
+                                    <label class="flex items-center gap-3 p-2 rounded-md hover:bg-white cursor-pointer transition-colors">
+                                      <input
+                                        type="checkbox"
+                                        [checked]="isOptionSelected(field, option.value)"
+                                        [disabled]="isOptionDisabled(field, option.value)"
+                                        (change)="onCheckboxChange(field, option.value, $event)"
+                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                      />
+                                      <span class="flex-1 text-sm text-gray-700">{{ option.label }}</span>
+                                    </label>
+                                  }
+                                </div>
+                              } @else {
+                                <p class="text-sm text-gray-500 text-center py-4">No hay opciones disponibles</p>
+                              }
+                            </div>
+                            
+                            <!-- Información y validación -->
+                            <div class="space-y-1">
+                              @if (field.maxSelections || field.minSelections) {
+                                <p class="text-xs text-gray-500">
+                                  @if (field.minSelections && field.maxSelections) {
+                                    Selecciona entre {{ field.minSelections }} y {{ field.maxSelections }} opciones
+                                  } @else if (field.minSelections) {
+                                    Selecciona al menos {{ field.minSelections }} opciones
+                                  } @else if (field.maxSelections) {
+                                    Selecciona máximo {{ field.maxSelections }} opciones
+                                  }
+                                </p>
+                              }
+                              @if (getMultiselectValue(field).length > 0) {
+                                <p class="text-xs font-medium text-blue-600">
+                                  {{ getMultiselectValue(field).length }} {{ getMultiselectValue(field).length === 1 ? 'seleccionado' : 'seleccionados' }}
+                                </p>
+                              }
+                              @if (isFieldInvalid(field)) {
+                                <p class="text-xs text-red-500">Este campo es requerido</p>
+                              }
+                            </div>
+                          </div>
+                        }
                         @case ('checkbox') {
                           <div class="flex items-center">
                             <input

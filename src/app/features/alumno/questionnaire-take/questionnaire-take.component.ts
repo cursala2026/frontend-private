@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './questionnaire-take.component.html',
 })
-export class QuestionnaireTakeComponent implements OnInit {
+export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   private questionnairesService = inject(QuestionnairesService);
   private progressService = inject(CourseProgressService);
   private coursesService = inject(CoursesService);
@@ -44,12 +44,159 @@ export class QuestionnaireTakeComponent implements OnInit {
   showResults = signal<boolean>(false);
   canRetry = signal<boolean>(false);
 
+  // Timer
+  timeRemaining = signal<number | null>(null); // Tiempo restante en segundos
+  timeExpired = signal<boolean>(false);
+  private timerInterval: any = null;
+
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.courseId.set(params['courseId']);
       this.questionnaireId.set(params['questionnaireId']);
       this.loadQuestionnaire();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.clearTimer();
+  }
+
+  clearTimer(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+
+  startTimer(): void {
+    this.clearTimer();
+    const questionnaire = this.questionnaire();
+    const submission = this.currentSubmission();
+
+    // Si el cuestionario no tiene tiempo límite, no iniciar el temporizador
+    if (!questionnaire || !submission || !questionnaire.timeLimitMinutes) {
+      this.timeRemaining.set(null);
+      return;
+    }
+
+    // Calcular tiempo restante
+    const startedAt = new Date(submission.startedAt);
+    const timeLimitMs = questionnaire.timeLimitMinutes * 60 * 1000;
+    const now = new Date();
+    const elapsedMs = now.getTime() - startedAt.getTime();
+    let remainingMs = timeLimitMs - elapsedMs;
+
+    // Si el tiempo ya expiró, cerrar inmediatamente
+    if (remainingMs <= 0) {
+      this.timeExpired.set(true);
+      this.timeRemaining.set(0);
+      this.handleTimeExpired();
+      return;
+    }
+
+    this.timeRemaining.set(Math.floor(remainingMs / 1000));
+    this.timeExpired.set(false);
+
+    // Actualizar el temporizador cada segundo
+    this.timerInterval = setInterval(() => {
+      remainingMs -= 1000;
+      const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+      this.timeRemaining.set(remainingSeconds);
+
+      if (remainingSeconds <= 0) {
+        this.timeExpired.set(true);
+        this.clearTimer();
+        this.handleTimeExpired();
+      }
+    }, 1000);
+  }
+
+  handleTimeExpired(): void {
+    // Si ya se está mostrando resultados, no hacer nada
+    if (this.showResults()) {
+      return;
+    }
+
+    // Si se está enviando, no hacer nada
+    if (this.submitting()) {
+      return;
+    }
+
+    this.infoService.showError('El tiempo para resolver el cuestionario ha finalizado. El cuestionario se enviará automáticamente con las respuestas que has proporcionado hasta ahora.');
+    
+    // Enviar automáticamente el cuestionario
+    this.autoSubmitOnTimeExpired();
+  }
+
+  autoSubmitOnTimeExpired(): void {
+    const submission = this.currentSubmission();
+    if (!submission) {
+      return;
+    }
+
+    this.submitting.set(true);
+
+    const answersArray: Answer[] = Object.values(this.answers).filter(a =>
+      (a.questionType === 'MULTIPLE_CHOICE' && a.selectedOptionId) ||
+      (a.questionType === 'TEXT' && a.textAnswer)
+    );
+
+    // Enviar con las respuestas que tenga hasta ahora
+    this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
+      next: (response) => {
+        const updatedSubmission = response?.data;
+        this.currentSubmission.set(updatedSubmission);
+        this.showResults.set(true);
+        this.submitting.set(false);
+        this.clearTimer(); // Detener el temporizador
+
+        // Update course progress
+        this.updateCourseProgress(updatedSubmission);
+
+        // Reload previous submissions
+        this.loadPreviousSubmissions();
+
+        this.infoService.showInfo('El cuestionario se ha enviado automáticamente al finalizar el tiempo.');
+      },
+      error: (error) => {
+        console.error('Error auto-submitting questionnaire:', error);
+        this.infoService.showError('Error al enviar el cuestionario automáticamente');
+        this.submitting.set(false);
+      }
+    });
+  }
+
+  formatTimeRemaining(seconds: number): string {
+    if (seconds <= 0) {
+      return '00:00';
+    }
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+  }
+
+  getTimeRemainingClass(): string {
+    const remaining = this.timeRemaining();
+    if (remaining === null) {
+      return '';
+    }
+
+    // Cambiar color según el tiempo restante
+    const minutes = Math.floor(remaining / 60);
+    if (remaining <= 60) {
+      return 'text-red-600 font-bold animate-pulse';
+    } else if (minutes <= 5) {
+      return 'text-orange-600 font-semibold';
+    } else {
+      return 'text-blue-600';
+    }
   }
 
   loadQuestionnaire(): void {
@@ -180,6 +327,7 @@ export class QuestionnaireTakeComponent implements OnInit {
       this.currentSubmission.set(mostRecent);
       this.loadAnswersFromSubmission(mostRecent);
       this.showResults.set(false);
+      this.startTimer(); // Iniciar el temporizador al reanudar
       return;
     }
 
@@ -203,6 +351,7 @@ export class QuestionnaireTakeComponent implements OnInit {
         this.currentSubmission.set(submission);
         this.showResults.set(false); // Ensure we show the form, not results
         this.initializeAnswers();
+        this.startTimer(); // Iniciar el temporizador
       },
       error: (error) => {
         console.error('Error starting submission:', error);
@@ -291,6 +440,7 @@ export class QuestionnaireTakeComponent implements OnInit {
         this.currentSubmission.set(updatedSubmission);
         this.showResults.set(true);
         this.submitting.set(false);
+        this.clearTimer(); // Detener el temporizador al enviar
 
         // Update course progress
         this.updateCourseProgress(updatedSubmission);
@@ -420,5 +570,37 @@ export class QuestionnaireTakeComponent implements OnInit {
 
     const question = questionnaire.questions.find(q => q._id === questionId);
     return question?.correctOptionId?.toString() === optionId.toString();
+  }
+
+  /**
+   * Calcula el tiempo transcurrido entre startedAt y submittedAt
+   * Retorna el tiempo en formato legible (MM:SS o HH:MM:SS)
+   */
+  getTimeElapsed(): string | null {
+    const submission = this.currentSubmission();
+    if (!submission || !submission.startedAt || !submission.submittedAt) {
+      return null;
+    }
+
+    const startedAt = new Date(submission.startedAt);
+    const submittedAt = new Date(submission.submittedAt);
+    const diffMs = submittedAt.getTime() - startedAt.getTime();
+
+    if (diffMs < 0) {
+      return null; // Datos inválidos
+    }
+
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
   }
 }

@@ -312,4 +312,72 @@ export class QuestionnaireResultsComponent implements OnInit {
     this.showResetConfirmModal.set(false);
     this.studentIdToReset = null;
   }
+
+  /**
+   * Calcula el tiempo transcurrido entre startedAt y submittedAt
+   * Retorna el tiempo en formato legible (MM:SS o HH:MM:SS)
+   */
+  getTimeElapsed(submission: QuestionnaireSubmission): string | null {
+    if (!submission.startedAt || !submission.submittedAt) {
+      return null;
+    }
+
+    const startedAt = new Date(submission.startedAt);
+    const submittedAt = new Date(submission.submittedAt);
+    const diffMs = submittedAt.getTime() - startedAt.getTime();
+
+    if (diffMs < 0) {
+      return null; // Datos inválidos
+    }
+
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
+
+  /**
+   * Obtiene el tiempo transcurrido en minutos (número)
+   */
+  getTimeElapsedMinutes(submission: QuestionnaireSubmission): number | null {
+    if (!submission.startedAt || !submission.submittedAt) {
+      return null;
+    }
+
+    const startedAt = new Date(submission.startedAt);
+    const submittedAt = new Date(submission.submittedAt);
+    const diffMs = submittedAt.getTime() - startedAt.getTime();
+
+    if (diffMs < 0) {
+      return null;
+    }
+
+    return Math.round(diffMs / (1000 * 60));
+  }
+
+  /**
+   * Obtiene el tiempo transcurrido del mejor intento de un estudiante
+   */
+  getBestAttemptTime(entry: GradeReportEntry): string | null {
+    if (!entry.allSubmissions || entry.allSubmissions.length === 0) {
+      return null;
+    }
+
+    // Encontrar la submission con el mejor score
+    const bestSubmission = entry.allSubmissions.reduce((best, current) => {
+      const currentScore = current.finalScore || current.autoGradedScore || 0;
+      const bestScore = best.finalScore || best.autoGradedScore || 0;
+      return currentScore > bestScore ? current : best;
+    });
+
+    return this.getTimeElapsed(bestSubmission);
+  }
 }

@@ -6,7 +6,7 @@ import { ModalDataTableComponent, ModalConfig } from '../../../shared/components
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
-import { TeacherAssignmentService } from '../../../core/services/teacher-assignment.service';
+import { UsersService } from '../../../core/services/users.service';
 import { TeacherAssignmentModalComponent } from './teacher-assignment-modal/teacher-assignment-modal.component';
 
 @Component({
@@ -29,6 +29,7 @@ export class CoursesComponent implements OnInit {
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
   selectedCourseForAssignment: any = null;
+  teachers = signal<any[]>([]);
 
   currentPage = 1;
   pageSize = 10;
@@ -76,20 +77,12 @@ export class CoursesComponent implements OnInit {
         align: 'right'
       },
       {
-        key: 'status',
-        label: 'Estado',
-        type: 'switch',
-        align: 'center',
-        width: '10%',
-        switchColor: 'blue',
-        onChange: (row: any, newValue: boolean) => this.handleStatusToggle(row, newValue)
-      },
-      {
         key: 'isPublished',
         label: 'Publicado',
         type: 'switch',
         align: 'center',
         width: '10%',
+        switchColor: 'green',
         onChange: (row: any, newValue: boolean) => this.handlePublishToggle(row, newValue)
       },
       {
@@ -98,18 +91,35 @@ export class CoursesComponent implements OnInit {
         type: 'switch',
         align: 'center',
         width: '10%',
+        switchColor: 'purple',
         onChange: (row: any, newValue: boolean) => this.handleShowOnHomeToggle(row, newValue)
       },
       {
         key: 'assignedTeachers',
-        label: 'Profesor Principal',
+        label: 'Profesores',
         type: 'text',
         formatter: (value: any, row: any) => {
-          // Mostrar el profesor principal del curso
+          // Mostrar los profesores del curso (prioridad: teachersInfo > mainTeacherInfo)
+          if (row.teachersInfo && Array.isArray(row.teachersInfo) && row.teachersInfo.length > 0) {
+            const firstTeacher = row.teachersInfo[0];
+            const firstTeacherName = firstTeacher.firstName && firstTeacher.lastName
+              ? `${firstTeacher.firstName} ${firstTeacher.lastName}`
+              : firstTeacher.teacherName || firstTeacher.email || 'Sin nombre';
+            
+            // Si hay más de un profesor, mostrar el primero + cantidad adicional
+            if (row.teachersInfo.length > 1) {
+              const additionalCount = row.teachersInfo.length - 1;
+              return `${firstTeacherName} +${additionalCount}`;
+            }
+            
+            return firstTeacherName;
+          }
+          // Fallback a mainTeacherInfo para compatibilidad
           if (row.mainTeacherInfo) {
-            return row.mainTeacherInfo.firstName 
+            const mainTeacherName = row.mainTeacherInfo.firstName 
               ? `${row.mainTeacherInfo.firstName} ${row.mainTeacherInfo.lastName || ''}`
               : row.mainTeacherInfo.teacherName || row.mainTeacherInfo.email || 'Sin asignar';
+            return mainTeacherName;
           }
           return 'Sin asignar';
         },
@@ -145,11 +155,24 @@ export class CoursesComponent implements OnInit {
   constructor(
     private coursesService: CoursesService,
     private infoService: InfoService,
-    private teacherAssignmentService: TeacherAssignmentService
+    private usersService: UsersService
   ) {}
 
   ngOnInit(): void {
     this.loadCourses();
+    this.loadTeachers();
+  }
+
+  loadTeachers(): void {
+    this.usersService.getTeachers().subscribe({
+      next: (response: any) => {
+        const teachers = Array.isArray(response?.data) ? response.data : [];
+        this.teachers.set(teachers);
+      },
+      error: (error) => {
+        console.error('Error loading teachers:', error);
+      }
+    });
   }
 
   loadCourses(): void {
@@ -241,12 +264,24 @@ export class CoursesComponent implements OnInit {
       }
     }
 
+    // Preparar teachers: puede venir como array de IDs o como array de objetos con _id
+    let teachersIds: string[] = [];
+    if (course.teachers && Array.isArray(course.teachers)) {
+      teachersIds = course.teachers.map((t: any) => typeof t === 'string' ? t : (t._id || t.teacherId || t));
+    } else if (course.teachersInfo && Array.isArray(course.teachersInfo)) {
+      teachersIds = course.teachersInfo.map((t: any) => t._id || t.teacherId || t);
+    } else if (course.mainTeacher) {
+      // Compatibilidad: si solo hay mainTeacher, usarlo
+      teachersIds = [typeof course.mainTeacher === 'string' ? course.mainTeacher : (course.mainTeacher._id || course.mainTeacher)];
+    }
+
     this.selectedCourse = {
       ...course,
       imageFile: imageFileUrl,
       programFile: programFileUrl,
       // Convertir days de array a string para el formulario
-      days: course.days && Array.isArray(course.days) ? course.days.join(', ') : course.days
+      days: course.days && Array.isArray(course.days) ? course.days.join(', ') : course.days,
+      teachers: teachersIds
     };
     const isCreate = !course._id;
 
@@ -356,6 +391,22 @@ export class CoursesComponent implements OnInit {
           key: 'isPublished',
           label: 'Publicado',
           type: 'checkbox'
+        },
+        {
+          key: 'teachers',
+          label: 'Profesores',
+          type: 'multiselect',
+          required: true,
+          options: (() => {
+            const teachersList = this.teachers();
+            return teachersList.map(teacher => ({
+              value: teacher._id,
+              label: `${teacher.firstName} ${teacher.lastName || ''}${teacher.email ? ` (${teacher.email})` : ''}`
+            }));
+          })(),
+          minSelections: 1,
+          maxSelections: 3,
+          placeholder: 'Selecciona entre 1 y 3 profesores'
         }
       ]
     };
@@ -376,7 +427,6 @@ export class CoursesComponent implements OnInit {
         { key: 'longDescription', label: 'Descripción Larga', type: 'textarea' },
         { key: 'modality', label: 'Modalidad', type: 'text' },
         { key: 'price', label: 'Precio', type: 'number' },
-        { key: 'status', label: 'Estado', type: 'text' },
         { key: 'isPublished', label: 'Publicado', type: 'checkbox' },
         { key: 'createdAt', label: 'Fecha de Creación', type: 'date' }
       ]
@@ -413,13 +463,25 @@ export class CoursesComponent implements OnInit {
       return;
     }
 
+    // Validar profesores
+    const teachers = Array.isArray(formData.teachers) ? formData.teachers : [];
+    if (teachers.length < 1 || teachers.length > 3) {
+      this.infoService.showError('El curso debe tener entre 1 y 3 profesores asignados');
+      this.modalComponent.isSubmitting.set(false);
+      return;
+    }
+
     // Procesar los datos antes de enviar
     const processedData: any = {
       ...formData,
       // Convertir days de string a array si es necesario
       days: formData.days && typeof formData.days === 'string'
         ? formData.days.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0)
-        : formData.days
+        : formData.days,
+      // Asegurar que siempre se cree con estado activo
+      status: 'ACTIVE',
+      // Asegurar que teachers sea un array
+      teachers: teachers.filter((t: string) => t && t.trim() !== '')
     };
 
     // Manejar programFile: incluir solo si es un File, o si es null (para eliminarlo)
@@ -474,27 +536,6 @@ export class CoursesComponent implements OnInit {
     }
   }
 
-  handleStatusToggle(course: any, newValue: boolean): void {
-    // Actualizar directamente el estado sin confirmación (visual feedback inmediato)
-    const newStatus = newValue ? 'ACTIVE' : 'INACTIVE';
-    const oldStatus = course.status;
-    course.status = newStatus;
-
-    this.coursesService.toggleCourseStatus(course._id, newStatus).subscribe({
-      next: () => {
-        // Éxito - el cambio ya está reflejado visualmente
-        this.infoService.showSuccess(`Curso ${newValue ? 'activado' : 'desactivado'} exitosamente`);
-      },
-      error: (error) => {
-        // Revertir el cambio en caso de error
-        course.status = oldStatus;
-        console.error('Error toggling course status:', error);
-        const errorMsg = error?.error?.message || 'Error al cambiar el estado del curso';
-        this.infoService.showError(errorMsg);
-        this.loadCourses(); // Recargar para asegurar consistencia
-      }
-    });
-  }
 
   togglePublishedStatus(course: any): void {
     const isPublished = course.isPublished;

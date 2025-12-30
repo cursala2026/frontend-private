@@ -47,29 +47,62 @@ export class QuestionnaireEditComponent implements OnInit {
 
   courses = signal<Course[]>([]);
   classes = signal<ClassData[]>([]);
+  questionnaires = signal<Questionnaire[]>([]); // Questionnaires of the selected course
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
   loadingClasses = signal<boolean>(false);
+  preselectedCourseId = signal<string | null>(null); // CourseId from query params
+  preselectedCourseName = signal<string>(''); // Name of the preselected course
 
   ngOnInit(): void {
     this.initForm();
-    this.loadCourses();
+
+    // Check for preselected courseId from query params (only in create mode)
+    const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
+    if (courseIdFromQuery) {
+      this.preselectedCourseId.set(courseIdFromQuery);
+      // Set the courseId directly in the form
+      this.questionnaireForm.patchValue({ courseId: courseIdFromQuery });
+      // Load the specific course to get its name
+      this.loadPreselectedCourse(courseIdFromQuery);
+      // Load classes for the preselected course
+      this.loadClassesByCourse(courseIdFromQuery);
+      // Load questionnaires to filter available classes
+      this.loadQuestionnairesByCourse(courseIdFromQuery);
+    }
 
     // Check if edit mode
     this.route.params.subscribe(params => {
       if (params['id'] && params['id'] !== 'new') {
         this.isEditMode = true;
         this.questionnaireId = params['id'];
+        this.loadCourses();
         this.loadQuestionnaire();
       } else {
-        // Check for pre-selected course in query params
-        this.route.queryParams.subscribe(queryParams => {
-          if (queryParams['courseId']) {
-            this.questionnaireForm.patchValue({ courseId: queryParams['courseId'] });
-            this.onCourseChange();
+        // In create mode, load courses (needed for the dropdown if no preselected course)
+        this.loadCourses();
+        // Loading will be set to false after courses load
+      }
+    });
+  }
+
+  loadPreselectedCourse(courseId: string): void {
+    this.coursesService.getCourseById(courseId).subscribe({
+      next: (response) => {
+        const courseData = response?.data || response;
+        if (courseData) {
+          // Store the course name
+          this.preselectedCourseName.set(courseData.name || '');
+          // Add the preselected course to the courses list if it's not already there
+          const currentCourses = this.courses();
+          const courseExists = currentCourses.some(c => c._id === courseId);
+          if (!courseExists) {
+            this.courses.set([...currentCourses, { _id: courseData._id, name: courseData.name }]);
           }
-        });
-        this.loading.set(false);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading preselected course:', error);
       }
     });
   }
@@ -86,6 +119,7 @@ export class QuestionnaireEditComponent implements OnInit {
       allowRetries: [true],
       maxRetries: [null, Validators.min(1)],
       showCorrectAnswers: [true],
+      timeLimitMinutes: [null, [Validators.min(1), Validators.max(1440)]],
       questions: this.fb.array([])
     });
 
@@ -107,19 +141,53 @@ export class QuestionnaireEditComponent implements OnInit {
     return this.questionnaireForm.get('questions') as FormArray;
   }
 
+  getPreselectedCourseName(): string {
+    if (this.preselectedCourseName()) {
+      return this.preselectedCourseName();
+    }
+    const preselectedId = this.preselectedCourseId();
+    if (preselectedId) {
+      const course = this.courses().find(c => c._id === preselectedId);
+      return course?.name || 'Cargando...';
+    }
+    return '';
+  }
+
   loadCourses(): void {
     const currentUser = this.authService.currentUser();
     if (!currentUser) {
+      if (!this.isEditMode) {
+        this.loading.set(false);
+      }
       return;
     }
 
+    // If we have a preselected courseId, we still need to load courses for the dropdown
+    // but we'll hide/disable it if courseId is preselected
     this.coursesService.getTeacherCourses(currentUser._id).subscribe({
       next: (response) => {
-        this.courses.set(response?.data || []);
+        const coursesData = response?.data || [];
+        this.courses.set(coursesData);
+        
+        // If in create mode and we have a preselected courseId, ensure it's set in the form
+        if (!this.isEditMode && this.preselectedCourseId()) {
+          const courseIdFromQuery = this.preselectedCourseId();
+          const courseIdControl = this.questionnaireForm.get('courseId');
+          if (courseIdControl && courseIdControl.value !== courseIdFromQuery) {
+            courseIdControl.setValue(courseIdFromQuery, { emitEvent: false });
+          }
+        }
+        
+        if (!this.isEditMode) {
+          this.loading.set(false);
+        }
       },
       error: (error) => {
         console.error('Error loading courses:', error);
         this.infoService.showError('Error al cargar los cursos');
+        if (!this.isEditMode) {
+          this.loading.set(false);
+        }
       }
     });
   }
@@ -128,9 +196,45 @@ export class QuestionnaireEditComponent implements OnInit {
     const courseId = this.questionnaireForm.get('courseId')?.value;
     if (courseId) {
       this.loadClassesByCourse(courseId);
+      // Load questionnaires to filter out classes that already have questionnaires after them
+      this.loadQuestionnairesByCourse(courseId);
     } else {
       this.classes.set([]);
+      this.questionnaires.set([]);
     }
+  }
+
+  loadQuestionnairesByCourse(courseId: string): void {
+    this.questionnairesService.getQuestionnairesByCourse(courseId).subscribe({
+      next: (response) => {
+        const questionnairesData = response?.data || [];
+        this.questionnaires.set(questionnairesData);
+      },
+      error: (error) => {
+        console.error('Error loading questionnaires:', error);
+        this.questionnaires.set([]);
+      }
+    });
+  }
+
+  getAvailableClassesForQuestionnaire(): ClassData[] {
+    const allClasses = this.classes();
+    const courseQuestionnaires = this.questionnaires();
+    const currentQuestionnaireId = this.questionnaireId; // Current questionnaire being edited
+    
+    // Get class IDs that already have a questionnaire after them (excluding current questionnaire if editing)
+    const classesWithQuestionnaires = new Set(
+      courseQuestionnaires
+        .filter(q => 
+          q._id !== currentQuestionnaireId && // Exclude current questionnaire if editing
+          q.position?.type === 'BETWEEN_CLASSES' && 
+          q.position?.afterClassId
+        )
+        .map(q => q.position!.afterClassId!)
+    );
+    
+    // Filter out classes that already have questionnaires after them
+    return allClasses.filter(classItem => !classesWithQuestionnaires.has(classItem._id));
   }
 
   loadClassesByCourse(courseId: string): void {
@@ -168,6 +272,8 @@ export class QuestionnaireEditComponent implements OnInit {
   populateForm(questionnaire: Questionnaire): void {
     // Load classes for the course first
     this.loadClassesByCourse(questionnaire.courseId);
+    // Load questionnaires to filter available classes
+    this.loadQuestionnairesByCourse(questionnaire.courseId);
 
     // Clear existing questions
     while (this.questions.length) {
@@ -185,7 +291,8 @@ export class QuestionnaireEditComponent implements OnInit {
       passingScore: questionnaire.passingScore,
       allowRetries: questionnaire.allowRetries,
       maxRetries: questionnaire.maxRetries,
-      showCorrectAnswers: questionnaire.showCorrectAnswers
+      showCorrectAnswers: questionnaire.showCorrectAnswers,
+      timeLimitMinutes: questionnaire.timeLimitMinutes || null
     });
 
     // Add questions
@@ -489,7 +596,8 @@ export class QuestionnaireEditComponent implements OnInit {
       passingScore: formValue.passingScore,
       allowRetries: formValue.allowRetries,
       maxRetries: formValue.allowRetries ? formValue.maxRetries : undefined,
-      showCorrectAnswers: formValue.showCorrectAnswers
+      showCorrectAnswers: formValue.showCorrectAnswers,
+      timeLimitMinutes: formValue.timeLimitMinutes || undefined
     };
 
     const request = this.isEditMode

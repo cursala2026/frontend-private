@@ -92,10 +92,7 @@
       <!-- Image -->
       <div class="mb-8">
         <label class="block text-base font-bold text-brand-tertiary mb-2">
-          Imagen de la Clase
-          @if (!isEditMode) {
-            <span class="text-red-500">*</span>
-          }
+          Imagen de la Clase (opcional)
         </label>
         <div class="space-y-4">
           @if (imagePreview) {
@@ -108,8 +105,9 @@
               />
               <button
                 type="button"
-                (click)="selectedImageFile = null; imagePreview = null; classForm.patchValue({ imageFile: null })"
-                class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                (click)="removeImage()"
+                class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                title="Eliminar imagen"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -124,9 +122,7 @@
             (change)="onImageSelected($event)"
             class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all"
           />
-          @if (!isEditMode && !selectedImageFile) {
-            <p class="mt-1 text-sm text-red-600">La imagen es requerida para crear una nueva clase</p>
-          }
+          <p class="text-xs text-gray-500">Si no subes una imagen, se usará la imagen por defecto.</p>
         </div>
       </div>
 
@@ -145,7 +141,7 @@
               ></video>
               <button
                 type="button"
-                (click)="selectedVideoFile = null; videoPreview = null"
+                (click)="clearVideoPreview()"
                 class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,14 +150,64 @@
               </button>
             </div>
           }
+          
+          <!-- Estado del procesamiento de video -->
+          @if (isUploadingVideo() || videoStatus() === 'processing') {
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+              <div class="flex items-center gap-2">
+                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-sm font-semibold text-blue-800">Procesando video...</p>
+              </div>
+              <div class="w-full bg-blue-200 rounded-full h-2.5">
+                <div 
+                  class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  [style.width.%]="videoUploadProgress()"
+                ></div>
+              </div>
+              <p class="text-xs text-blue-600 text-center">{{ videoUploadProgress() }}% completado</p>
+            </div>
+          }
+          
+          @if (videoStatus() === 'error') {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div class="flex items-center gap-2">
+                <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm font-semibold text-red-800">Error al procesar video</p>
+              </div>
+              <p class="text-xs text-red-600 mt-1">Por favor, intenta subir el video nuevamente.</p>
+            </div>
+          }
+          
           <input
             type="file"
             id="videoFile"
             accept="video/*"
             (change)="onVideoSelected($event)"
-            class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all"
+            [disabled]="isUploadingVideo()"
+            class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <p class="text-xs text-gray-500">Tamaño máximo: 2GB. Formatos soportados: MP4, WebM, MOV.</p>
+          
+          <!-- Opción para eliminar video original (solo en modo edición) -->
+          @if (isEditMode && originalVideoUrl && !selectedVideoFile) {
+            <div class="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="deleteCurrentVideo"
+                [checked]="deleteCurrentVideo"
+                (change)="toggleDeleteVideo()"
+                class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+              />
+              <label for="deleteCurrentVideo" class="text-sm text-gray-700 cursor-pointer">
+                Eliminar video actual de la clase
+              </label>
+            </div>
+          }
         </div>
       </div>
 
@@ -267,6 +313,10 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="https://meet.google.com/..."
         />
+        <p class="mt-2 text-sm text-gray-600">
+          <strong>Nota:</strong> Si el curso tiene una sola clase con enlace en vivo y sin video, se tratará automáticamente como un <strong>workshop</strong>. 
+          En este caso, los estudiantes solo verán el enlace para acceder a la clase en vivo, sin sistema de progreso ni navegación entre clases.
+        </p>
       </div>
 
       <!-- Submit Button -->

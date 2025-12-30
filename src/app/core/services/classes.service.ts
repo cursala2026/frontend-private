@@ -11,6 +11,7 @@ export interface ClassData {
   order: number;
   imageUrl?: string;
   videoUrl?: string;
+  videoStatus?: 'ready' | 'processing' | 'error';
   courseId: string;
   supportMaterials?: string[];
   meta?: {
@@ -55,6 +56,8 @@ export interface UpdateClassDto {
   imageFileId?: string;
   videoFileId?: string;
   supportMaterialIds?: string[];
+  deleteCurrentVideo?: string;
+  deleteCurrentImage?: string;
 }
 
 @Injectable({
@@ -138,6 +141,14 @@ export class ClassesService {
     
     if (classData.linkLive !== undefined) {
       formData.append('linkLive', classData.linkLive);
+    }
+
+    if (classData.deleteCurrentVideo) {
+      formData.append('deleteCurrentVideo', classData.deleteCurrentVideo);
+    }
+
+    if (classData.deleteCurrentImage) {
+      formData.append('deleteCurrentImage', classData.deleteCurrentImage);
     }
 
     return this.http.patch(`${this.apiUrl}/${classId}`, formData);

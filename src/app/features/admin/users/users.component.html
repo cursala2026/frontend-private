@@ -7,15 +7,29 @@
           <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">Gestión de Usuarios 👥</h1>
           <p class="text-indigo-100 text-sm">Administra los usuarios del sistema</p>
         </div>
-        <button 
-          (click)="editUser({})"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 focus:ring-4 focus:ring-white/20 transition-all shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-          </svg>
-          Nuevo Usuario
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- Filtro por Rol -->
+          <select
+            id="roleFilter"
+            [(ngModel)]="selectedRole"
+            (change)="onRoleFilterChange(selectedRole)"
+            class="px-3 py-2 bg-white/90 backdrop-blur-sm text-indigo-600 text-sm font-medium rounded-lg border border-white/20 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/40 transition-all min-w-[140px] hover:bg-white"
+          >
+            <option value="" class="text-gray-600">Todos los roles</option>
+            <option [value]="UserRole.ALUMNO" class="text-gray-900">Alumno</option>
+            <option [value]="UserRole.PROFESOR" class="text-gray-900">Profesor</option>
+            <option [value]="UserRole.ADMIN" class="text-gray-900">Administrador</option>
+          </select>
+          <button 
+            (click)="editUser({})"
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 focus:ring-4 focus:ring-white/20 transition-all shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            Nuevo Usuario
+          </button>
+        </div>
       </div>
     </div>
 

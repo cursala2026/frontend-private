@@ -202,7 +202,34 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     this.courseItems.set(items);
   }
 
+  /**
+   * Verificar si es un curso tipo workshop (una sola clase con enlace externo y sin video)
+   */
+  isWorkshopType(): boolean {
+    const course = this.course();
+    if (!course) return false;
+    
+    const classes = course.classes || [];
+    // Debe tener exactamente una clase
+    if (classes.length !== 1) return false;
+    
+    const singleClass = classes[0];
+    // La clase debe tener linkLive (enlace externo)
+    if (!singleClass.linkLive) return false;
+    
+    // La clase NO debe tener videoUrl (solo imagen)
+    if (singleClass.videoUrl) return false;
+    
+    return true;
+  }
+
   loadCourseProgress(courseId: string): void {
+    // No cargar progreso si es un curso tipo workshop
+    if (this.isWorkshopType()) {
+      this.loading.set(false);
+      return;
+    }
+
     this.progressService.getProgress(courseId).subscribe({
       next: (response: any) => {
         const progress = response?.data || response;
@@ -455,6 +482,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Verifica si el curso tiene algún progreso
    */
   hasProgress(): boolean {
+    // No mostrar progreso si es un workshop
+    if (this.isWorkshopType()) return false;
+
     const progress = this.courseProgress();
     if (!progress) return false;
 
@@ -533,6 +563,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Obtiene el progreso general del curso (incluye clases y cuestionarios)
    */
   getOverallProgress(): number {
+    // No mostrar progreso si es un workshop
+    if (this.isWorkshopType()) return 0;
+    
     const progress = this.courseProgress();
     return progress?.overallProgress || 0;
   }

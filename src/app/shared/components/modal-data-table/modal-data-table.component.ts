@@ -6,17 +6,19 @@ import { ImageUploaderComponent } from '../image-uploader/image-uploader.compone
 export interface ModalField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'number' | 'date' | 'select' | 'textarea' | 'checkbox' | 'password' | 'image' | 'file';
+  type: 'text' | 'email' | 'number' | 'date' | 'select' | 'multiselect' | 'textarea' | 'checkbox' | 'password' | 'image' | 'file';
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
-  options?: { value: any; label: string }[]; // For select
+  options?: { value: any; label: string }[]; // For select and multiselect
   validators?: any[];
   value?: any;
   rows?: number; // For textarea
   imageShape?: 'circle' | 'rectangle'; // For image fields
   aspectRatio?: string; // For image fields
   accept?: string; // For file fields (e.g., '.pdf', 'application/pdf')
+  maxSelections?: number; // For multiselect
+  minSelections?: number; // For multiselect
 }
 
 export interface ModalConfig {
@@ -52,11 +54,20 @@ export class ModalDataTableComponent {
     });
   }
 
+
   initializeForm(): void {
     const formControls: any = {};
     
     this.config.fields.forEach(field => {
-      const value = this.data?.[field.key] ?? field.value ?? '';
+      let value = this.data?.[field.key] ?? field.value ?? '';
+      
+      // Para multiselect, asegurar que sea un array
+      if (field.type === 'multiselect') {
+        if (!Array.isArray(value)) {
+          value = value ? [value] : [];
+        }
+      }
+      
       formControls[field.key] = [
         { value, disabled: field.disabled || this.config.mode === 'view' }
       ];
@@ -107,6 +118,15 @@ export class ModalDataTableComponent {
         return option?.label || value;
       }
       
+      if (field.type === 'multiselect' && field.options) {
+        const values = Array.isArray(value) ? value : (value ? [value] : []);
+        const labels = values.map(v => {
+          const option = field.options?.find(opt => opt.value === v || opt.value === String(v));
+          return option?.label || v;
+        });
+        return labels.join(', ') || '-';
+      }
+      
       if (field.type === 'checkbox') {
         return value ? 'Sí' : 'No';
       }
@@ -119,6 +139,81 @@ export class ModalDataTableComponent {
     }
     
     return this.form?.get(field.key)?.value;
+  }
+
+  onCheckboxChange(field: ModalField, optionValue: any, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    const currentValue = this.getMultiselectValue(field);
+    const valueStr = String(optionValue);
+    
+    let newValue: string[];
+    
+    if (checkbox.checked) {
+      // Agregar el valor si no está ya seleccionado
+      if (!currentValue.includes(valueStr)) {
+        newValue = [...currentValue, valueStr];
+        
+        // Validar límite máximo
+        if (field.maxSelections && newValue.length > field.maxSelections) {
+          // No permitir seleccionar más del máximo
+          checkbox.checked = false;
+          return;
+        }
+      } else {
+        newValue = currentValue;
+      }
+    } else {
+      // Remover el valor
+      newValue = currentValue.filter(v => String(v) !== valueStr);
+      
+      // Validar límite mínimo
+      if (field.minSelections && newValue.length < field.minSelections) {
+        // No permitir deseleccionar si ya está en el mínimo
+        checkbox.checked = true;
+        return;
+      }
+    }
+    
+    // Actualizar el formulario
+    this.form.patchValue({ [field.key]: newValue });
+    this.form.get(field.key)?.markAsTouched();
+  }
+
+  isOptionDisabled(field: ModalField, optionValue: any): boolean {
+    const currentValue = this.getMultiselectValue(field);
+    const valueStr = String(optionValue);
+    const isSelected = currentValue.includes(valueStr);
+    
+    // Si está seleccionado y ya alcanzamos el mínimo, no permitir deseleccionar
+    if (isSelected && field.minSelections && currentValue.length <= field.minSelections) {
+      return true;
+    }
+    
+    // Si no está seleccionado y ya alcanzamos el máximo, deshabilitar
+    if (!isSelected && field.maxSelections && currentValue.length >= field.maxSelections) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  isArray(value: any): boolean {
+    return Array.isArray(value);
+  }
+
+  getMultiselectValue(field: ModalField): any[] {
+    const value = this.form?.get(field.key)?.value;
+    return Array.isArray(value) ? value : [];
+  }
+
+  getMultiselectSelectedValues(field: ModalField): string[] {
+    const value = this.getMultiselectValue(field);
+    return value.map(v => String(v));
+  }
+
+  isOptionSelected(field: ModalField, optionValue: any): boolean {
+    const selectedValues = this.getMultiselectSelectedValues(field);
+    return selectedValues.includes(String(optionValue));
   }
 
   isFieldInvalid(field: ModalField): boolean {

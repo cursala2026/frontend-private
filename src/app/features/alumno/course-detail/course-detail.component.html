@@ -94,14 +94,156 @@
           @if (courseData.longDescription) {
             <div class="bg-white rounded-lg shadow-sm p-8">
               <h2 class="text-2xl font-bold text-gray-900 mb-4">Descripción del Curso</h2>
-              <div class="prose max-w-none text-gray-600 whitespace-pre-line">
+              <div class="prose max-w-none text-gray-600 whitespace-pre-line mb-6">
                 {{ courseData.longDescription }}
               </div>
+              
+              <!-- Profesores en la descripción -->
+              @if (courseData.teachersInfo && courseData.teachersInfo.length > 0) {
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesores del Curso</h3>
+                  <div class="space-y-4">
+                    @for (teacher of courseData.teachersInfo; track teacher.teacherId) {
+                      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
+                        <div class="flex items-start gap-4">
+                          @if (teacher.profilePhotoUrl) {
+                            <img 
+                              [src]="getTeacherImageUrl(teacher.profilePhotoUrl)" 
+                              [alt]="teacher.teacherName"
+                              class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
+                              (error)="handleImageError($event)"
+                            />
+                          } @else {
+                            <div class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
+                              {{ (teacher.firstName && teacher.firstName.charAt(0)) || '' }}{{ (teacher.lastName && teacher.lastName.charAt(0)) || '' }}
+                            </div>
+                          }
+                          <div class="flex-1 min-w-0">
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">
+                              {{ teacher.firstName && teacher.lastName 
+                                ? teacher.firstName + ' ' + teacher.lastName 
+                                : teacher.teacherName || teacher.email }}
+                            </h4>
+                            @if (teacher.professionalDescription) {
+                              <p class="text-sm text-gray-700 leading-relaxed">
+                                {{ teacher.professionalDescription }}
+                              </p>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              } @else if (courseData.mainTeacherInfo) {
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesor del Curso</h3>
+                  <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
+                    <div class="flex items-start gap-4">
+                      @if (courseData.mainTeacherInfo.profilePhotoUrl) {
+                        <img 
+                          [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
+                          [alt]="courseData.mainTeacherInfo.teacherName"
+                          class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
+                          (error)="handleImageError($event)"
+                        />
+                      } @else {
+                        <div class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
+                          {{ (courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.firstName.charAt(0)) || '' }}{{ (courseData.mainTeacherInfo.lastName && courseData.mainTeacherInfo.lastName.charAt(0)) || '' }}
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-lg font-bold text-gray-900 mb-2">
+                          {{ courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.lastName 
+                            ? courseData.mainTeacherInfo.firstName + ' ' + courseData.mainTeacherInfo.lastName 
+                            : courseData.mainTeacherInfo.teacherName || courseData.mainTeacherInfo.email }}
+                        </h4>
+                        @if (courseData.mainTeacherInfo.professionalDescription) {
+                          <p class="text-sm text-gray-700 leading-relaxed">
+                            {{ courseData.mainTeacherInfo.professionalDescription }}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           } @else if (courseData.description) {
             <div class="bg-white rounded-lg shadow-sm p-8">
               <h2 class="text-2xl font-bold text-gray-900 mb-4">Descripción del Curso</h2>
-              <p class="text-gray-600">{{ courseData.description }}</p>
+              <p class="text-gray-600 mb-6">{{ courseData.description }}</p>
+              
+              <!-- Profesores en la descripción -->
+              @if (courseData.teachersInfo && courseData.teachersInfo.length > 0) {
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesores del Curso</h3>
+                  <div class="space-y-4">
+                    @for (teacher of courseData.teachersInfo; track teacher.teacherId) {
+                      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
+                        <div class="flex items-start gap-4">
+                          @if (teacher.profilePhotoUrl) {
+                            <img 
+                              [src]="getTeacherImageUrl(teacher.profilePhotoUrl)" 
+                              [alt]="teacher.teacherName"
+                              class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
+                              (error)="handleImageError($event)"
+                            />
+                          } @else {
+                            <div class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
+                              {{ (teacher.firstName && teacher.firstName.charAt(0)) || '' }}{{ (teacher.lastName && teacher.lastName.charAt(0)) || '' }}
+                            </div>
+                          }
+                          <div class="flex-1 min-w-0">
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">
+                              {{ teacher.firstName && teacher.lastName 
+                                ? teacher.firstName + ' ' + teacher.lastName 
+                                : teacher.teacherName || teacher.email }}
+                            </h4>
+                            @if (teacher.professionalDescription) {
+                              <p class="text-sm text-gray-700 leading-relaxed">
+                                {{ teacher.professionalDescription }}
+                              </p>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              } @else if (courseData.mainTeacherInfo) {
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesor del Curso</h3>
+                  <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
+                    <div class="flex items-start gap-4">
+                      @if (courseData.mainTeacherInfo.profilePhotoUrl) {
+                        <img 
+                          [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
+                          [alt]="courseData.mainTeacherInfo.teacherName"
+                          class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
+                          (error)="handleImageError($event)"
+                        />
+                      } @else {
+                        <div class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
+                          {{ (courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.firstName.charAt(0)) || '' }}{{ (courseData.mainTeacherInfo.lastName && courseData.mainTeacherInfo.lastName.charAt(0)) || '' }}
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-lg font-bold text-gray-900 mb-2">
+                          {{ courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.lastName 
+                            ? courseData.mainTeacherInfo.firstName + ' ' + courseData.mainTeacherInfo.lastName 
+                            : courseData.mainTeacherInfo.teacherName || courseData.mainTeacherInfo.email }}
+                        </h4>
+                        @if (courseData.mainTeacherInfo.professionalDescription) {
+                          <p class="text-sm text-gray-700 leading-relaxed">
+                            {{ courseData.mainTeacherInfo.professionalDescription }}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           }
 
@@ -138,89 +280,6 @@
           </div>
           }
 
-          <!-- Teachers Section -->
-          @if (courseData.mainTeacherInfo || (courseData.teacherInfo && courseData.teacherInfo.length > 0)) {
-            <div class="bg-white rounded-lg shadow-sm p-6">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Profesores del Curso</h2>
-              
-              <!-- Main Teacher -->
-              @if (courseData.mainTeacherInfo) {
-                <div class="mb-6 pb-6 border-b border-gray-200">
-                  <div class="flex items-center mb-4">
-                    <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                    <p class="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Profesor Principal</p>
-                  </div>
-                  <div class="bg-linear-to-r from-indigo-50 to-purple-50 rounded-lg p-5 border-2 border-indigo-200">
-                    <div class="flex items-start space-x-4">
-                      <div class="relative h-20 w-20 shrink-0">
-                        @if (courseData.mainTeacherInfo.profilePhotoUrl) {
-                          <img 
-                            [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
-                            [alt]="courseData.mainTeacherInfo.teacherName"
-                            class="h-20 w-20 rounded-full object-cover border-4 border-white"
-                            (error)="handleImageError($event)"
-                          />
-                        }
-                        <div 
-                          class="h-20 w-20 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white uppercase font-bold text-xl border-4 border-white shadow-md absolute inset-0"
-                          [style.display]="courseData.mainTeacherInfo.profilePhotoUrl ? 'none' : 'flex'"
-                        >
-                          {{ courseData.mainTeacherInfo.firstName.charAt(0) }}{{ courseData.mainTeacherInfo.lastName.charAt(0) }}
-                        </div>
-                      </div>
-                      <div class="flex-1">
-                        <h3 class="text-xl font-bold text-gray-900 mb-1">{{ courseData.mainTeacherInfo.teacherName }}</h3>
-                        @if (courseData.mainTeacherInfo.professionalDescription) {
-                          <p class="text-gray-700 mt-2 leading-relaxed">{{ courseData.mainTeacherInfo.professionalDescription }}</p>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-
-              <!-- Other Teachers -->
-              @if (courseData.teacherInfo && courseData.teacherInfo.length > 0) {
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-4">
-                    @if (courseData.mainTeacherInfo) {
-                      Profesores Colaboradores
-                    } @else {
-                      Profesores
-                    }
-                  </p>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @for (teacher of courseData.teacherInfo; track teacher.teacherId) {
-                      <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div class="relative h-12 w-12 shrink-0">
-                          @if (teacher.profilePhotoUrl) {
-                            <img 
-                              [src]="getTeacherImageUrl(teacher.profilePhotoUrl)" 
-                              [alt]="teacher.teacherName"
-                              class="h-12 w-12 rounded-full object-cover border-2 border-gray-300"
-                              (error)="handleImageError($event)"
-                            />
-                          }
-                          <div 
-                            class="h-12 w-12 rounded-full bg-linear-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-300 absolute inset-0"
-                            [style.display]="teacher.profilePhotoUrl ? 'none' : 'flex'"
-                          >
-                            {{ teacher.firstName.charAt(0) }}{{ teacher.lastName.charAt(0) }}
-                          </div>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                          <h4 class="font-medium text-gray-900 text-sm truncate">{{ teacher.teacherName }}</h4>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          }
-
           <!-- Program Link -->
           @if (courseData.programUrl) {
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -244,9 +303,10 @@
           @if (isEnrolled()) {
             <!-- Enrolled View -->
             <div class="bg-white rounded-lg shadow-md p-6 sticky top-8 border-2 border-brand-primary">
-              <!-- Progreso del curso -->
-              <div class="text-center mb-6">
-                @if (getOverallProgress() >= 100) {
+              <!-- Progreso del curso (oculto para workshops) -->
+              @if (!isWorkshopType()) {
+                <div class="text-center mb-6">
+                  @if (getOverallProgress() >= 100) {
                   <!-- Curso completado -->
                   <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
                     <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -332,10 +392,11 @@
                   <h3 class="text-lg font-bold text-gray-900">¡Listo para comenzar!</h3>
                   <p class="text-sm text-gray-500 mt-1">{{ course()?.classes?.length || 0 }} clases te esperan</p>
                 }
-              </div>
+                </div>
+              }
 
-              <!-- Begin/Continue Button -->
-              @if (course()?.classes && course()!.classes.length > 0) {
+              <!-- Begin/Continue Button (oculto para workshops) -->
+              @if (!isWorkshopType() && course()?.classes && course()!.classes.length > 0) {
                 <button
                   (click)="beginCourse()"
                   [class]="getOverallProgress() === 100 
@@ -367,7 +428,9 @@
                 <!-- Course Content (Classes and Questionnaires) -->
                 @if (courseItems() && courseItems().length > 0) {
                   <div>
-                    <h4 class="font-semibold text-gray-900 mb-3">Contenido del Curso</h4>
+                    @if (!isWorkshopType()) {
+                      <h4 class="font-semibold text-gray-900 mb-3">Contenido del Curso</h4>
+                    }
                     <div class="space-y-2 max-h-96 overflow-y-auto">
                       @for (item of courseItems(); track item.index) {
                         <!-- Class Item -->

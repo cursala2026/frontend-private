@@ -39,23 +39,35 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Course Selection -->
           <div class="md:col-span-2">
-            <label for="courseId" class="block text-base font-bold text-brand-tertiary mb-2">
-              Curso <span class="text-red-500">*</span>
-            </label>
-            <select
-              id="courseId"
-              formControlName="courseId"
-              (change)="onCourseChange()"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-              [class.border-red-500]="questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched"
-            >
-              <option value="">Selecciona un curso</option>
-              @for (course of courses(); track course._id) {
-                <option [value]="course._id">{{ course.name }}</option>
+            @if (preselectedCourseId()) {
+              <!-- Show preselected course as read-only -->
+              <label class="block text-base font-bold text-brand-tertiary mb-2">
+                Curso
+              </label>
+              <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                {{ getPreselectedCourseName() }}
+              </div>
+              <input type="hidden" formControlName="courseId" />
+            } @else {
+              <!-- Show course selector -->
+              <label for="courseId" class="block text-base font-bold text-brand-tertiary mb-2">
+                Curso <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="courseId"
+                formControlName="courseId"
+                (change)="onCourseChange()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+                [class.border-red-500]="questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched"
+              >
+                <option value="">Selecciona un curso</option>
+                @for (course of courses(); track course._id) {
+                  <option [value]="course._id">{{ course.name }}</option>
+                }
+              </select>
+              @if (questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched) {
+                <p class="mt-1 text-sm text-red-600">El curso es requerido</p>
               }
-            </select>
-            @if (questionnaireForm.get('courseId')?.invalid && questionnaireForm.get('courseId')?.touched) {
-              <p class="mt-1 text-sm text-red-600">El curso es requerido</p>
             }
           </div>
 
@@ -137,8 +149,8 @@
                   class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                 >
                   <option value="">Selecciona una clase</option>
-                  @for (classItem of classes(); track classItem._id) {
-                    <option [value]="classItem._id">{{ classItem.order }}. {{ classItem.name }}</option>
+                  @for (classItem of getAvailableClassesForQuestionnaire(); track classItem._id) {
+                    <option [value]="classItem._id">{{ classItem.name }}</option>
                   }
                 </select>
               }
@@ -218,6 +230,25 @@
             <label for="showCorrectAnswers" class="cursor-pointer ml-2 block text-sm text-gray-700">
               Mostrar Respuestas Correctas
             </label>
+          </div>
+
+          <!-- Time Limit (Minutes) -->
+          <div class="md:col-span-2">
+            <label for="timeLimitMinutes" class="block text-base font-bold text-brand-tertiary mb-2">
+              Tiempo Límite (minutos)
+            </label>
+            <input
+              type="number"
+              id="timeLimitMinutes"
+              formControlName="timeLimitMinutes"
+              min="1"
+              max="1440"
+              placeholder="Dejar vacío para tiempo ilimitado (ej: 60 para 1 hora)"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            />
+            <p class="mt-1 text-sm text-gray-600">
+              Establece un tiempo límite en minutos para resolver el cuestionario. Deja vacío para tiempo ilimitado.
+            </p>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { ClassesService } from '../../../core/services/classes.service';
 import { CoursesService } from '../../../core/services/courses.service';
 import { CourseProgressService, ClassProgress } from '../../../core/services/course-progress.service';
 import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
+import { InfoService } from '../../../core/services/info.service';
 import { environment } from '../../../core/config/environment';
 import { Subject, interval, takeUntil } from 'rxjs';
 
@@ -21,6 +22,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
   private questionnairesService = inject(QuestionnairesService);
+  private info = inject(InfoService);
   private destroy$ = new Subject<void>();
 
   @ViewChild('videoPlayer') videoPlayerRef!: ElementRef<HTMLVideoElement>;
@@ -82,6 +84,12 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadClassProgress(courseId: string, classId: string): void {
+    // No cargar progreso si es un curso tipo workshop
+    if (this.isWorkshopType()) {
+      this.progressLoaded.set(true);
+      return;
+    }
+
     this.progressLoaded.set(false);
     this.progressService.getClassProgress(courseId, classId).subscribe({
       next: (response: any) => {
@@ -108,82 +116,71 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
 
-    // También cargar el progreso general del curso
-    this.progressService.getProgress(courseId).subscribe({
-      next: (courseProgress) => {
-        if (courseProgress) {
-          this.overallProgress.set(courseProgress.overallProgress);
-          // Contar clases completadas
-          const completedCount = courseProgress.classesProgress?.filter(cp => cp.completed).length || 0;
-          this.completedClassesCount.set(completedCount);
+    // También cargar el progreso general del curso (solo si no es workshop)
+    if (!this.isWorkshopType()) {
+      this.progressService.getProgress(courseId).subscribe({
+        next: (courseProgress) => {
+          if (courseProgress) {
+            this.overallProgress.set(courseProgress.overallProgress);
+            // Contar clases completadas
+            const completedCount = courseProgress.classesProgress?.filter(cp => cp.completed).length || 0;
+            this.completedClassesCount.set(completedCount);
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   loadClassData(courseId: string, classId: string): void {
     this.loading.set(true);
     this.error.set(null);
 
-    // Verificar acceso primero
-    this.progressService.canAccessClass(courseId, classId).subscribe({
+    // Cargar datos del curso primero para verificar si es workshop
+    this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
-        const accessResult = response?.data || response;
-        if (!accessResult.canAccess) {
-          this.error.set('No puedes acceder a esta clase');
-          this.errorReason.set(accessResult.reason || 'Debes completar las clases anteriores');
-          this.loading.set(false);
-          return;
-        }
-
-        // Si tiene acceso, cargar datos del curso
-        this.coursesService.getCourseById(courseId).subscribe({
-          next: (response: any) => {
-            const course = response?.data || response;
-            this.courseData.set(course);
+        const course = response?.data || response;
+        this.courseData.set(course);
+        
+        // Encontrar la clase en el curso
+        if (course.classes && course.classes.length > 0) {
+          const foundClass = course.classes.find((c: any) => c._id === classId);
+          if (foundClass) {
+            this.classData.set(foundClass);
             
-            // Encontrar la clase en el curso
-            if (course.classes && course.classes.length > 0) {
-              const foundClass = course.classes.find((c: any) => c._id === classId);
-              if (foundClass) {
-                this.classData.set(foundClass);
-              } else {
-                this.error.set('Clase no encontrada');
-              }
+            // Si es workshop, no verificar acceso ni progreso
+            if (this.isWorkshopType()) {
+              this.loading.set(false);
+              return;
+            }
+          } else {
+            this.error.set('Clase no encontrada');
+            this.loading.set(false);
+            return;
+          }
+        }
+        
+        // Si no es workshop, verificar acceso
+        this.progressService.canAccessClass(courseId, classId).subscribe({
+          next: (response: any) => {
+            const accessResult = response?.data || response;
+            if (!accessResult.canAccess) {
+              this.error.set('No puedes acceder a esta clase');
+              this.errorReason.set(accessResult.reason || 'Debes completar las clases anteriores');
+              this.loading.set(false);
+              return;
             }
             this.loading.set(false);
           },
           error: (err) => {
-            console.error('Error loading class:', err);
-            this.error.set('No se pudo cargar la clase');
+            console.error('Error checking access:', err);
             this.loading.set(false);
           }
         });
       },
       error: (err) => {
-        console.error('Error checking access:', err);
-        // Si falla la verificación, intentar cargar de todas formas
-        this.coursesService.getCourseById(courseId).subscribe({
-          next: (response: any) => {
-            const course = response?.data || response;
-            this.courseData.set(course);
-            
-            if (course.classes && course.classes.length > 0) {
-              const foundClass = course.classes.find((c: any) => c._id === classId);
-              if (foundClass) {
-                this.classData.set(foundClass);
-              } else {
-                this.error.set('Clase no encontrada');
-              }
-            }
-            this.loading.set(false);
-          },
-          error: (err) => {
-            console.error('Error loading class:', err);
-            this.error.set('No se pudo cargar la clase');
-            this.loading.set(false);
-          }
-        });
+        console.error('Error loading class:', err);
+        this.error.set('No se pudo cargar la clase');
+        this.loading.set(false);
       }
     });
   }
@@ -299,6 +296,12 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     return `${environment.apiUrl}/static/covers/${imageUrl}`;
   }
 
+  getClassImageUrl(imageUrl: string | null | undefined): string {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${environment.apiUrl}/static/classes/${imageUrl}`;
+  }
+
   downloadMaterial(materialUrl: string): void {
     if (materialUrl) {
       window.open(materialUrl, '_blank');
@@ -354,6 +357,9 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    * Se ejecuta cada vez que cambia el tiempo del video
    */
   onVideoTimeUpdate(event: Event): void {
+    // No guardar progreso si es un curso tipo workshop
+    if (this.isWorkshopType()) return;
+
     const video = event.target as HTMLVideoElement;
     this.currentWatchTime.set(video.currentTime);
 
@@ -395,13 +401,13 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    this.isSavingProgress.set(true);
     this.lastSavedTime = currentTime;
 
     // Calcular si se considera completado (90% o más visto)
     const percentWatched = duration > 0 ? (currentTime / duration) * 100 : 0;
     const completed = percentWatched >= 90;
 
+    // Guardar en silencio sin mostrar el cartel
     this.progressService.updateProgress(this.courseId(), {
       classId: this.classId(),
       watchTime: currentTime,
@@ -409,7 +415,6 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       completed: completed
     }).subscribe({
       next: (courseProgress) => {
-        this.isSavingProgress.set(false);
         this.overallProgress.set(courseProgress.overallProgress);
         // Actualizar conteo de clases completadas
         const completedCount = courseProgress.classesProgress?.filter(cp => cp.completed).length || 0;
@@ -420,7 +425,6 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (err) => {
         console.error('Error saving progress:', err);
-        this.isSavingProgress.set(false);
       }
     });
   }
@@ -487,6 +491,74 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   hasVideo(): boolean {
     return !!this.classData()?.videoUrl;
+  }
+
+  /**
+   * Verificar si es un curso tipo workshop (una sola clase con enlace externo y sin video)
+   */
+  isWorkshopType(): boolean {
+    const course = this.courseData();
+    const classData = this.classData();
+    
+    if (!course || !classData) return false;
+    
+    // Debe tener exactamente una clase
+    const classes = course.classes || [];
+    if (classes.length !== 1) return false;
+    
+    // La clase debe tener linkLive (enlace externo)
+    if (!classData.linkLive) return false;
+    
+    // La clase NO debe tener videoUrl (solo imagen)
+    if (classData.videoUrl) return false;
+    
+    return true;
+  }
+
+  /**
+   * Verificar si la fecha de inicio del curso ya pasó
+   */
+  isCourseStartDateReached(): boolean {
+    const course = this.courseData();
+    if (!course || !course.startDate) return true; // Si no hay fecha, permitir acceso
+    
+    const startDate = new Date(course.startDate);
+    const now = new Date();
+    
+    return now >= startDate;
+  }
+
+  /**
+   * Obtener la fecha de inicio formateada
+   */
+  getFormattedStartDate(): string {
+    const course = this.courseData();
+    if (!course || !course.startDate) return '';
+    
+    const startDate = new Date(course.startDate);
+    return startDate.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  /**
+   * Manejar el clic en el botón de clase en vivo (workshop)
+   */
+  handleWorkshopLinkClick(event: Event): void {
+    if (!this.isCourseStartDateReached()) {
+      event.preventDefault();
+      const formattedDate = this.getFormattedStartDate();
+      this.info.showError(
+        `La clase aún no está activa. La clase comenzará el ${formattedDate}.`
+      );
+      return;
+    }
+    // Si la fecha ya pasó, permitir el comportamiento normal del enlace
   }
 
   /**

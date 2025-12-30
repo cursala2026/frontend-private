@@ -142,8 +142,10 @@ export class TeacherQuestionnairesComponent implements OnInit {
       this.router.navigate(['/profesor/questionnaires', questionnaire._id, 'edit']);
     } else {
       // Create new questionnaire with pre-selected course
+      // Use selectedCourseId if available, otherwise try to get it from query params
+      const courseId = this.selectedCourseId || this.route.snapshot.queryParamMap.get('courseId') || '';
       this.router.navigate(['/profesor/questionnaires/new'], {
-        queryParams: { courseId: this.selectedCourseId }
+        queryParams: courseId ? { courseId } : {}
       });
     }
   }

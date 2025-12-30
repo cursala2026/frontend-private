@@ -37,6 +37,7 @@ export interface Questionnaire {
   allowRetries: boolean;
   maxRetries?: number;
   showCorrectAnswers: boolean;
+  timeLimitMinutes?: number; // Tiempo límite en minutos para resolver el cuestionario (opcional)
   createdBy?: string;
   createdAt?: Date;
   updatedAt?: Date;

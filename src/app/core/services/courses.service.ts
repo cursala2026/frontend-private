@@ -40,6 +40,8 @@ export interface Course {
   mainTeacher?: string;
   mainTeacherInfo?: TeacherInfo;
   teacherInfo?: TeacherInfo[];
+  teachers?: string[]; // Array de IDs de profesores
+  teachersInfo?: TeacherInfo[]; // Array de información de profesores
   numberOfClasses?: number;
   duration?: number;
   isPublished?: boolean;
@@ -56,6 +58,7 @@ export interface Class {
   videoUrl?: string;
   description?: string;
   order?: number;
+  linkLive?: string;
 }
 
 export interface CourseListResponse {
@@ -85,6 +88,7 @@ export interface CreateCourseDto {
   maxInstallments?: number;
   interestFree?: boolean;
   isPublished?: boolean;
+  teachers?: string[]; // Array de IDs de profesores (1-3)
 }
 
 export interface UpdateCourseDto {
@@ -104,6 +108,8 @@ export interface UpdateCourseDto {
   imageFile?: File;
   programFile?: File;
   showOnHome?: boolean;
+  deleteImage?: boolean;
+  teachers?: string[]; // Array de IDs de profesores (1-3)
 }
 
 @Injectable({
@@ -178,6 +184,10 @@ export class CoursesService {
     if (course.maxInstallments !== undefined) formData.append('maxInstallments', course.maxInstallments.toString());
     if (course.interestFree !== undefined) formData.append('interestFree', course.interestFree.toString());
     if (course.isPublished !== undefined) formData.append('isPublished', course.isPublished.toString());
+    if (course.teachers && Array.isArray(course.teachers) && course.teachers.length > 0) {
+      // Enviar como array separado por comas
+      formData.append('teachers', course.teachers.join(','));
+    }
 
     return this.http.post(`${this.apiUrl}/course`, formData);
   }
@@ -209,6 +219,16 @@ export class CoursesService {
     if (course.imageFile) formData.append('imageFile', course.imageFile);
     if (course.programFile) formData.append('programFile', course.programFile);
     if (course.showOnHome !== undefined) formData.append('showOnHome', course.showOnHome.toString());
+    if (course.deleteImage !== undefined) formData.append('deleteImage', course.deleteImage.toString());
+    if (course.teachers !== undefined) {
+      if (Array.isArray(course.teachers) && course.teachers.length > 0) {
+        // Enviar como array separado por comas
+        formData.append('teachers', course.teachers.join(','));
+      } else {
+        // Si es un array vacío, enviar como string vacío para limpiar
+        formData.append('teachers', '');
+      }
+    }
 
     return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }

@@ -44,6 +44,7 @@ export class UsersService {
     sort?: string;
     sort_dir?: 'ASC' | 'DESC';
     search?: string;
+    role?: string;
     _t?: string;
   }): Observable<UserListResponse> {
     let httpParams = new HttpParams();
@@ -57,6 +58,7 @@ export class UsersService {
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
     if (params.sort_dir) httpParams = httpParams.set('sort_dir', params.sort_dir);
     if (params.search) httpParams = httpParams.set('search', params.search);
+    if (params.role) httpParams = httpParams.set('role', params.role);
     if (params._t) httpParams = httpParams.set('_t', params._t);
 
     return this.http.get<UserListResponse>(this.apiUrl, { params: httpParams });

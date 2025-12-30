@@ -16,7 +16,7 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() courseId = '';
   @Input() courseName = '';
-  @Input() currentMainTeacher: any = null;
+  @Input() currentTeachers: any = null; // Puede ser teachersInfo array o mainTeacherInfo
   @Output() close = new EventEmitter<void>();
   @Output() refreshCourses = new EventEmitter<void>();
 
@@ -27,8 +27,8 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   teachers = signal<any[]>([]);
   loadingTeachers = signal(false);
   isSubmitting = signal(false);
-  selectedTeacherId = '';
-  initialTeacherId = '';
+  selectedTeacherIds = signal<string[]>([]);
+  initialTeacherIds = signal<string[]>([]);
 
   ngOnInit(): void {
     if (this.isOpen && this.courseId) {
@@ -46,20 +46,36 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   }
 
   private initializeModal(): void {
-    this.initialTeacherId = this.resolveCurrentTeacherId();
-    this.selectedTeacherId = this.initialTeacherId;
+    const initialIds = this.resolveCurrentTeacherIds();
+    this.initialTeacherIds.set(initialIds);
+    this.selectedTeacherIds.set([...initialIds]);
     this.loadTeachers();
   }
 
-  private resolveCurrentTeacherId(): string {
-    const t = this.currentMainTeacher;
-    if (!t) return '';
+  private resolveCurrentTeacherIds(): string[] {
+    const teachers = this.currentTeachers;
+    if (!teachers) return [];
 
-    // Si es un string, es directamente el ID
-    if (typeof t === 'string') return t;
+    // Si es un array (teachersInfo)
+    if (Array.isArray(teachers)) {
+      return teachers.map((t: any) => {
+        if (typeof t === 'string') return t;
+        return t._id || t.teacherId || t.id || '';
+      }).filter((id: string) => id !== '');
+    }
 
-    // Si es un objeto, buscar el ID en diferentes propiedades
-    return t._id || t.teacherId || t.id || '';
+    // Si es un objeto único (mainTeacherInfo para compatibilidad)
+    if (typeof teachers === 'object') {
+      const id = teachers._id || teachers.teacherId || teachers.id || '';
+      return id ? [id] : [];
+    }
+
+    // Si es un string
+    if (typeof teachers === 'string') {
+      return teachers ? [teachers] : [];
+    }
+
+    return [];
   }
 
   loadTeachers(): void {
@@ -82,31 +98,87 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
     });
   }
 
-  assignTeacher(): void {
-    // Permitir asignar o remover profesor (selectedTeacherId puede estar vacío)
+  assignTeachers(): void {
+    const selectedIds = this.selectedTeacherIds();
+    
+    // Validar que haya entre 1 y 3 profesores
+    if (selectedIds.length < 1 || selectedIds.length > 3) {
+      this.infoService.showError('El curso debe tener entre 1 y 3 profesores asignados');
+      return;
+    }
+
     this.isSubmitting.set(true);
-    this.coursesService.assignMainTeacher(this.courseId, this.selectedTeacherId || '').subscribe({
+    
+    // Usar updateCourse para actualizar los profesores
+    const formData = new FormData();
+    formData.append('teachers', selectedIds.join(','));
+    
+    this.coursesService.updateCourse(this.courseId, { teachers: selectedIds }).subscribe({
       next: () => {
-        const message = this.selectedTeacherId 
-          ? 'Profesor principal asignado exitosamente'
-          : 'Profesor principal removido exitosamente';
+        const count = selectedIds.length;
+        const message = count === 1 
+          ? 'Profesor asignado exitosamente'
+          : `${count} profesores asignados exitosamente`;
         this.infoService.showSuccess(message);
         this.isSubmitting.set(false);
         this.refreshCourses.emit();
         this.onClose();
       },
       error: (error: any) => {
-        console.error('Error assigning teacher:', error);
-        const errorMsg = error?.error?.message || 'Error al asignar el profesor';
+        console.error('Error assigning teachers:', error);
+        const errorMsg = error?.error?.message || 'Error al asignar los profesores';
         this.infoService.showError(errorMsg);
         this.isSubmitting.set(false);
       }
     });
   }
 
-  getSelectedTeacher(): any {
-    if (!this.selectedTeacherId) return null;
-    return this.teachers().find((t: any) => t._id === this.selectedTeacherId);
+  onTeacherToggle(teacherId: string, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    const currentIds = [...this.selectedTeacherIds()];
+    
+    if (checkbox.checked) {
+      // Agregar si no está ya seleccionado y no excede el máximo
+      if (!currentIds.includes(teacherId) && currentIds.length < 3) {
+        currentIds.push(teacherId);
+      } else if (currentIds.length >= 3) {
+        checkbox.checked = false;
+        this.infoService.showError('Solo puedes seleccionar hasta 3 profesores');
+        return;
+      }
+    } else {
+      // Remover si está seleccionado y no baja del mínimo
+      if (currentIds.includes(teacherId) && currentIds.length > 1) {
+        currentIds.splice(currentIds.indexOf(teacherId), 1);
+      } else if (currentIds.length <= 1) {
+        checkbox.checked = true;
+        this.infoService.showError('El curso debe tener al menos 1 profesor');
+        return;
+      }
+    }
+    
+    this.selectedTeacherIds.set(currentIds);
+  }
+
+  isTeacherSelected(teacherId: string): boolean {
+    return this.selectedTeacherIds().includes(teacherId);
+  }
+
+  isTeacherDisabled(teacherId: string): boolean {
+    const currentIds = this.selectedTeacherIds();
+    const isSelected = currentIds.includes(teacherId);
+    
+    // Si está seleccionado y ya alcanzamos el mínimo, no permitir deseleccionar
+    if (isSelected && currentIds.length <= 1) {
+      return true;
+    }
+    
+    // Si no está seleccionado y ya alcanzamos el máximo, deshabilitar
+    if (!isSelected && currentIds.length >= 3) {
+      return true;
+    }
+    
+    return false;
   }
 
   getTeacherInitials(teacher: any): string {
@@ -124,12 +196,14 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   }
 
   hasChanges(): boolean {
-    return this.selectedTeacherId !== this.initialTeacherId;
+    const current = this.selectedTeacherIds().sort().join(',');
+    const initial = this.initialTeacherIds().sort().join(',');
+    return current !== initial;
   }
 
   onClose(): void {
-    this.selectedTeacherId = '';
-    this.initialTeacherId = '';
+    this.selectedTeacherIds.set([]);
+    this.initialTeacherIds.set([]);
     this.isSubmitting.set(false);
     // Limpiar la lista de profesores al cerrar para forzar recarga la próxima vez
     this.teachers.set([]);

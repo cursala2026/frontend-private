@@ -1,5 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../shared/components/modal-data-table/modal-data-table.component';
 import { TableColumn, TableConfig, PaginationData } from '../../../shared/models/table.interface';
@@ -10,7 +12,7 @@ import { UserRole } from '../../../core/models/user-role.enum';
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, ModalDataTableComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalDataTableComponent],
   templateUrl: './users.component.html'
 })
 export class UsersComponent implements OnInit {
@@ -27,6 +29,12 @@ export class UsersComponent implements OnInit {
   sortColumn = 'createdAt';
   sortDirection: 'ASC' | 'DESC' = 'DESC';
   searchTerm = '';
+  selectedRole: string = '';
+  
+  // Exponer UserRole para usar en el template
+  UserRole = UserRole;
+
+  private route = inject(ActivatedRoute);
 
   constructor(
     private usersService: UsersService,
@@ -65,10 +73,10 @@ export class UsersComponent implements OnInit {
         width: '15%'
       },
       {
-        key: 'phone',
-        label: 'Teléfono',
-        type: 'text',
-        formatter: (value: string) => value || '-',
+        key: 'createdAt',
+        label: 'Fecha de Inscripción',
+        type: 'date',
+        sortable: true,
         width: '12%'
       },
       {
@@ -87,14 +95,6 @@ export class UsersComponent implements OnInit {
         onChange: (row: any, newValue: string) => this.handleRoleChange(row, newValue),
         align: 'center',
         width: '12%'
-      },
-      {
-        key: 'status',
-        label: 'Estado',
-        type: 'switch',
-        align: 'center',
-        width: '10%',
-        onChange: (row: any) => this.toggleUserStatus(row)
       }
     ],
     sortBy: this.sortColumn,
@@ -120,7 +120,14 @@ export class UsersComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.loadUsers();
+    // Leer el parámetro 'role' de la URL si existe
+    this.route.queryParamMap.subscribe(params => {
+      const roleFromQuery = params.get('role');
+      if (roleFromQuery) {
+        this.selectedRole = roleFromQuery;
+      }
+      this.loadUsers();
+    });
   }
 
   loadUsers(): void {
@@ -131,7 +138,8 @@ export class UsersComponent implements OnInit {
       page_size: this.pageSize,
       sort: this.sortColumn,
       sort_dir: this.sortDirection,
-      search: this.searchTerm || undefined
+      search: this.searchTerm || undefined,
+      role: this.selectedRole || undefined
     };
 
     this.usersService.getUsers(params).subscribe({
@@ -195,6 +203,12 @@ export class UsersComponent implements OnInit {
         this.loadUsers();
       }
     }, 500);
+  }
+
+  onRoleFilterChange(role: string): void {
+    this.selectedRole = role;
+    this.currentPage = 1;
+    this.loadUsers();
   }
 
   editUser(user: any): void {
@@ -300,7 +314,6 @@ export class UsersComponent implements OnInit {
         { key: 'birthDate', label: 'Fecha de Nacimiento', type: 'date' },
         { key: 'professionalDescription', label: 'Descripción Profesional', type: 'textarea' },
         { key: 'roles', label: 'Roles', type: 'text' },
-        { key: 'status', label: 'Estado', type: 'text' },
         { key: 'createdAt', label: 'Fecha de Registro', type: 'date' },
         { key: 'lastConnection', label: 'Última Conexión', type: 'date' }
       ]
@@ -343,6 +356,9 @@ export class UsersComponent implements OnInit {
       if (!userData.username && userData.email) {
         userData.username = userData.email.split('@')[0];
       }
+      
+      // Asegurar que siempre se cree con estado activo
+      userData.status = 'ACTIVE';
       
       this.usersService.createUser(userData).subscribe({
         next: () => {
@@ -433,21 +449,6 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  toggleUserStatus(user: any): void {
-    const isActive = user.status === 'ACTIVE';
-    const userName = `${user.firstName} ${user.lastName}`;
-    
-    this.usersService.toggleUserStatus(user._id).subscribe({
-      next: () => {
-        this.infoService.showSuccess(`${userName} ${isActive ? 'desactivado' : 'activado'} exitosamente`);
-        this.loadUsers();
-      },
-      error: (error) => {
-        console.error('Error toggling user status:', error);
-        this.infoService.showError(error.error?.message || 'Error al cambiar el estado del usuario');
-      }
-    });
-  }
 
   deleteUser(user: any): void {
     if (confirm(`¿Estás seguro de que quieres eliminar a ${user.email}? Esta acción no se puede deshacer.`)) {

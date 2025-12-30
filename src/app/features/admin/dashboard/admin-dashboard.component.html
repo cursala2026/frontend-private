@@ -1,13 +1,13 @@
 <div class="pt-4 space-y-4">
   <!-- Welcome Section -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden shadow-lg rounded-xl">
+  <div class="bg-brand-primary overflow-hidden shadow-lg rounded-xl">
     <div class="px-5 py-4 sm:px-6 sm:py-5">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">
             ¡Hola, {{ user()?.firstName }}! 👋
           </h1>
-          <p class="text-indigo-100 text-sm">
+          <p class="text-white/80 text-sm">
             Panel de administración del sistema
           </p>
         </div>
@@ -25,7 +25,7 @@
   <!-- Loading State -->
   @if (loading()) {
     <div class="flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
     </div>
   }
 
@@ -48,11 +48,11 @@
     <!-- Main Stats Cards -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <!-- Total Usuarios -->
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+      <a routerLink="/admin/users" class="bg-brand-primary overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200 cursor-pointer block">
         <div class="px-4 py-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-blue-100 text-xs font-medium mb-1">
+              <p class="text-white/80 text-xs font-medium mb-1">
                 Total Usuarios
               </p>
               <p class="text-3xl font-bold text-white">
@@ -66,14 +66,14 @@
             </div>
           </div>
         </div>
-      </div>
+      </a>
 
       <!-- Total Alumnos -->
-      <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+      <a [routerLink]="['/admin/users']" [queryParams]="{ role: UserRole.ALUMNO }" class="bg-brand-primary-dark overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200 cursor-pointer block">
         <div class="px-4 py-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-emerald-100 text-xs font-medium mb-1">
+              <p class="text-white/80 text-xs font-medium mb-1">
                 Alumnos
               </p>
               <p class="text-3xl font-bold text-white">
@@ -87,35 +87,35 @@
             </div>
           </div>
         </div>
-      </div>
+      </a>
 
       <!-- Total Profesores -->
-      <div class="bg-brand-secondary overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+      <a [routerLink]="['/admin/users']" [queryParams]="{ role: UserRole.PROFESOR }" class="bg-brand-secondary overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200 cursor-pointer block">
         <div class="px-4 py-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-purple-100 text-xs font-medium mb-1">
+              <p class="text-brand-secondary-text text-xs font-medium mb-1">
                 Profesores
               </p>
-              <p class="text-3xl font-bold text-white">
+              <p class="text-3xl font-bold text-brand-secondary-text">
                 {{ stats()!.totalTeachers }}
               </p>
             </div>
-            <div class="bg-white/20 rounded-lg p-2">
-              <svg class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="bg-brand-secondary-text/10 rounded-lg p-2">
+              <svg class="h-7 w-7 text-brand-secondary-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
           </div>
         </div>
-      </div>
+      </a>
 
       <!-- Total Cursos -->
-      <div class="bg-gradient-to-br from-amber-500 to-amber-600 overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+      <a routerLink="/admin/courses" class="bg-brand-tertiary overflow-hidden shadow-lg rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200 cursor-pointer block">
         <div class="px-4 py-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-amber-100 text-xs font-medium mb-1">
+              <p class="text-white/80 text-xs font-medium mb-1">
                 Cursos
               </p>
               <p class="text-3xl font-bold text-white">
@@ -129,7 +129,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Distribution Chart -->
@@ -141,61 +141,77 @@
           <span class="text-xs text-gray-500">Total: {{ stats()!.totalUsers }}</span>
         </div>
         <div class="space-y-3">
-          <!-- Alumnos Bar -->
+          <!-- Distribución Combinada Alumnos, Profesores y Administradores -->
           <div>
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-medium text-gray-700">Alumnos</span>
-              <span class="text-xs font-semibold text-emerald-600">{{ stats()!.totalStudents }}</span>
-            </div>
-            <div class="relative h-6 bg-gray-100 rounded-full overflow-hidden">
-              <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                   [style.width.%]="(stats()!.totalStudents / stats()!.totalUsers) * 100">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 rounded-full bg-brand-primary-dark"></div>
+                  <span class="text-xs font-medium text-gray-700">Alumnos</span>
+                  <span class="text-xs font-semibold text-brand-primary-dark">{{ stats()!.totalStudents }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 rounded-full bg-brand-secondary"></div>
+                  <span class="text-xs font-medium text-gray-700">Profesores</span>
+                  <span class="text-xs font-semibold text-brand-secondary">{{ stats()!.totalTeachers }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 rounded-full bg-brand-primary"></div>
+                  <span class="text-xs font-medium text-gray-700">Administradores</span>
+                  <span class="text-xs font-semibold text-brand-primary">{{ stats()!.totalAdmins }}</span>
+                </div>
               </div>
-              <div class="absolute inset-0 flex items-center justify-end pr-3">
+            </div>
+            <div class="relative h-8 bg-gray-100 rounded-full overflow-hidden">
+              <!-- Barra de Alumnos -->
+              <div class="absolute inset-y-0 left-0 bg-brand-primary-dark transition-all duration-1000 ease-out flex items-center justify-end pr-2"
+                   [style.width.%]="(stats()!.totalStudents / stats()!.totalUsers) * 100">
                 <span class="text-xs font-bold text-white">{{ ((stats()!.totalStudents / stats()!.totalUsers) * 100).toFixed(1) }}%</span>
               </div>
-            </div>
-          </div>
-          
-          <!-- Profesores Bar -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-medium text-gray-700">Profesores</span>
-              <span class="text-xs font-semibold text-purple-600">{{ stats()!.totalTeachers }}</span>
-            </div>
-            <div class="relative h-6 bg-gray-100 rounded-full overflow-hidden">
-              <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-1000 ease-out"
+              <!-- Barra de Profesores -->
+              <div class="absolute inset-y-0 bg-brand-secondary transition-all duration-1000 ease-out flex items-center justify-end pr-2"
+                   [style.left.%]="(stats()!.totalStudents / stats()!.totalUsers) * 100"
                    [style.width.%]="(stats()!.totalTeachers / stats()!.totalUsers) * 100">
+                <span class="text-xs font-bold text-brand-secondary-text">{{ ((stats()!.totalTeachers / stats()!.totalUsers) * 100).toFixed(1) }}%</span>
               </div>
-              <div class="absolute inset-0 flex items-center justify-end pr-3">
-                <span class="text-xs font-bold text-white">{{ ((stats()!.totalTeachers / stats()!.totalUsers) * 100).toFixed(1) }}%</span>
+              <!-- Barra de Administradores -->
+              <div class="absolute inset-y-0 bg-brand-primary transition-all duration-1000 ease-out flex items-center justify-end pr-2"
+                   [style.left.%]="((stats()!.totalStudents + stats()!.totalTeachers) / stats()!.totalUsers) * 100"
+                   [style.width.%]="(stats()!.totalAdmins / stats()!.totalUsers) * 100">
+                <span class="text-xs font-bold text-white">{{ ((stats()!.totalAdmins / stats()!.totalUsers) * 100).toFixed(1) }}%</span>
               </div>
             </div>
           </div>
 
-          <!-- Cursos vs Categorías -->
-          <div class="pt-3 mt-3 border-t border-gray-200">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-sm font-medium text-gray-700">Cursos por Categoría</span>
-              <span class="text-sm font-semibold text-amber-600">{{ (stats()!.totalCourses / stats()!.totalCategories).toFixed(1) }}</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-600">Cursos</span>
-                  <span class="text-xs font-semibold text-amber-600">{{ stats()!.totalCourses }}</span>
-                </div>
-                <div class="h-3 bg-gradient-to-r from-amber-200 to-amber-300 rounded-full"></div>
+          <!-- Gráfica de Registros por Mes -->
+          @if (hasUsersByMonth()) {
+            @let usersByMonth = getUsersByMonth();
+            <div class="pt-3 mt-3 border-t border-gray-200">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-gray-700">Registros de Usuarios por Mes</span>
+                <span class="text-xs text-gray-500">Últimos 6 meses</span>
               </div>
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-600">Categorías</span>
-                  <span class="text-xs font-semibold text-gray-600">{{ stats()!.totalCategories }}</span>
+              <div class="space-y-2">
+                <div class="flex items-end justify-between gap-2 h-28">
+                  @for (item of usersByMonth; track item.month) {
+                    <div class="flex-1 flex flex-col items-center gap-1.5 h-full">
+                      <div class="relative w-full h-full flex items-end justify-center">
+                        <div 
+                          class="w-full max-w-[50px] bg-brand-primary rounded-t transition-all duration-1000 ease-out hover:bg-brand-primary-dark cursor-pointer shadow-sm"
+                          [style.height.%]="getBarHeight(item.count)"
+                          [title]="item.count + ' usuarios en ' + item.month">
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <span class="text-xs font-semibold text-gray-700">{{ item.count }}</span>
+                        <span class="text-[10px] text-gray-500 text-center leading-tight">{{ item.month }}</span>
+                      </div>
+                    </div>
+                  }
                 </div>
-                <div class="h-3 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full"></div>
               </div>
             </div>
-          </div>
+          }
         </div>
       </div>
 
@@ -205,8 +221,8 @@
           <div class="px-4 py-3 border-b border-gray-100">
             <div class="flex items-center justify-between">
               <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                <div class="bg-indigo-100 rounded-lg p-1.5">
-                  <svg class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-brand-primary/10 rounded-lg p-1.5">
+                  <svg class="h-4 w-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
@@ -218,18 +234,31 @@
           <div class="p-4">
             <div class="space-y-2">
               @for (user of stats()!.recentUsers; track user._id) {
-                <div class="group flex items-center justify-between p-2.5 bg-gradient-to-r from-gray-50 to-transparent rounded-lg hover:from-indigo-50 hover:shadow-md transition-all duration-200">
+                <div class="group flex items-center justify-between p-2.5 bg-gradient-to-r from-gray-50 to-transparent rounded-lg hover:from-brand-primary/5 hover:shadow-md transition-all duration-200">
                   <div class="flex items-center min-w-0 flex-1 gap-3">
                     <div class="flex-shrink-0 relative">
-                      <div class="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                        <span class="text-white font-bold text-xs">
-                          {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
-                        </span>
-                      </div>
+                      @if (getUserPhotoUrl(user)) {
+                        <img 
+                          [src]="getUserPhotoUrl(user)!" 
+                          [alt]="user.firstName + ' ' + user.lastName"
+                          class="h-9 w-9 rounded-full object-cover shadow-md border-2 border-white"
+                          (error)="onImageError($event)">
+                        <div class="h-9 w-9 rounded-full bg-brand-primary hidden items-center justify-center shadow-md">
+                          <span class="text-white font-bold text-xs">
+                            {{ getUserInitials(user) }}
+                          </span>
+                        </div>
+                      } @else {
+                        <div class="h-9 w-9 rounded-full bg-brand-primary flex items-center justify-center shadow-md">
+                          <span class="text-white font-bold text-xs">
+                            {{ getUserInitials(user) }}
+                          </span>
+                        </div>
+                      }
                       <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></div>
                     </div>
                     <div class="min-w-0 flex-1">
-                      <p class="text-xs font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                      <p class="text-xs font-semibold text-gray-900 truncate group-hover:text-brand-primary transition-colors">
                         {{ user.firstName }} {{ user.lastName }}
                       </p>
                       <p class="text-[10px] text-gray-500 truncate">{{ user.email }}</p>

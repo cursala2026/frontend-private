@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { environment } from '../../../core/config/environment';
 
 interface RecentUser {
@@ -12,23 +14,26 @@ interface RecentUser {
   lastName: string;
   createdAt: string;
   roles: string[];
+  profilePhotoUrl?: string;
 }
 
 interface SystemStats {
   totalUsers: number;
   totalStudents: number;
   totalTeachers: number;
+  totalAdmins: number;
   totalCourses: number;
   totalCategories: number;
   totalPromotionalCodes: number;
   activePromotionalCodes: number;
   recentUsers: RecentUser[];
+  usersByMonth?: Array<{ month: string; count: number }>;
 }
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './admin-dashboard.component.html'
 })
 export class AdminDashboardComponent implements OnInit {
@@ -78,9 +83,9 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getRoleBadgeClass(roles: string[]): string {
-    if (roles.includes('ADMIN')) return 'bg-purple-100 text-purple-800';
-    if (roles.includes('PROFESOR')) return 'bg-blue-100 text-blue-800';
-    if (roles.includes('ALUMNO')) return 'bg-green-100 text-green-800';
+    if (roles.includes('ADMIN')) return 'bg-brand-primary/10 text-brand-primary';
+    if (roles.includes('PROFESOR')) return 'bg-brand-secondary/20 text-brand-secondary-text';
+    if (roles.includes('ALUMNO')) return 'bg-brand-primary-dark/10 text-brand-primary-dark';
     return 'bg-gray-100 text-gray-800';
   }
 
@@ -90,4 +95,45 @@ export class AdminDashboardComponent implements OnInit {
     if (roles.includes('ALUMNO')) return 'Alumno';
     return 'Usuario';
   }
+
+  getMaxCount(): number {
+    const usersByMonth = this.stats()?.usersByMonth;
+    if (!usersByMonth || usersByMonth.length === 0) return 1;
+    return Math.max(...usersByMonth.map(item => item.count), 1);
+  }
+
+  getBarHeight(count: number): number {
+    const maxCount = this.getMaxCount();
+    if (maxCount === 0) return 0;
+    return (count / maxCount) * 100;
+  }
+
+  hasUsersByMonth(): boolean {
+    const usersByMonth = this.stats()?.usersByMonth;
+    return !!usersByMonth && usersByMonth.length > 0;
+  }
+
+  getUsersByMonth(): Array<{ month: string; count: number }> {
+    return this.stats()?.usersByMonth || [];
+  }
+
+  getUserPhotoUrl(user: RecentUser): string | null {
+    return user.profilePhotoUrl || null;
+  }
+
+  getUserInitials(user: RecentUser): string {
+    return (user.firstName?.charAt(0) || '') + (user.lastName?.charAt(0) || '');
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const fallback = img.nextElementSibling as HTMLElement;
+    if (fallback) {
+      fallback.style.display = 'flex';
+    }
+  }
+
+  // Exponer UserRole para usar en el template
+  UserRole = UserRole;
 }

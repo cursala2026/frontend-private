@@ -63,9 +63,19 @@
                 class="w-full h-full object-cover"
                 (error)="handleImageError($event)"
               />
+              <button
+                type="button"
+                (click)="removeImage()"
+                class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                title="Eliminar imagen"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
           }
-          <div class="">
+          <div class="flex-1">
             <input
               type="file"
               accept="image/*"
@@ -306,7 +316,7 @@
         </button>
         <button
           type="submit"
-          [disabled]="saving() || courseForm.invalid"
+          [disabled]="saving() || (courseForm.invalid && !courseForm.dirty)"
           class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white  "
         >
           @if (saving()) {
