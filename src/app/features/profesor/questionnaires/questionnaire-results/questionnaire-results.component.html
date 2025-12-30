@@ -15,7 +15,7 @@
       </div>
       <button
       (click)="goBack()"
-      class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-primary border-2 border-brand-primary hover:ring-[3px] hover:ring-white/60 hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
+      class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 border-2 border-white hover:ring-[3px] hover:ring-white/60 hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -234,14 +234,14 @@
 
 <!-- Grading Modal -->
 @if (showGradingModal()) {
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" (click)="closeGradingModal()">
+  <div class="fixed inset-0 bg-black/70 bg-opacity-50 flex items-center justify-center z-50 p-4" (click)="closeGradingModal()">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" (click)="$event.stopPropagation()">
       <!-- Modal Header -->
-      <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-white">Revisar y Calificar</h2>
+      <div class="bg-linear-to-br from-amber-400 to-amber-600 px-6 py-4 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-white">Revisar y Calificar</h2>
         <button
           (click)="closeGradingModal()"
-          class="text-white hover:text-gray-200 transition-colors"
+          class="cursor-pointer text-white/50 hover:text-white transition-colors"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -253,23 +253,23 @@
       <div class="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
         @if (currentSubmission()) {
           <!-- Submission Info -->
-          <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div class="mb-6 p-5 bg-brand-primary/20 rounded-lg">
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <span class="text-sm text-gray-600">Estudiante:</span>
-                <p class="font-medium">{{ currentSubmission()?.studentName || 'N/A' }}</p>
+                <p class="font-bold text-lg">{{ currentSubmission()?.studentName || 'N/A' }}</p>
               </div>
               <div>
                 <span class="text-sm text-gray-600">Intento:</span>
-                <p class="font-medium">#{{ currentSubmission()?.attemptNumber }}</p>
+                <p class="font-bold text-lg">#{{ currentSubmission()?.attemptNumber }}</p>
               </div>
               <div>
                 <span class="text-sm text-gray-600">Enviado:</span>
-                <p class="font-medium">{{ currentSubmission()?.submittedAt | date: 'short' }}</p>
+                <p class="font-bold text-lg">{{ currentSubmission()?.submittedAt | date: 'short' }}</p>
               </div>
               <div>
                 <span class="text-sm text-gray-600">Calificación Automática:</span>
-                <p class="font-medium">{{ currentSubmission()?.autoGradedScore?.toFixed(1) || 0 }}%</p>
+                <p class="font-bold text-lg">{{ currentSubmission()?.autoGradedScore?.toFixed(1) || 0 }}%</p>
               </div>
             </div>
           </div>
@@ -279,11 +279,11 @@
             @for (question of questionnaire()?.questions; track question._id; let i = $index) {
               @if (currentSubmission()) {
                 @let answer = getAnswerForQuestion(currentSubmission()!, question._id!.toString());
-                <div class="border border-gray-200 rounded-lg p-4">
+                <div class="border border-brand-tertiary-lighten rounded-lg p-5">
                   <!-- Question Header -->
-                  <div class="flex items-start justify-between mb-3">
-                    <h3 class="text-lg font-medium text-gray-900">{{ i + 1 }}. {{ question.questionText }}</h3>
-                    <span class="text-sm text-gray-600 whitespace-nowrap ml-4">{{ question.points }} puntos</span>
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xl font-medium text-brand-primary mb-2 px-3 py-2">{{ i + 1 }}. {{ question.questionText }}</h3>
+                    <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/10 px-2 py-1 font-bold  whitespace-nowrap ml-4">{{ question.points }} puntos</span>
                   </div>
 
                   <!-- Multiple Choice Answer -->
@@ -314,7 +314,7 @@
                         }
                       }
                       @if (answer) {
-                        <div class="mt-2 text-sm">
+                        <div class="mt-4 text-sm">
                           @if (answer.isCorrect) {
                             <span class="text-green-600 font-medium">✓ Correcta (+{{ question.points }} puntos)</span>
                           } @else {
@@ -328,15 +328,15 @@
                   <!-- Text Answer -->
                   @if (question.type === 'TEXT' && answer) {
                     <div class="space-y-3">
-                      <div class="bg-gray-50 rounded p-3">
-                        <p class="text-sm text-gray-600 mb-1">Respuesta del estudiante:</p>
-                        <p class="text-gray-900">{{ answer.textAnswer || '(Sin respuesta)' }}</p>
+                      <div class="bg-brand-secondary/20 rounded-md p-5">
+                        <p class="text-sm text-[#97770d] mb-1">Respuesta del estudiante:</p>
+                        <p class="text-brand-tertiary text-lg">{{ answer.textAnswer || '(Sin respuesta)' }}</p>
                       </div>
 
                       <!-- Grading Section -->
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-gray-200">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 mt-6 border-t border-gray-200 bg-brand-tertiary-lighten/10 rounded-md p-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-2">
+                          <label class="block text-sm font-bold text-brand-tertiary mb-2">
                             Puntos (de {{ question.points }})
                           </label>
                           <input
@@ -345,18 +345,18 @@
                             [max]="question.points"
                             min="0"
                             step="0.5"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full bg-white px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                           />
                         </div>
                         <div class="md:col-span-2">
-                          <label class="block text-sm font-medium text-gray-700 mb-2">
+                          <label class="block text-sm font-bold text-brand-tertiary mb-2">
                             Retroalimentación (opcional)
                           </label>
                           <textarea
                             [(ngModel)]="gradingAnswers[question._id!.toString()].feedback"
                             rows="2"
                             placeholder="Comentarios sobre esta respuesta..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="bg-white w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                           ></textarea>
                         </div>
                       </div>
@@ -368,15 +368,15 @@
           </div>
 
           <!-- Overall Feedback -->
-          <div class="mt-6 pt-6 border-t border-gray-200">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+          <div class="mt-8 pt-6 border-t border-gray-200 bg-brand-tertiary-lighten/10 p-4 rounded-md">
+            <label class="block text-sm font-bold text-brand-tertiary mb-2">
               Comentario General (opcional)
             </label>
             <textarea
               [(ngModel)]="overallFeedback"
               rows="3"
               placeholder="Retroalimentación general sobre el cuestionario..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="bg-white w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             ></textarea>
           </div>
         }
@@ -386,14 +386,14 @@
       <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-200">
         <button
           (click)="closeGradingModal()"
-          class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
         >
           Cancelar
         </button>
         <button
           (click)="saveGrade()"
           [disabled]="savingGrade()"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
         >
           @if (savingGrade()) {
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

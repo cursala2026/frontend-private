@@ -1,6 +1,6 @@
 <div class="space-y-4">
   <!-- Header Section -->
-  <div class="relative overflow-hidden bg-linear-to-tr from-[#2777a8] to-[#9ed4f0] rounded-xl">
+  <div class="relative overflow-hidden bg-linear-to-tr from-[#033e72] to-[#66afef] rounded-xl">
     <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center justify-between">
       <div>
         <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Alumnos</h1>
@@ -38,7 +38,7 @@
                   <h2 class="text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
                   <p class="text-sm text-brand-primary/80">{{ group.students.length }} {{ group.students.length === 1 ? 'alumno' : 'alumnos' }}</p>
                 </div>
-                <div class="text-right text-sm text-brand-primary px-2 bg-brand-primary/30">
+                <div class="text-right text-sm text-brand-primary px-2 py-1 bg-brand-primary/10">
                   <span class="font-medium">{{ group.students[0]?.totalClasses || 0 }} clases</span>
                 </div>
               </div>
@@ -52,7 +52,7 @@
                     <!-- Left: Avatar + Name + Email -->
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <!-- Profile Image -->
-                      <div class="flex-shrink-0">
+                      <div class="shrink-0">
                         @if (getStudentImageUrl(student.profilePhotoUrl)) {
                           <img
                             [src]="getStudentImageUrl(student.profilePhotoUrl)"
@@ -61,7 +61,7 @@
                             (error)="handleImageError($event)"
                           />
                         } @else {
-                          <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
+                          <div class="h-10 w-10 rounded-full bg-brand-primary uppercase font-bold flex items-center justify-center text-white text-sm">
                             {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
                           </div>
                         }

@@ -30,7 +30,7 @@
     </div>
   } @else if (course(); as courseData) {
     <!-- Course Detail Page -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="">
       <!-- Back Button -->
       <button
         (click)="goBack()"
@@ -164,7 +164,7 @@
                           />
                         }
                         <div 
-                          class="h-20 w-20 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-md absolute inset-0"
+                          class="h-20 w-20 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white uppercase font-bold text-xl border-4 border-white shadow-md absolute inset-0"
                           [style.display]="courseData.mainTeacherInfo.profilePhotoUrl ? 'none' : 'flex'"
                         >
                           {{ courseData.mainTeacherInfo.firstName.charAt(0) }}{{ courseData.mainTeacherInfo.lastName.charAt(0) }}
@@ -228,7 +228,7 @@
               <a 
                 [href]="courseData.programUrl" 
                 target="_blank"
-                class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg"
+                class="group mt-2 w-auto relative inline-flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
               >
                 <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -338,7 +338,7 @@
               @if (course()?.classes && course()!.classes.length > 0) {
                 <button
                   (click)="beginCourse()"
-                  [class]="getOverallProgress() >= 100 
+                  [class]="getOverallProgress() === 100 
                     ? 'cursor-pointer w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold mb-4 flex items-center justify-center gap-2'
                     : 'cursor-pointer w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold mb-4 flex items-center justify-center gap-2'"
                 >
@@ -519,7 +519,7 @@
               @if (courseData.price && courseData.price > 0) {
                 <button
                   (click)="openPurchaseModal()"
-                  class="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold shadow-md hover:shadow-lg mb-4"
+                  class="group mt-2 w-full mb-4 relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-base font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
                 >
                   Comprar Curso
                 </button>

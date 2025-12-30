@@ -1,6 +1,6 @@
 <div class="space-y-4">
   <!-- Header Section -->
-  <div class="relative overflow-hidden bg-linear-to-tr from-[#2777a8] to-[#9ed4f0] rounded-xl">
+  <div class="relative overflow-hidden bg-linear-to-tr from-[#033e72] to-[#66afef] rounded-xl">
     <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center justify-between">
       <div>
         <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Clases</h1>
@@ -97,7 +97,7 @@
             class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
           >
             <!-- Class Image -->
-            <div class="relative h-48 bg-linear-to-br from-indigo-400 to-purple-500 overflow-hidden">
+            <div class="relative h-48 bg-linear-to-b from-white to-white overflow-hidden">
               @if (getClassImageUrl(classItem.imageUrl)) {
                 <img
                   [src]="getClassImageUrl(classItem.imageUrl)"
@@ -123,12 +123,12 @@
               </button>
 
               @if (classItem.status === 'ACTIVE') {
-                <div class="absolute top-4 right-4 bg-green-500 px-2 py-0.5 rounded-xs">
+                <div class="absolute top-4 right-4 bg-green-500 px-2 py-0.5 text-sm leading-4 rounded-xs">
                   <span class="text-white font-semibold text-xs leading-2.5">Activa</span>
                 </div>
               } @else {
-                <div class="absolute top-4 right-4 bg-gray-500 px-3 py-1 rounded-full">
-                  <span class="text-white font-semibold text-xs">Inactiva</span>
+                <div class="absolute top-4 right-4 bg-gray-500 px-2 py-0.5 text-sm leading-4 rounded-xs">
+                  <span class="text-white font-semibold text-xs leading-2.5">Inactiva</span>
                 </div>
               }
             </div>
