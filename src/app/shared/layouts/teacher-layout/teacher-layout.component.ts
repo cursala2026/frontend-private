@@ -45,16 +45,25 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
   pendingExamsCount = signal<number>(0);
   private refreshSubscription?: Subscription;
   private routerSubscription?: Subscription;
+  private visibilityChangeListener?: () => void;
+  private isTabVisible = true;
 
   ngOnInit(): void {
     // Asegurar que el modo de vista esté inicializado
     this.viewModeService.initializeViewMode();
     // Cargar exámenes pendientes
     this.loadPendingExams();
-    // Refrescar cada 30 segundos
-    this.refreshSubscription = interval(30000).subscribe(() => {
-      this.loadPendingExams();
+    
+    // Configurar Page Visibility API para pausar polling cuando la pestaña no está visible
+    this.setupVisibilityListener();
+    
+    // Refrescar cada 60 segundos (solo cuando la pestaña está visible)
+    this.refreshSubscription = interval(60000).subscribe(() => {
+      if (this.isTabVisible) {
+        this.loadPendingExams();
+      }
     });
+    
     // Actualizar cuando se navega (especialmente después de calificar)
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
@@ -69,9 +78,23 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
     });
   }
 
+  private setupVisibilityListener(): void {
+    this.visibilityChangeListener = () => {
+      this.isTabVisible = !document.hidden;
+      // Si la pestaña se vuelve visible, actualizar inmediatamente
+      if (this.isTabVisible) {
+        this.loadPendingExams();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityChangeListener);
+  }
+
   ngOnDestroy(): void {
     this.refreshSubscription?.unsubscribe();
     this.routerSubscription?.unsubscribe();
+    if (this.visibilityChangeListener) {
+      document.removeEventListener('visibilitychange', this.visibilityChangeListener);
+    }
   }
 
   loadPendingExams(): void {

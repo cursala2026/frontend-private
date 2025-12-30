@@ -99,18 +99,35 @@ export class ProfileComponent {
   }
 
   onSubmit(): void {
-    if (this.profileForm.invalid) {
-      this.infoService.showError('Por favor completa todos los campos requeridos');
-      return;
-    }
-
     const currentUser = this.user();
     if (!currentUser) return;
 
-    this.isSubmitting.set(true);
-
     const formData = this.profileForm.value;
     const hasProfilePhoto = this.selectedProfileImage instanceof File;
+
+    // Si solo se está actualizando la foto, validar solo campos requeridos
+    // Si no hay foto, validar todo el formulario
+    if (hasProfilePhoto) {
+      // Validar solo campos requeridos cuando hay foto
+      if (!formData.firstName || !formData.lastName || !formData.email) {
+        this.infoService.showError('Por favor completa los campos requeridos (Nombre, Apellido, Email)');
+        return;
+      }
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        this.infoService.showError('Por favor ingresa un email válido');
+        return;
+      }
+    } else {
+      // Sin foto, validar todo el formulario
+      if (this.profileForm.invalid) {
+        this.infoService.showError('Por favor completa todos los campos requeridos');
+        return;
+      }
+    }
+
+    this.isSubmitting.set(true);
     
     if (hasProfilePhoto) {
       // Si hay foto, usar FormData y endpoint updateUserData
@@ -204,5 +221,40 @@ export class ProfileComponent {
     const currentUser = this.user();
     if (!currentUser) return '';
     return `${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`;
+  }
+
+  /**
+   * Verifica si hay cambios pendientes en el formulario o en la foto de perfil
+   */
+  hasPendingChanges(): boolean {
+    const currentUser = this.user();
+    if (!currentUser) return false;
+
+    // Si hay una foto seleccionada, hay cambios pendientes
+    if (this.selectedProfileImage) {
+      return true;
+    }
+
+    // Verificar si el formulario tiene cambios
+    const formValue = this.profileForm.value;
+    
+    // Comparar cada campo del formulario con los valores originales
+    if (formValue.firstName !== currentUser.firstName) return true;
+    if (formValue.lastName !== currentUser.lastName) return true;
+    if (formValue.email !== currentUser.email) return true;
+    if (formValue.phone !== (currentUser.phone || '')) return true;
+    if (formValue.dni !== (currentUser.dni || '')) return true;
+    
+    // Comparar fecha de nacimiento
+    const formBirthDate = formValue.birthDate || '';
+    const userBirthDate = currentUser.birthDate 
+      ? new Date(currentUser.birthDate).toISOString().split('T')[0] 
+      : '';
+    if (formBirthDate !== userBirthDate) return true;
+    
+    // Comparar descripción profesional
+    if (formValue.professionalDescription !== (currentUser.professionalDescription || '')) return true;
+
+    return false;
   }
 }
