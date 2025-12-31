@@ -168,22 +168,25 @@ export class DataTableComponent {
 
   getBadgeClass(value: string): string {
     const badgeClasses: Record<string, string> = {
-      'ADMIN': 'bg-blue-100 text-blue-800',
-      'PROFESOR': 'bg-yellow-100 text-yellow-800',
+      'ADMIN': 'bg-brand-primary/20 text-brand-primary',
+      'PROFESOR': 'bg-brand-secondary/30 text-brand-secondary-text',
       'ALUMNO': 'bg-green-100 text-green-800',
       'Activo': 'bg-green-100 text-green-800',
       'Inactivo': 'bg-red-100 text-red-800',
       'ACTIVE': 'bg-green-100 text-green-800',
       'INACTIVE': 'bg-red-100 text-red-800',
       'Sí': 'bg-green-100 text-green-800',
-      'No': 'bg-red-100 text-red-800'
+      'No': 'bg-red-100 text-red-800',
+      'Presencial': 'bg-brand-primary/20 text-brand-primary ring-1 ring-brand-primary/30',
+      'Online': 'bg-brand-secondary/30 text-brand-secondary-text ring-1 ring-brand-secondary/40',
+      'Híbrido': 'bg-purple-100 text-purple-800 ring-1 ring-purple-300'
     };
-    return badgeClasses[value] || 'bg-gray-100 text-gray-800';
+    return badgeClasses[value] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-300';
   }
 
   getActionClass(actionClass?: string): string {
     const classes: Record<string, string> = {
-      'btn-primary': 'text-blue-600 hover:bg-blue-50 border border-blue-200',
+      'btn-primary': 'text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/30',
       'btn-secondary': 'text-gray-600 hover:bg-gray-50 border border-gray-200',
       'btn-danger': 'text-red-600 hover:bg-red-50 border border-red-200',
       'btn-success': 'text-green-600 hover:bg-green-50 border border-green-200'
@@ -229,15 +232,15 @@ export class DataTableComponent {
     
     const colorClasses: Record<string, { active: string; focus: string }> = {
       green: { active: 'bg-green-600', focus: 'focus:ring-green-500' },
-      blue: { active: 'bg-blue-600', focus: 'focus:ring-blue-500' },
+      blue: { active: 'bg-brand-primary', focus: 'focus:ring-brand-primary' },
       purple: { active: 'bg-purple-600', focus: 'focus:ring-purple-500' },
       indigo: { active: 'bg-indigo-600', focus: 'focus:ring-indigo-500' },
-      yellow: { active: 'bg-yellow-600', focus: 'focus:ring-yellow-500' },
+      yellow: { active: 'bg-brand-secondary', focus: 'focus:ring-brand-secondary' },
       red: { active: 'bg-red-600', focus: 'focus:ring-red-500' }
     };
 
     const colors = colorClasses[color] || colorClasses['green'];
-    return isActive ? colors.active + ' ' + colors.focus : 'bg-gray-200' + ' ' + colors.focus;
+    return isActive ? colors.active + ' ' + colors.focus : 'bg-gray-400' + ' ' + colors.focus;
   }
 
   getSelectValue(row: any, column: TableColumn): string {
@@ -299,8 +302,8 @@ export class DataTableComponent {
     const normalizedValue = value ? String(value).toUpperCase() : '';
     
     const selectClasses: Record<string, string> = {
-      'ADMIN': 'bg-blue-100 text-blue-800 ring-1 ring-blue-600/20 focus:ring-blue-500',
-      'PROFESOR': 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20 focus:ring-yellow-500',
+      'ADMIN': 'bg-brand-primary/20 text-brand-primary ring-1 ring-brand-primary/30 focus:ring-brand-primary',
+      'PROFESOR': 'bg-brand-secondary/30 text-brand-secondary-text ring-1 ring-brand-secondary/40 focus:ring-brand-secondary',
       'ALUMNO': 'bg-green-100 text-green-800 ring-1 ring-green-600/20 focus:ring-green-500'
     };
     return selectClasses[normalizedValue] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 focus:ring-gray-500';

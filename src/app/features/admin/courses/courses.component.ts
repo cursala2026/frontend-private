@@ -64,7 +64,7 @@ export class CoursesComponent implements OnInit {
       {
         key: 'modality',
         label: 'Modalidad',
-        type: 'text',
+        type: 'badge',
         formatter: (value: string) => value || '-',
         width: '15%'
       },
