@@ -134,15 +134,28 @@
         <div class="space-y-4">
           @if (videoPreview) {
             <div class="relative">
-              <video
-                [src]="videoPreview"
-                controls
-                class="w-full h-64 rounded-lg border border-gray-300 bg-black"
-              ></video>
+              @if (isBunnyStreamUrl(videoPreview)) {
+                <!-- Reproductor embebido de Bunny Stream con Player.js -->
+                <iframe
+                  #bunnyStreamIframe
+                  [src]="getVideoUrl(videoPreview)"
+                  class="w-full h-64 rounded-lg border border-gray-300 bg-black"
+                  style="border: none;"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              } @else {
+                <!-- Video HTML5 normal -->
+                <video
+                  [src]="videoPreview"
+                  controls
+                  class="w-full h-64 rounded-lg border border-gray-300 bg-black"
+                ></video>
+              }
               <button
                 type="button"
                 (click)="clearVideoPreview()"
-                class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                class="cursor-pointer absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 z-10"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -151,8 +164,8 @@
             </div>
           }
           
-          <!-- Estado del procesamiento de video -->
-          @if (isUploadingVideo() || videoStatus() === 'processing') {
+          <!-- Estado del procesamiento de video (solo mostrar si hay video) -->
+          @if ((isUploadingVideo() || videoStatus() === 'processing') && (originalVideoUrl || selectedVideoFile)) {
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
               <div class="flex items-center gap-2">
                 <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

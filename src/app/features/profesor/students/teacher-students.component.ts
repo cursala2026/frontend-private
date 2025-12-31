@@ -8,6 +8,8 @@ import { QuestionnairesService } from '../../../core/services/questionnaires.ser
 import { UserRole } from '../../../core/models/user-role.enum';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
+import { InfoService } from '../../../core/services/info.service';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 
 interface Student {
   userId: string;
@@ -42,7 +44,7 @@ interface PendingExam {
 @Component({
   selector: 'app-teacher-students',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConfirmModalComponent],
   templateUrl: './teacher-students.component.html',
 })
 export class TeacherStudentsComponent implements OnInit, OnDestroy {
@@ -51,6 +53,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private questionnairesService = inject(QuestionnairesService);
   private router = inject(Router);
+  private info = inject(InfoService);
   
   user = this.authService.currentUser;
   students = signal<Student[]>([]);
@@ -59,6 +62,19 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   pendingExams = signal<PendingExam[]>([]);
   pendingExamsByStudent = signal<Map<string, PendingExam[]>>(new Map());
   private routerSubscription?: Subscription;
+
+  // Modal de confirmación para resetear progreso
+  showResetModal = signal<boolean>(false);
+  studentToReset: Student | null = null;
+  resetModalConfig: ConfirmModalConfig = {
+    title: 'Resetear Progreso del Alumno',
+    message: '',
+    confirmText: 'Resetear',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    icon: 'danger'
+  };
+  resettingProgress = signal<boolean>(false);
 
   ngOnInit(): void {
     this.viewModeService.initializeViewMode();
@@ -205,6 +221,64 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   goToExam(exam: PendingExam): void {
     // Navegar a la página de resultados del cuestionario para calificar
     this.router.navigate(['/profesor/questionnaires', exam.questionnaireId, 'results']);
+  }
+
+  /**
+   * Abre el modal de confirmación para resetear el progreso de un estudiante
+   */
+  openResetProgressModal(student: Student): void {
+    this.studentToReset = student;
+    this.resetModalConfig = {
+      ...this.resetModalConfig,
+      message: `¿Estás seguro de que quieres resetear el progreso de ${student.firstName} ${student.lastName} en el curso "${student.courseName}"? Esta acción eliminará:
+      
+• Todos los videos vistos de las clases
+• Todos los cuestionarios completados
+• Todas las respuestas de exámenes
+• El progreso general del curso
+
+Esta acción no se puede deshacer.`
+    };
+    this.showResetModal.set(true);
+  }
+
+  /**
+   * Resetea el progreso completo del estudiante
+   */
+  confirmResetProgress(): void {
+    if (!this.studentToReset) {
+      return;
+    }
+
+    this.resettingProgress.set(true);
+    const student = this.studentToReset;
+
+    this.http.delete<any>(
+      `${environment.apiUrl}/courseProgress/${student.courseId}/student/${student.userId}`
+    ).subscribe({
+      next: (response: any) => {
+        this.info.showSuccess(`Progreso de ${student.firstName} ${student.lastName} reseteado exitosamente`);
+        this.showResetModal.set(false);
+        this.studentToReset = null;
+        this.resettingProgress.set(false);
+        // Recargar la lista de estudiantes para actualizar el progreso
+        this.loadStudents();
+      },
+      error: (error) => {
+        console.error('Error reseteando progreso:', error);
+        const errorMsg = error?.error?.message || 'Error al resetear el progreso del estudiante';
+        this.info.showError(errorMsg);
+        this.resettingProgress.set(false);
+      }
+    });
+  }
+
+  /**
+   * Cancela el reseteo de progreso
+   */
+  cancelResetProgress(): void {
+    this.showResetModal.set(false);
+    this.studentToReset = null;
   }
 }
 

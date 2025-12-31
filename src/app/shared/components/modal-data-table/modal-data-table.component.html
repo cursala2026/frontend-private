@@ -50,9 +50,23 @@
         <!-- Body -->
         <div class="px-3 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1">
           @if (form) {
-            <form [formGroup]="form" class="space-y-4 sm:space-y-6">
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                @for (field of config.fields; track field.key) {
+            <form [formGroup]="form" class="space-y-6 sm:space-y-8">
+              @for (sectionGroup of getFieldsBySection(); track sectionGroup.section || 'no-section') {
+                @if (sectionGroup.section) {
+                  <!-- Section Header -->
+                  <div class="border-b-2 border-b-blue-500 pb-2">
+                    <h3 class="text-lg font-bold flex items-center text-blue-600">
+                      <span class="min-w-6 rounded-full w-6 h-6 bg-blue-500 flex items-center justify-center text-white mr-3 text-sm">
+                        {{ sectionGroup.sectionIndex }}
+                      </span>
+                      {{ sectionGroup.section }}
+                    </h3>
+                  </div>
+                }
+                
+                <!-- Fields Grid -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6" [class.mt-4]="sectionGroup.section">
+                  @for (field of sectionGroup.fields; track field.key) {
                   <div [class.sm:col-span-2]="field.type === 'textarea'">
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       {{ field.label }}
@@ -275,7 +289,8 @@
                   
                   </div>
                 }
-              </div>
+                </div>
+              }
             </form>
           }
         </div>

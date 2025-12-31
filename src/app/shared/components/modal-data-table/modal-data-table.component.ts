@@ -19,6 +19,7 @@ export interface ModalField {
   accept?: string; // For file fields (e.g., '.pdf', 'application/pdf')
   maxSelections?: number; // For multiselect
   minSelections?: number; // For multiselect
+  section?: string; // Optional section name for grouping fields
 }
 
 export interface ModalConfig {
@@ -280,5 +281,38 @@ export class ModalDataTableComponent {
         fileInput.value = '';
       }
     }
+  }
+
+  getFieldsBySection(): { section: string | null; fields: ModalField[]; sectionIndex?: number }[] {
+    if (!this.config?.fields) return [];
+    
+    const sectionMap = new Map<string | null, ModalField[]>();
+    
+    // Agrupar campos por sección
+    this.config.fields.forEach(field => {
+      const section = field.section || null;
+      if (!sectionMap.has(section)) {
+        sectionMap.set(section, []);
+      }
+      sectionMap.get(section)!.push(field);
+    });
+    
+    // Convertir a array manteniendo el orden (campos sin sección primero, luego los demás)
+    const result: { section: string | null; fields: ModalField[]; sectionIndex?: number }[] = [];
+    let sectionNumber = 1;
+    
+    // Primero los campos sin sección
+    if (sectionMap.has(null)) {
+      result.push({ section: null, fields: sectionMap.get(null)! });
+    }
+    
+    // Luego los campos con sección
+    sectionMap.forEach((fields, section) => {
+      if (section !== null) {
+        result.push({ section, fields, sectionIndex: sectionNumber++ });
+      }
+    });
+    
+    return result;
   }
 }

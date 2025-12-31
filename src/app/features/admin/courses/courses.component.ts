@@ -290,6 +290,7 @@ export class CoursesComponent implements OnInit {
       mode: isCreate ? 'create' : 'edit',
       size: 'xl',
       fields: [
+        // Sección 1: Datos Básicos del Curso
         {
           key: 'imageFile',
           label: 'Imagen del Curso',
@@ -297,7 +298,8 @@ export class CoursesComponent implements OnInit {
           required: isCreate,
           placeholder: 'Seleccionar imagen',
           imageShape: 'rectangle',
-          aspectRatio: '3:2 (rectangular)'
+          aspectRatio: '3:2 (rectangular)',
+          section: 'Datos Básicos del Curso'
         },
         {
           key: 'programFile',
@@ -305,27 +307,32 @@ export class CoursesComponent implements OnInit {
           type: 'file',
           required: false,
           placeholder: 'Formatos soportados: PDF. Tamaño máximo: 50MB',
-          accept: '.pdf,application/pdf'
+          accept: '.pdf,application/pdf',
+          section: 'Datos Básicos del Curso'
         },
         {
           key: 'name',
           label: 'Nombre del Curso',
           type: 'text',
           required: true,
-          placeholder: 'Nombre del curso'
+          placeholder: 'Nombre del curso',
+          section: 'Datos Básicos del Curso'
         },
         {
           key: 'description',
           label: 'Descripción Corta',
           type: 'textarea',
-          placeholder: 'Descripción breve del curso'
+          placeholder: 'Descripción breve del curso',
+          section: 'Datos Básicos del Curso'
         },
         {
           key: 'longDescription',
           label: 'Descripción Larga',
           type: 'textarea',
-          placeholder: 'Descripción detallada del curso'
+          placeholder: 'Descripción detallada del curso',
+          section: 'Datos Básicos del Curso'
         },
+        // Sección 2: Datos del Cursado
         {
           key: 'modality',
           label: 'Modalidad',
@@ -334,63 +341,54 @@ export class CoursesComponent implements OnInit {
             { value: 'Presencial', label: 'Presencial' },
             { value: 'Online', label: 'Online' },
             { value: 'Híbrido', label: 'Híbrido' }
-          ]
-        },
-        {
-          key: 'price',
-          label: 'Precio',
-          type: 'number',
-          placeholder: '0'
-        },
-        {
-          key: 'maxInstallments',
-          label: 'Máximo de Cuotas',
-          type: 'number',
-          placeholder: '1'
-        },
-        {
-          key: 'interestFree',
-          label: 'Sin Interés',
-          type: 'checkbox'
+          ],
+          section: 'Datos del Cursado'
         },
         {
           key: 'days',
           label: 'Días de la Semana',
           type: 'text',
-          placeholder: 'Lunes, Miércoles, Viernes'
+          placeholder: 'Lunes, Miércoles, Viernes',
+          section: 'Datos del Cursado'
         },
         {
           key: 'time',
           label: 'Horario (HH:mm)',
           type: 'text',
-          placeholder: '18:00'
+          placeholder: '18:00',
+          section: 'Datos del Cursado'
         },
         {
           key: 'startDate',
           label: 'Fecha de Inicio',
-          type: 'date'
+          type: 'date',
+          section: 'Datos del Cursado'
         },
         {
           key: 'registrationOpenDate',
           label: 'Fecha de Apertura de Inscripciones',
-          type: 'date'
+          type: 'date',
+          section: 'Datos del Cursado'
         },
         {
           key: 'numberOfClasses',
           label: 'Número de Clases',
           type: 'number',
-          placeholder: '0'
+          placeholder: '0',
+          section: 'Datos del Cursado'
         },
         {
           key: 'duration',
           label: 'Duración (horas)',
           type: 'number',
-          placeholder: '0'
+          placeholder: '0',
+          section: 'Datos del Cursado'
         },
         {
           key: 'isPublished',
           label: 'Publicado',
-          type: 'checkbox'
+          type: 'checkbox',
+          section: 'Datos del Cursado'
         },
         {
           key: 'teachers',
@@ -406,7 +404,29 @@ export class CoursesComponent implements OnInit {
           })(),
           minSelections: 1,
           maxSelections: 3,
-          placeholder: 'Selecciona entre 1 y 3 profesores'
+          placeholder: 'Selecciona entre 1 y 3 profesores',
+          section: 'Datos del Cursado'
+        },
+        // Sección 3: Precio y Financiación (al final como solicitó el usuario)
+        {
+          key: 'price',
+          label: 'Precio',
+          type: 'number',
+          placeholder: '0',
+          section: 'Precio y Financiación'
+        },
+        {
+          key: 'maxInstallments',
+          label: 'Máximo de Cuotas',
+          type: 'number',
+          placeholder: '1',
+          section: 'Precio y Financiación'
+        },
+        {
+          key: 'interestFree',
+          label: 'Sin Interés',
+          type: 'checkbox',
+          section: 'Precio y Financiación'
         }
       ]
     };

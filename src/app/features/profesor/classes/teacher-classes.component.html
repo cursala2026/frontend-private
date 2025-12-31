@@ -143,8 +143,8 @@
               }
             </div>
 
-            <!-- Video Upload Progress Indicator -->
-            @if (getVideoStatus(classItem._id) === 'processing') {
+            <!-- Video Upload Progress Indicator (solo mostrar si hay video) -->
+            @if (getVideoStatus(classItem._id) === 'processing' && classItem.videoUrl) {
               <div class="px-6 pt-4 pb-2 bg-blue-50 border-b border-blue-200">
                 <div class="flex items-center gap-2 mb-2">
                   <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -163,7 +163,7 @@
               </div>
             }
             
-            @if (getVideoStatus(classItem._id) === 'error') {
+            @if (getVideoStatus(classItem._id) === 'error' && classItem.videoUrl) {
               <div class="px-6 pt-4 pb-2 bg-red-50 border-b border-red-200">
                 <div class="flex items-center gap-2">
                   <svg class="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

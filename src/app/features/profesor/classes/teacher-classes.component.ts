@@ -56,6 +56,16 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
+    // Limpiar todas las suscripciones SSE al inicializar
+    this.progressSubscriptions.forEach((sub) => {
+      sub?.unsubscribe();
+    });
+    this.progressSubscriptions.clear();
+    
+    // Limpiar estados de video
+    this.videoStatuses.set(new Map());
+    this.videoProgress.set(new Map());
+    
     this.loadCourses();
 
     // Verificar si hay un courseId en los query params
@@ -152,20 +162,75 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
    * Conecta al stream SSE para todas las clases que están procesando video
    */
   private connectToProgressStreams(classes: ClassData[]): void {
-    // Limpiar suscripciones anteriores solo para clases que ya no están en la lista
     const currentClassIds = new Set(classes.map(c => c._id));
+    
+    // PRIMERO: Limpiar TODAS las clases sin videoUrl y sus suscripciones
+    const currentStatuses = this.videoStatuses();
+    const currentProgress = this.videoProgress();
+    let statusesChanged = false;
+    let progressChanged = false;
+    
+    classes.forEach(classItem => {
+      if (!classItem.videoUrl && classItem._id) {
+        // Limpiar estado si no hay videoUrl
+        if (currentStatuses.has(classItem._id)) {
+          currentStatuses.delete(classItem._id);
+          statusesChanged = true;
+        }
+        
+        // Limpiar progreso
+        if (currentProgress.has(classItem._id)) {
+          currentProgress.delete(classItem._id);
+          progressChanged = true;
+        }
+        
+        // Limpiar suscripción si existe
+        if (this.progressSubscriptions.has(classItem._id)) {
+          this.progressSubscriptions.get(classItem._id)?.unsubscribe();
+          this.progressSubscriptions.delete(classItem._id);
+        }
+      }
+    });
+    
+    // Actualizar signals si hubo cambios
+    if (statusesChanged) {
+      this.videoStatuses.set(new Map(currentStatuses));
+    }
+    if (progressChanged) {
+      this.videoProgress.set(new Map(currentProgress));
+    }
+    
+    // Limpiar suscripciones de clases que ya no están en la lista
+    // Y también limpiar suscripciones para clases sin videoUrl
     this.progressSubscriptions.forEach((sub, classId) => {
-      if (!currentClassIds.has(classId) && !classId.includes('_reloading')) {
+      const classItem = classes.find(c => c._id === classId);
+      if ((!currentClassIds.has(classId) && !classId.includes('_reloading')) || 
+          (classItem && !classItem.videoUrl)) {
+        // Cerrar la suscripción SSE correctamente
         sub?.unsubscribe();
         this.progressSubscriptions.delete(classId);
       }
     });
 
+    // AHORA: Procesar solo las clases que tienen videoUrl
+    // Obtener una nueva referencia a los estados después de la limpieza
+    let finalStatuses = this.videoStatuses();
     classes.forEach(classItem => {
-      // Establecer estado inicial desde la BD
-      const currentStatuses = this.videoStatuses();
+      // CRÍTICO: Solo procesar si hay videoUrl
+      // Si no hay videoUrl, NO establecer ningún estado, incluso si la BD dice 'processing'
+      if (!classItem.videoUrl || !classItem._id) {
+        // Asegurar que NO hay estado para esta clase sin video
+        if (finalStatuses.has(classItem._id)) {
+          finalStatuses.delete(classItem._id);
+          this.videoStatuses.set(new Map(finalStatuses));
+          finalStatuses = this.videoStatuses();
+        }
+        return; // Saltar clases sin video
+      }
+      
+      // Establecer estado inicial desde la BD (solo si hay videoUrl)
       const currentStatus = classItem.videoStatus || 'ready';
-      const previousStatus = currentStatuses.get(classItem._id);
+      const previousStatus = finalStatuses.get(classItem._id);
       
       // Si el estado local ya es 'ready', mantenerlo aunque la BD diga 'processing'
       // (esto evita reconexiones cuando el progreso ya terminó pero la BD aún no se actualizó)
@@ -173,22 +238,27 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
       if (localStatus === 'ready' && currentStatus === 'processing') {
         // No actualizar el estado, mantener 'ready'
       } else {
-        currentStatuses.set(classItem._id, currentStatus);
-        this.videoStatuses.set(new Map(currentStatuses));
+        // Solo establecer estado si realmente hay videoUrl (ya verificado arriba)
+        finalStatuses.set(classItem._id, currentStatus);
+        this.videoStatuses.set(new Map(finalStatuses));
+        // Actualizar referencia local
+        finalStatuses = this.videoStatuses();
       }
 
       // Solo conectar al SSE si:
-      // 1. La BD dice 'processing'
-      // 2. El estado local NO es 'ready' (para evitar reconexiones después de completar)
-      // 3. No hay una suscripción activa
-      const finalStatus = currentStatuses.get(classItem._id);
+      // 1. Hay videoUrl (ya verificado arriba)
+      // 2. La BD dice 'processing'
+      // 3. El estado local NO es 'ready' (para evitar reconexiones después de completar)
+      // 4. No hay una suscripción activa
+      const finalStatus = finalStatuses.get(classItem._id);
       if (currentStatus === 'processing' && 
           classItem._id && 
+          classItem.videoUrl && // Verificación adicional redundante pero segura
           !this.progressSubscriptions.has(classItem._id) &&
           finalStatus !== 'ready') {
-        this.connectToProgressStream(classItem._id);
-      } else if (finalStatus !== 'processing') {
-        // Si no está procesando, limpiar cualquier suscripción existente
+        this.connectToProgressStream(classItem._id, classItem.videoUrl);
+      } else if (finalStatus !== 'processing' && finalStatus !== 'ready') {
+        // Si no está procesando ni listo, limpiar cualquier suscripción existente
         if (this.progressSubscriptions.has(classItem._id)) {
           this.progressSubscriptions.get(classItem._id)?.unsubscribe();
           this.progressSubscriptions.delete(classItem._id);
@@ -204,9 +274,27 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
   /**
    * Conecta al stream SSE para una clase específica
    */
-  private connectToProgressStream(classId: string): void {
+  private connectToProgressStream(classId: string, videoUrl?: string): void {
     // Evitar múltiples conexiones para la misma clase
     if (this.progressSubscriptions.has(classId)) {
+      return;
+    }
+
+    // Verificar si la clase tiene videoUrl - si no, no conectar
+    // Usamos el parámetro videoUrl pasado, o buscamos en la lista actual
+    const hasVideo = videoUrl || this.classes().find(c => c._id === classId)?.videoUrl;
+    if (!hasVideo) {
+      // Limpiar estado si no hay video
+      const currentStatuses = this.videoStatuses();
+      if (currentStatuses.has(classId)) {
+        currentStatuses.delete(classId);
+        this.videoStatuses.set(new Map(currentStatuses));
+      }
+      const currentProgress = this.videoProgress();
+      if (currentProgress.has(classId)) {
+        currentProgress.delete(classId);
+        this.videoProgress.set(new Map(currentProgress));
+      }
       return;
     }
 
@@ -275,8 +363,14 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
 
   /**
    * Obtiene el estado del video de una clase
+   * IMPORTANTE: Nunca retorna 'processing' o 'error' si no hay videoUrl
    */
   getVideoStatus(classId: string): 'ready' | 'processing' | 'error' | null {
+    const classItem = this.classes().find(c => c._id === classId);
+    // Si no hay videoUrl, nunca retornar 'processing' o 'error'
+    if (!classItem || !classItem.videoUrl) {
+      return null;
+    }
     return this.videoStatuses().get(classId) || null;
   }
 

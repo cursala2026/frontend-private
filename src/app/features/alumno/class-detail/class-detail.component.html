@@ -222,18 +222,31 @@
           }
           
           @if (classData().videoUrl) {
-            <video 
-              #videoPlayer
-              controls 
-              crossorigin="anonymous"
-              class="max-w-full max-h-full w-full h-full object-contain"
-              (loadedmetadata)="onVideoLoadedMetadata($event)"
-              (timeupdate)="onVideoTimeUpdate($event)"
-              (ended)="onVideoEnded()"
-              (pause)="onVideoPause()"
-            >
-              <source [src]="classData().videoUrl" type="video/mp4" />
-            </video>
+            @if (isBunnyStreamUrl(classData().videoUrl)) {
+              <!-- Reproductor embebido de Bunny Stream -->
+              <iframe
+                #bunnyStreamIframe
+                [src]="getVideoUrl(classData().videoUrl)"
+                class="w-full h-full"
+                style="border: none;"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowfullscreen
+              ></iframe>
+            } @else {
+              <!-- Video HTML5 normal -->
+              <video 
+                #videoPlayer
+                controls 
+                crossorigin="anonymous"
+                class="max-w-full max-h-full w-full h-full object-contain"
+                (loadedmetadata)="onVideoLoadedMetadata($event)"
+                (timeupdate)="onVideoTimeUpdate($event)"
+                (ended)="onVideoEnded()"
+                (pause)="onVideoPause()"
+              >
+                <source [src]="classData().videoUrl" type="video/mp4" />
+              </video>
+            }
           } @else if (isWorkshopType() && getCourseImageUrl(courseData().imageUrl)) {
             <img
               [src]="getCourseImageUrl(courseData().imageUrl)"

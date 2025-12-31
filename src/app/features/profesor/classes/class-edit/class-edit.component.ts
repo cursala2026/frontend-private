@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, signal, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ClassesService, ClassData } from '../../../../core/services/classes.service';
 import { CoursesService, Course } from '../../../../core/services/courses.service';
 import { InfoService } from '../../../../core/services/info.service';
@@ -17,7 +18,7 @@ import { Subscription } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './class-edit.component.html'
 })
-export class TeacherClassEditComponent implements OnInit, OnDestroy {
+export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private classesService = inject(ClassesService);
@@ -27,6 +28,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private viewModeService = inject(ViewModeService);
   private videoUploadProgressService = inject(VideoUploadProgressService);
+  private sanitizer = inject(DomSanitizer);
 
   classForm!: FormGroup;
   classData = signal<ClassData | null>(null);
@@ -60,6 +62,15 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
   isEditMode = false;
 
   private progressSubscription: Subscription | null = null;
+  
+  // Cache para URLs de video embebido de Bunny Stream
+  private videoEmbedUrlCache = new Map<string, SafeResourceUrl>();
+  
+  // ViewChild para el iframe de Bunny Stream
+  @ViewChild('bunnyStreamIframe') bunnyStreamIframeRef!: ElementRef<HTMLIFrameElement>;
+  
+  // Player.js instance para Bunny Stream
+  private bunnyStreamPlayer: any = null;
 
   ngOnInit(): void {
     this.classId = this.route.snapshot.paramMap.get('id');
@@ -80,6 +91,12 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
     this.deleteCurrentImage = false;
     this.originalVideoUrl = null;
     this.originalImageUrl = null;
+    
+    // Limpiar estado de video
+    this.videoStatus.set(null);
+    this.videoUploadProgress.set(0);
+    this.isUploadingVideo.set(false);
+    this.cleanupProgressSubscription();
 
     if (this.isEditMode && this.classId) {
       this.loadClass();
@@ -91,6 +108,15 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
       }
       this.loading.set(false);
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Inicializar Player.js para Bunny Stream si hay un video preview
+    setTimeout(() => {
+      if (this.videoPreview && this.isBunnyStreamUrl(this.videoPreview)) {
+        this.initBunnyStreamPlayer();
+      }
+    }, 500);
   }
 
   initializeForm(): void {
@@ -166,6 +192,13 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
           this.originalImageUrl = classData.imageUrl;
         }
 
+        // PRIMERO: Limpiar estado completamente antes de cargar datos
+        // Esto previene estados residuales
+        this.videoStatus.set(null);
+        this.videoUploadProgress.set(0);
+        this.isUploadingVideo.set(false);
+        this.cleanupProgressSubscription();
+        
         // Cargar preview de video
         if (classData.videoUrl) {
           this.originalVideoUrl = this.getClassVideoUrl(classData.videoUrl);
@@ -174,15 +207,24 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
           if (!this.selectedVideoFile) {
             this.videoPreview = this.originalVideoUrl;
           }
-        }
-
-        // Verificar estado del video
-        if ((classData as any).videoStatus) {
-          this.videoStatus.set((classData as any).videoStatus);
-          // Si está procesando, conectar al SSE
-          if ((classData as any).videoStatus === 'processing') {
-            this.connectToProgressStream(classData._id);
+          
+          // Verificar estado del video (solo si hay videoUrl)
+          if ((classData as any).videoStatus) {
+            this.videoStatus.set((classData as any).videoStatus);
+            // Si está procesando, conectar al SSE
+            if ((classData as any).videoStatus === 'processing') {
+              this.connectToProgressStream(classData._id);
+            }
           }
+        } else {
+          // Si no hay videoUrl, asegurarse de que todo esté limpio
+          this.originalVideoUrl = null;
+          this.videoPreview = null;
+          // El estado ya fue limpiado arriba, pero lo hacemos explícitamente aquí también
+          this.videoStatus.set(null);
+          this.videoUploadProgress.set(0);
+          this.isUploadingVideo.set(false);
+          this.cleanupProgressSubscription();
         }
 
         // Cargar materiales de apoyo existentes
@@ -262,10 +304,16 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
       // Esto evita cargar todo el video en memoria como base64
       // Mostrar el video local seleccionado (tiene prioridad sobre el video original)
       this.videoPreview = URL.createObjectURL(this.selectedVideoFile);
+      
+      // Limpiar Player.js anterior si existe (ya que cambiamos a un video local)
+      this.destroyBunnyStreamPlayer();
     }
   }
 
   clearVideoPreview(): void {
+    // Limpiar Player.js si existe
+    this.destroyBunnyStreamPlayer();
+    
     // Limpiar blob URL si existe para evitar memory leaks
     if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
       URL.revokeObjectURL(this.videoPreview);
@@ -276,6 +324,12 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
     // Si había un video original y no está marcado para eliminar, restaurarlo
     if (this.originalVideoUrl && !this.deleteCurrentVideo) {
       this.videoPreview = this.originalVideoUrl;
+      // Inicializar Player.js si es Bunny Stream
+      setTimeout(() => {
+        if (this.isBunnyStreamUrl(this.videoPreview)) {
+          this.initBunnyStreamPlayer();
+        }
+      }, 500);
     } else {
       this.videoPreview = null;
     }
@@ -288,6 +342,8 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
     // Si se marca para eliminar, ocultar el video
     // Si se desmarca y hay video original, mostrarlo
     if (this.deleteCurrentVideo) {
+      // Limpiar Player.js si existe
+      this.destroyBunnyStreamPlayer();
       // Si hay un blob URL, limpiarlo
       if (this.videoPreview && this.videoPreview.startsWith('blob:')) {
         URL.revokeObjectURL(this.videoPreview);
@@ -296,6 +352,12 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
     } else if (this.originalVideoUrl && !this.selectedVideoFile) {
       // Restaurar el video original si se desmarca y no hay video local
       this.videoPreview = this.originalVideoUrl;
+      // Inicializar Player.js si es Bunny Stream
+      setTimeout(() => {
+        if (this.isBunnyStreamUrl(this.videoPreview)) {
+          this.initBunnyStreamPlayer();
+        }
+      }, 500);
     }
   }
 
@@ -309,10 +371,74 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
 
   getClassVideoUrl(videoUrl?: string): string {
     if (!videoUrl) return '';
+    // Si ya es una URL completa (incluye http/https), devolverla tal cual
     if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
       return videoUrl;
     }
-    return `https://cursala.b-cdn.net/class-videos/${encodeURIComponent(videoUrl)}`;
+    // Si es una URL de Bunny Stream (vz-*.b-cdn.net), devolverla tal cual
+    if (videoUrl.includes('vz-') && videoUrl.includes('.b-cdn.net')) {
+      return videoUrl;
+    }
+    // Si es una URL antigua de storage, no intentar construir la URL (ya no existe)
+    // Esto evita errores de CORS cuando el video fue eliminado
+    return '';
+  }
+
+  /**
+   * Verifica si la URL del video es de Bunny Stream (requiere iframe)
+   */
+  isBunnyStreamUrl(videoUrl: string | null | undefined): boolean {
+    if (!videoUrl) return false;
+    return videoUrl.includes('vz-') && videoUrl.includes('.b-cdn.net');
+  }
+
+  /**
+   * Obtiene la URL del video, convirtiendo URLs de Bunny Stream al reproductor embebido
+   */
+  getVideoUrl(videoUrl: string | null | undefined): SafeResourceUrl {
+    if (!videoUrl) return this.sanitizer.bypassSecurityTrustResourceUrl('');
+    
+    // Si no es Bunny Stream, devolver la URL original sanitizada
+    if (!this.isBunnyStreamUrl(videoUrl)) {
+      const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(videoUrl);
+      return safeUrl;
+    }
+    
+    // Usar caché para evitar recalcular múltiples veces
+    if (this.videoEmbedUrlCache.has(videoUrl)) {
+      return this.videoEmbedUrlCache.get(videoUrl)!;
+    }
+    
+    // Si es una URL de Bunny Stream (vz-*.b-cdn.net), convertir al reproductor embebido
+    let match = videoUrl.match(/vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)(?:\/|$)/i);
+    
+    // Si no coincide, intentar sin el trailing slash
+    if (!match) {
+      match = videoUrl.match(/vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)/i);
+    }
+    
+    if (match && match.length >= 3) {
+      const libraryId = match[1];
+      let videoId = match[2];
+      
+      // Limpiar el videoId
+      videoId = videoId.split('/')[0];
+      
+      // Usar el reproductor embebido de Bunny Stream (iframe)
+      // Sin autoplay para preview
+      const embedUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?autoplay=false`;
+      const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+      
+      // Guardar en caché
+      this.videoEmbedUrlCache.set(videoUrl, safeUrl);
+      
+      return safeUrl;
+    }
+    
+    // Fallback: devolver la URL original sanitizada
+    const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(videoUrl);
+    this.videoEmbedUrlCache.set(videoUrl, safeUrl);
+    return safeUrl;
   }
 
   handleImageError(event: Event): void {
@@ -491,10 +617,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     // Limpiar suscripción si existe
-    if (this.progressSubscription) {
-      this.progressSubscription.unsubscribe();
-      this.progressSubscription = null;
-    }
+    this.cleanupProgressSubscription();
     
     // Navegar de vuelta con el curso seleccionado si existe
     if (this.courseId) {
@@ -510,9 +633,24 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
    * Conecta al stream SSE para recibir actualizaciones de progreso
    */
   private connectToProgressStream(classId: string): void {
+    // No conectar si no hay classId
+    if (!classId) return;
+    
+    // IMPORTANTE: No conectar si no hay videoUrl (original o seleccionado)
+    // Esto previene conexiones SSE cuando el video fue eliminado
+    if (!this.originalVideoUrl && !this.selectedVideoFile) {
+      // Limpiar estado si no hay video
+      this.videoStatus.set(null);
+      this.videoUploadProgress.set(0);
+      this.isUploadingVideo.set(false);
+      this.cleanupProgressSubscription();
+      return;
+    }
+    
     // Limpiar suscripción anterior si existe
     if (this.progressSubscription) {
       this.progressSubscription.unsubscribe();
+      this.progressSubscription = null;
     }
 
     this.videoUploadProgress.set(0);
@@ -524,10 +662,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
           this.videoStatus.set('error');
           this.isUploadingVideo.set(false);
           this.info.showError('Error al procesar el video: ' + event.error);
-          if (this.progressSubscription) {
-            this.progressSubscription.unsubscribe();
-            this.progressSubscription = null;
-          }
+          this.cleanupProgressSubscription();
         } else {
           this.videoUploadProgress.set(event.percent);
           if (event.percent >= 100) {
@@ -538,32 +673,106 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy {
             if (classId) {
               this.loadClass();
             }
-            if (this.progressSubscription) {
-              this.progressSubscription.unsubscribe();
-              this.progressSubscription = null;
-            }
+            this.cleanupProgressSubscription();
           }
         }
       },
       error: (error) => {
-        console.error('Error en stream de progreso:', error);
-        this.videoStatus.set('error');
-        this.isUploadingVideo.set(false);
-        this.info.showError('Error al conectar con el servidor para el progreso del video');
-        if (this.progressSubscription) {
-          this.progressSubscription.unsubscribe();
-          this.progressSubscription = null;
+        // Solo mostrar error si realmente hay un video que se está procesando
+        // Si el video fue eliminado, silenciar el error
+        if (this.originalVideoUrl || this.selectedVideoFile) {
+          console.error('Error en stream de progreso:', error);
+          this.videoStatus.set('error');
+          this.isUploadingVideo.set(false);
+          this.info.showError('Error al conectar con el servidor para el progreso del video');
+        } else {
+          // Si no hay video, simplemente limpiar el estado
+          this.videoStatus.set(null);
+          this.isUploadingVideo.set(false);
         }
+        this.cleanupProgressSubscription();
       }
     });
   }
 
-  ngOnDestroy(): void {
-    // Limpiar suscripción al destruir el componente
+  /**
+   * Limpia la suscripción al stream de progreso
+   */
+  private cleanupProgressSubscription(): void {
     if (this.progressSubscription) {
       this.progressSubscription.unsubscribe();
       this.progressSubscription = null;
     }
+  }
+
+  /**
+   * Inicializa Player.js para controlar el reproductor de Bunny Stream
+   */
+  initBunnyStreamPlayer(): void {
+    // No inicializar si ya hay un player activo
+    if (this.bunnyStreamPlayer) return;
+
+    // Verificar si hay un iframe de Bunny Stream
+    if (!this.bunnyStreamIframeRef?.nativeElement) {
+      // Reintentar después de un breve delay
+      setTimeout(() => this.initBunnyStreamPlayer(), 500);
+      return;
+    }
+
+    // Verificar que Player.js esté disponible (se carga desde el script en index.html)
+    const playerjs = (window as any).playerjs;
+    if (!playerjs || typeof playerjs.Player === 'undefined') {
+      console.warn('Player.js no está disponible. Asegúrate de que el script esté cargado.');
+      // Reintentar después de un breve delay
+      setTimeout(() => this.initBunnyStreamPlayer(), 500);
+      return;
+    }
+
+    try {
+      const iframe = this.bunnyStreamIframeRef.nativeElement;
+      this.bunnyStreamPlayer = new playerjs.Player(iframe);
+
+      // Esperar a que el reproductor esté listo
+      this.bunnyStreamPlayer.on('ready', () => {
+        console.log('Bunny Stream Player.js listo para preview');
+        // No hacer autoplay, solo mostrar el preview
+      });
+    } catch (error) {
+      console.error('Error inicializando Player.js:', error);
+    }
+  }
+
+  /**
+   * Destruye la instancia de Player.js
+   */
+  destroyBunnyStreamPlayer(): void {
+    if (this.bunnyStreamPlayer) {
+      try {
+        // Verificar si el iframe aún existe y tiene contentWindow antes de intentar limpiar
+        const iframe = this.bunnyStreamIframeRef?.nativeElement;
+        if (iframe && iframe.contentWindow) {
+          try {
+            this.bunnyStreamPlayer.off('ready');
+          } catch (cleanupError) {
+            // Silenciar errores de limpieza si el iframe ya no está disponible
+            // Esto es normal cuando el componente se destruye mientras el iframe se está limpiando
+          }
+        }
+      } catch (error) {
+        // Silenciar errores si el iframe ya no existe
+        // Esto es normal cuando el componente se destruye
+      } finally {
+        this.bunnyStreamPlayer = null;
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar suscripción al destruir el componente
+    this.cleanupProgressSubscription();
+    
+    // Limpiar Player.js
+    this.destroyBunnyStreamPlayer();
     
     // Limpiar blob URLs para evitar memory leaks
     if (this.videoPreview && this.videoPreview.startsWith('blob:')) {

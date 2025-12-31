@@ -220,65 +220,68 @@ export class UsersComponent implements OnInit {
       mode: isCreate ? 'create' : 'edit',
       size: 'xl',
       fields: [
-        // Solo mostrar uploader de foto en modo edición, no en creación
+        // Sección 1: Información Personal
         ...(!isCreate ? [{
           key: 'profilePhotoUrl',
           label: 'Foto de Perfil',
           type: 'image' as const,
           imageShape: 'circle' as const,
-          aspectRatio: '1:1' as const
+          aspectRatio: '1:1' as const,
+          section: 'Información Personal'
         }] : []),
-        {
-          key: 'email',
-          label: 'Email',
-          type: 'email' as const,
-          required: true,
-          placeholder: 'correo@ejemplo.com',
-          disabled: !isCreate
-        },
         {
           key: 'firstName',
           label: 'Nombre',
           type: 'text' as const,
           required: true,
-          placeholder: 'Juan'
+          placeholder: 'Juan',
+          section: 'Información Personal'
         },
         {
           key: 'lastName',
           label: 'Apellido',
           type: 'text' as const,
           required: true,
-          placeholder: 'Pérez'
+          placeholder: 'Pérez',
+          section: 'Información Personal'
         },
         {
           key: 'dni',
           label: 'DNI',
           type: 'text' as const,
-          placeholder: '12345678'
+          placeholder: '12345678',
+          section: 'Información Personal'
         },
         {
           key: 'phone',
           label: 'Teléfono',
           type: 'text' as const,
-          placeholder: '+54 9 11 1234-5678'
+          placeholder: '+54 9 11 1234-5678',
+          section: 'Información Personal'
         },
         {
           key: 'birthDate',
           label: 'Fecha de Nacimiento',
-          type: 'date' as const
+          type: 'date' as const,
+          section: 'Información Personal'
         },
+        // Sección 2: Información de Cuenta
         {
-          key: 'professionalDescription',
-          label: 'Descripción Profesional',
-          type: 'textarea' as const,
-          placeholder: 'Descripción de la experiencia profesional...'
+          key: 'email',
+          label: 'Email',
+          type: 'email' as const,
+          required: true,
+          placeholder: 'correo@ejemplo.com',
+          disabled: !isCreate,
+          section: 'Información de Cuenta'
         },
         {
           key: 'password',
           label: isCreate ? 'Contraseña' : 'Nueva Contraseña (dejar vacío para mantener)',
           type: 'password' as const,
           required: isCreate,
-          placeholder: '••••••••'
+          placeholder: '••••••••',
+          section: 'Información de Cuenta'
         },
         {
           key: 'roles',
@@ -289,7 +292,16 @@ export class UsersComponent implements OnInit {
             { value: 'ALUMNO', label: 'Alumno' },
             { value: 'PROFESOR', label: 'Profesor' },
             { value: 'ADMIN', label: 'Administrador' }
-          ]
+          ],
+          section: 'Información de Cuenta'
+        },
+        // Sección 3: Información Profesional
+        {
+          key: 'professionalDescription',
+          label: 'Descripción Profesional',
+          type: 'textarea' as const,
+          placeholder: 'Descripción de la experiencia profesional...',
+          section: 'Información Profesional'
         }
       ]
     };

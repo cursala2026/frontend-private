@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ClassesService } from '../../../core/services/classes.service';
 import { CoursesService } from '../../../core/services/courses.service';
@@ -23,9 +24,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   private progressService = inject(CourseProgressService);
   private questionnairesService = inject(QuestionnairesService);
   private info = inject(InfoService);
+  private sanitizer = inject(DomSanitizer);
   private destroy$ = new Subject<void>();
 
   @ViewChild('videoPlayer') videoPlayerRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('bunnyStreamIframe') bunnyStreamIframeRef!: ElementRef<HTMLIFrameElement>;
 
   classData = signal<any>(null);
   courseData = signal<any>(null);
@@ -36,6 +39,9 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   courseId = signal<string>('');
   classId = signal<string>('');
   Math = Math;
+  
+  // Cache para la URL del video embebido
+  private videoEmbedUrlCache = new Map<string, SafeResourceUrl>();
 
   // Estado del progreso
   classProgress = signal<ClassProgress | null>(null);
@@ -50,16 +56,26 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   // Modal de materiales
   showMaterialsModal = signal<boolean>(false);
 
+  // Tracking para videos de Bunny Stream (iframe) usando Player.js API
+  private bunnyStreamPlayer: any = null;
+  private bunnyStreamPlayerReady: boolean = false;
+
   private lastSavedTime = 0;
   private saveInterval = 10; // Guardar cada 10 segundos de cambio
   private pendingVideoRestore: HTMLVideoElement | null = null;
 
   ngOnInit(): void {
+    // Listener para postMessage desde el iframe de Bunny Stream
+    window.addEventListener('message', this.handleIframeMessage.bind(this));
+    
     this.route.params.subscribe(params => {
       const courseId = params['courseId'];
       const classId = params['classId'];
       
       if (courseId && classId) {
+        // Destruir Player.js anterior si existe
+        this.destroyBunnyStreamPlayer();
+        
         this.courseId.set(courseId);
         this.classId.set(classId);
         this.loadClassData(courseId, classId);
@@ -74,11 +90,22 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     // Se inicializa después de que la vista esté lista
+    // Inicializar Player.js para Bunny Stream si hay un iframe
+    setTimeout(() => {
+      this.initBunnyStreamPlayer();
+    }, 500);
   }
 
   ngOnDestroy(): void {
     // Guardar progreso antes de salir
     this.saveProgress(true);
+    
+    // Limpiar Player.js de Bunny Stream
+    this.destroyBunnyStreamPlayer();
+    
+    // Remover listener de postMessage
+    window.removeEventListener('message', this.handleIframeMessage.bind(this));
+    
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -101,7 +128,15 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isClassCompleted.set(progress.completed);
           this.currentWatchTime.set(progress.watchTime);
           this.videoDuration.set(progress.duration);
-          this.lastSavedTime = progress.watchTime;
+            this.lastSavedTime = progress.watchTime;
+          
+          // Si es un video de Bunny Stream, inicializar Player.js
+          if (this.classData()?.videoUrl && this.isBunnyStreamUrl(this.classData().videoUrl)) {
+            // Pequeño delay para asegurar que el iframe esté cargado
+            setTimeout(() => {
+              this.initBunnyStreamPlayer();
+            }, 1000);
+          }
           
           // Si el video ya cargó sus metadatos, restaurar la posición ahora
           if (this.pendingVideoRestore && progress.watchTime > 0) {
@@ -300,6 +335,170 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!imageUrl) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
     return `${environment.apiUrl}/static/classes/${imageUrl}`;
+  }
+
+  /**
+   * Obtiene la URL del video, convirtiendo URLs de Bunny Stream al reproductor embebido
+   */
+  getVideoUrl(videoUrl: string | null | undefined): SafeResourceUrl {
+    if (!videoUrl) return this.sanitizer.bypassSecurityTrustResourceUrl('');
+    
+    // Usar caché para evitar recalcular múltiples veces
+    if (this.videoEmbedUrlCache.has(videoUrl)) {
+      return this.videoEmbedUrlCache.get(videoUrl)!;
+    }
+    
+    // Si es una URL de Bunny Stream (vz-*.b-cdn.net), convertir al reproductor embebido
+    if (videoUrl.includes('vz-') && videoUrl.includes('.b-cdn.net')) {
+      // Extraer libraryId y videoId de la URL
+      // Formato: https://vz-{libraryId}.b-cdn.net/{videoId}/play_480p.mp4
+      // o: https://vz-{libraryId}.b-cdn.net/{videoId}
+      let match = videoUrl.match(/vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)(?:\/|$)/i);
+      
+      // Si no coincide, intentar sin el trailing slash
+      if (!match) {
+        match = videoUrl.match(/vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)/i);
+      }
+      
+      if (match && match.length >= 3) {
+        const libraryId = match[1];
+        let videoId = match[2];
+        
+        // Limpiar el videoId
+        videoId = videoId.split('/')[0];
+        
+        // Usar el reproductor embebido de Bunny Stream (iframe)
+        // Nota: Para que funcione, necesitas agregar tu dominio a "Allowed Domains" en Bunny Stream
+        // Si estás en desarrollo, agrega "localhost" a los dominios permitidos
+        const embedUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
+        const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+        
+        // Guardar en caché
+        this.videoEmbedUrlCache.set(videoUrl, safeUrl);
+        
+        return safeUrl;
+      }
+    }
+    
+    // Si no es Bunny Stream, devolver la URL original sanitizada
+    const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(videoUrl);
+    this.videoEmbedUrlCache.set(videoUrl, safeUrl);
+    return safeUrl;
+  }
+
+  /**
+   * Verifica si la URL del video es de Bunny Stream (requiere iframe)
+   */
+  isBunnyStreamUrl(videoUrl: string | null | undefined): boolean {
+    if (!videoUrl) return false;
+    return videoUrl.includes('vz-') && videoUrl.includes('.b-cdn.net');
+  }
+
+  /**
+   * Maneja mensajes postMessage desde el iframe de Bunny Stream
+   * (Mantenido por compatibilidad, pero ahora usamos Player.js API)
+   */
+  handleIframeMessage(event: MessageEvent): void {
+    // Este método ahora está deprecated, usamos Player.js API en su lugar
+  }
+
+  /**
+   * Inicializa Player.js para controlar el reproductor de Bunny Stream
+   */
+  initBunnyStreamPlayer(): void {
+    // No inicializar si es workshop
+    if (this.isWorkshopType()) return;
+
+    // No inicializar si ya hay un player activo
+    if (this.bunnyStreamPlayer) return;
+
+    // Verificar si hay un iframe de Bunny Stream
+    if (!this.bunnyStreamIframeRef?.nativeElement) {
+      // Reintentar después de un breve delay
+      setTimeout(() => this.initBunnyStreamPlayer(), 500);
+      return;
+    }
+
+    // Verificar que Player.js esté disponible (se carga desde el script en index.html)
+    const playerjs = (window as any).playerjs;
+    if (!playerjs || typeof playerjs.Player === 'undefined') {
+      console.warn('Player.js no está disponible. Asegúrate de que el script esté cargado.');
+      // Reintentar después de un breve delay
+      setTimeout(() => this.initBunnyStreamPlayer(), 500);
+      return;
+    }
+
+    try {
+      const iframe = this.bunnyStreamIframeRef.nativeElement;
+      this.bunnyStreamPlayer = new playerjs.Player(iframe);
+
+      // Esperar a que el reproductor esté listo
+      this.bunnyStreamPlayer.on('ready', () => {
+        this.bunnyStreamPlayerReady = true;
+        console.log('Bunny Stream Player.js listo');
+
+        // Obtener duración del video
+        this.bunnyStreamPlayer.getDuration((duration: number) => {
+          if (duration && duration > 0) {
+            this.videoDuration.set(duration);
+            
+            // Restaurar posición si hay progreso guardado
+            const progress = this.classProgress();
+            if (progress && progress.watchTime > 0 && progress.watchTime < duration) {
+              this.bunnyStreamPlayer.setCurrentTime(progress.watchTime);
+            }
+          }
+        });
+
+        // Escuchar cuando el video termina
+        this.bunnyStreamPlayer.on('ended', () => {
+          console.log('Video terminado');
+          this.markAsCompleted();
+        });
+
+        // Escuchar actualizaciones de tiempo (progreso)
+        this.bunnyStreamPlayer.on('timeupdate', (data: any) => {
+          if (data && typeof data.seconds === 'number') {
+            this.currentWatchTime.set(data.seconds);
+            
+            // Guardar progreso cada 10 segundos
+            if (Math.abs(data.seconds - this.lastSavedTime) >= this.saveInterval) {
+              this.saveProgress();
+            }
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error inicializando Player.js:', error);
+    }
+  }
+
+  /**
+   * Destruye la instancia de Player.js
+   */
+  destroyBunnyStreamPlayer(): void {
+    if (this.bunnyStreamPlayer) {
+      try {
+        // Verificar si el iframe aún existe y tiene contentWindow antes de intentar limpiar
+        const iframe = this.bunnyStreamIframeRef?.nativeElement;
+        if (iframe && iframe.contentWindow) {
+          try {
+            this.bunnyStreamPlayer.off('ready');
+            this.bunnyStreamPlayer.off('ended');
+            this.bunnyStreamPlayer.off('timeupdate');
+          } catch (cleanupError) {
+            // Silenciar errores de limpieza si el iframe ya no está disponible
+            // Esto es normal cuando el componente se destruye mientras el iframe se está limpiando
+          }
+        }
+      } catch (error) {
+        // Silenciar errores si el iframe ya no existe
+        // Esto es normal cuando el componente se destruye
+      } finally {
+        this.bunnyStreamPlayer = null;
+        this.bunnyStreamPlayerReady = false;
+      }
+    }
   }
 
   downloadMaterial(materialUrl: string): void {

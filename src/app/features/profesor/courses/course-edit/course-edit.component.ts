@@ -154,16 +154,23 @@ export class CourseEditComponent implements OnInit {
     }
 
     this.saving.set(true);
-    const formData = this.courseForm.value;
-
+    
+    // Obtener valores del formulario (getRawValue incluye campos deshabilitados)
+    const formValue = this.courseForm.getRawValue();
+    
     // Procesar los datos antes de enviar
     const processedData: any = {
-      ...formData,
+      ...formValue,
       // Convertir days de string a array si es necesario
-      days: formData.days && typeof formData.days === 'string'
-        ? formData.days.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0)
-        : formData.days
+      days: formValue.days && typeof formValue.days === 'string'
+        ? formValue.days.split(',').map((d: string) => d.trim()).filter((d: string) => d.length > 0)
+        : formValue.days
     };
+    
+    // Excluir campos de precio y financiación del envío (profesores no pueden editarlos)
+    delete processedData.price;
+    delete processedData.maxInstallments;
+    delete processedData.interestFree;
 
     // Agregar archivo de imagen si se seleccionó uno nuevo
     if (this.selectedImageFile) {
