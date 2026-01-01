@@ -69,7 +69,7 @@ export class ModalBankAccountsComponent {
 
         accounts.forEach(account => {
           const form = this.fb.group({
-            cbu: [account.cbu, [Validators.required, Validators.pattern(/^\\d{22}$/)]],
+            cbu: [account.cbu, [Validators.required, Validators.pattern(/^\d{22}$/)]],
             alias: [account.alias, [Validators.required, Validators.minLength(3), Validators.maxLength(20)]]
           });
           this.accountForms.set(account._id, form);
@@ -113,6 +113,7 @@ export class ModalBankAccountsComponent {
         }
         this.info.showSuccess('Cuenta bancaria actualizada exitosamente');
         this.saving.set(null);
+        this.closeModal();
       },
       error: (error) => {
         console.error('Error updating bank account in modal:', error);

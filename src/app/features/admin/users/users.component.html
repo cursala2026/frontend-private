@@ -56,3 +56,12 @@
   (close)="onModalClose()"
   (save)="onModalSave($event)"
 />
+
+<!-- Modal de Gestión de Cursos -->
+<app-student-courses-modal
+  [isOpen]="showCoursesModal"
+  [studentId]="selectedStudentForCourses?._id || ''"
+  [studentName]="selectedStudentForCourses ? (selectedStudentForCourses.firstName + ' ' + selectedStudentForCourses.lastName) : ''"
+  (close)="closeCoursesModal()"
+  (coursesUpdated)="onCoursesUpdated()"
+/>

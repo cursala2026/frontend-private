@@ -5,6 +5,7 @@ import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { QuestionnairesService } from '../../../core/services/questionnaires.service';
+import { CoursesService } from '../../../core/services/courses.service';
 import { UserRole } from '../../../core/models/user-role.enum';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
@@ -52,6 +53,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private viewModeService = inject(ViewModeService);
   private http = inject(HttpClient);
   private questionnairesService = inject(QuestionnairesService);
+  private coursesService = inject(CoursesService);
   private router = inject(Router);
   private info = inject(InfoService);
   
@@ -75,6 +77,19 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     icon: 'danger'
   };
   resettingProgress = signal<boolean>(false);
+
+  // Modal de confirmación para desasociar alumno
+  showUnenrollModal = signal<boolean>(false);
+  studentToUnenroll: Student | null = null;
+  unenrollModalConfig: ConfirmModalConfig = {
+    title: 'Desasociar Alumno del Curso',
+    message: '',
+    confirmText: 'Desasociar',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    icon: 'danger'
+  };
+  unenrollingStudent = signal<boolean>(false);
 
   ngOnInit(): void {
     this.viewModeService.initializeViewMode();
@@ -152,6 +167,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
       }
       grouped.get(courseName)!.push(student);
     });
+    
     this.groupedStudents.set(grouped);
     
     this.loading.set(false);
@@ -279,6 +295,64 @@ Esta acción no se puede deshacer.`
   cancelResetProgress(): void {
     this.showResetModal.set(false);
     this.studentToReset = null;
+  }
+
+  /**
+   * Abre el modal de confirmación para desasociar un estudiante del curso
+   */
+  openUnenrollModal(student: Student): void {
+    this.studentToUnenroll = student;
+    this.unenrollModalConfig = {
+      ...this.unenrollModalConfig,
+      message: `¿Estás seguro de que quieres desasociar a ${student.firstName} ${student.lastName} del curso "${student.courseName}"? Esta acción eliminará:
+
+• La inscripción del alumno al curso
+• Todos los videos vistos de las clases
+• Todos los cuestionarios completados
+• Todas las respuestas de exámenes
+• Todas las certificaciones obtenidas
+• El progreso general del curso
+
+El alumno ya no tendrá acceso al curso y esta acción no se puede deshacer.`
+    };
+    this.showUnenrollModal.set(true);
+  }
+
+  /**
+   * Desasocia al estudiante del curso y elimina todo su progreso
+   */
+  confirmUnenrollStudent(): void {
+    if (!this.studentToUnenroll) {
+      return;
+    }
+
+    this.unenrollingStudent.set(true);
+    const student = this.studentToUnenroll;
+
+    this.coursesService.unenrollStudentCompletely(student.courseId, student.userId).subscribe({
+      next: (response: any) => {
+        this.info.showSuccess(`${student.firstName} ${student.lastName} ha sido desasociado del curso exitosamente`);
+        this.showUnenrollModal.set(false);
+        this.studentToUnenroll = null;
+        this.unenrollingStudent.set(false);
+        // Recargar la lista de estudiantes para actualizar
+        this.loadStudents();
+      },
+      error: (error) => {
+        console.error('Error desasociando estudiante:', error);
+        const errorMsg = error?.error?.message || 'Error al desasociar al estudiante del curso';
+        this.info.showError(errorMsg);
+        this.unenrollingStudent.set(false);
+      }
+    });
+  }
+
+  /**
+   * Cancela la desasociación del estudiante
+   */
+  cancelUnenrollStudent(): void {
+    this.showUnenrollModal.set(false);
+    this.studentToUnenroll = null;
   }
 }
 

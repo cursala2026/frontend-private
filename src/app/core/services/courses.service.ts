@@ -13,6 +13,14 @@ export interface TeacherInfo {
   profilePhotoUrl?: string;
 }
 
+export interface CourseStudent {
+  userId: string;
+  enrolledAt: Date;
+  enrollmentType: 'MANUAL' | 'SELF'; // MANUAL = admin | SELF = auto-inscripción
+  startDate?: Date; // Solo para inscripciones manuales con fechas
+  endDate?: Date;   // Solo para inscripciones manuales con fechas
+}
+
 export interface Course {
   _id: string;
   name: string;
@@ -22,7 +30,7 @@ export interface Course {
   order: number;
   imageUrl?: string;
   classes: Class[];
-  students?: any[]; // Array de estudiantes (puede ser ObjectId o objeto completo)
+  students?: CourseStudent[]; // Array de estudiantes con metadata de inscripción
   meta?: {
     totalClasses: number;
     popularity: number;
@@ -262,6 +270,15 @@ export class CoursesService {
 
   unenrollFromCourse(courseId: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${courseId}/unenroll`, {});
+  }
+
+  // Métodos para administradores: inscripción/desinscripción manual
+  enrollStudentManually(courseId: string, userId: string, data?: { startDate?: string; endDate?: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${courseId}/enroll/${userId}`, data || {});
+  }
+
+  unenrollStudentCompletely(courseId: string, userId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${courseId}/unenroll/${userId}`);
   }
 
   getStudentCourses(): Observable<any> {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../shared/components/modal-data-table/modal-data-table.component';
+import { StudentCoursesModalComponent } from '../../../shared/components/student-courses-modal/student-courses-modal.component';
 import { TableColumn, TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { UsersService, UserListResponse } from '../../../core/services/users.service';
 import { InfoService } from '../../../core/services/info.service';
@@ -12,7 +13,7 @@ import { UserRole } from '../../../core/models/user-role.enum';
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalDataTableComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalDataTableComponent, StudentCoursesModalComponent],
   templateUrl: './users.component.html'
 })
 export class UsersComponent implements OnInit {
@@ -23,6 +24,10 @@ export class UsersComponent implements OnInit {
   isModalOpen = signal<boolean>(false);
   modalConfig!: ModalConfig;
   selectedUser: any = null;
+  
+  // Modal de gestión de cursos
+  showCoursesModal = signal<boolean>(false);
+  selectedStudentForCourses: any = null;
   
   currentPage = 1;
   pageSize = 10;
@@ -103,6 +108,13 @@ export class UsersComponent implements OnInit {
     searchable: true,
     selectable: false,
     actions: [
+      {
+        label: 'Gestionar Cursos',
+        iconSvg: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+        handler: (row) => this.openCoursesModal(row),
+        class: 'btn-info',
+        condition: (row) => row.roles?.includes('ALUMNO') || row.roles?.includes(UserRole.ALUMNO)
+      },
       {
         label: 'Editar',
         iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
@@ -547,5 +559,20 @@ export class UsersComponent implements OnInit {
       [UserRole.ALUMNO]: 'Alumno'
     };
     return roleLabels[role] || role;
+  }
+
+  openCoursesModal(user: any): void {
+    this.selectedStudentForCourses = user;
+    this.showCoursesModal.set(true);
+  }
+
+  closeCoursesModal(): void {
+    this.showCoursesModal.set(false);
+    this.selectedStudentForCourses = null;
+  }
+
+  onCoursesUpdated(): void {
+    // Opcional: recargar la lista de usuarios si es necesario
+    // this.loadUsers();
   }
 }
