@@ -261,7 +261,7 @@
           <button
             type="submit"
             class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
-            [disabled]="isSubmitting() || (!selectedProfileImage && (profileForm.invalid || !hasPendingChanges()))"
+            [disabled]="isSubmitting() || (!selectedProfileImage && !hasPendingChanges())"
           >
             @if (isSubmitting()) {
               <span class="flex items-center justify-center gap-2">
