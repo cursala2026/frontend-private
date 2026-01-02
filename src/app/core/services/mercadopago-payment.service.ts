@@ -35,6 +35,7 @@ export interface MercadoPagoPreferenceData {
     failure: string;
     pending: string;
   };
+  auto_return?: string;
   externalReference: string;
   notificationUrl?: string;
   metadata?: any;
@@ -42,8 +43,8 @@ export interface MercadoPagoPreferenceData {
 
 export interface MercadoPagoPreferenceResponse {
   id: string;
-  init_point: string;
-  sandbox_init_point: string;
+  initPoint: string;
+  sandboxInitPoint: string;
 }
 
 export interface PaymentStatus {
@@ -143,6 +144,7 @@ export class MercadoPagoPaymentService {
         failure: `${window.location.origin}/alumno/payment/failure?external_reference=${externalReference}`,
         pending: `${window.location.origin}/alumno/payment/pending?external_reference=${externalReference}`
       },
+      auto_return: 'approved',
       externalReference: externalReference,
       notificationUrl: `${environment.apiUrl}/payment/payments/webhook`
     };

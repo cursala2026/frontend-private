@@ -36,6 +36,7 @@ export class ProfileComponent {
       firstName: [currentUser.firstName, [Validators.required]],
       lastName: [currentUser.lastName, [Validators.required]],
       email: [currentUser.email, [Validators.required, Validators.email]],
+      username: [currentUser.username, [Validators.required]],
       phone: [currentUser.phone || ''],
       dni: [currentUser.dni || ''],
       birthDate: [currentUser.birthDate ? new Date(currentUser.birthDate).toISOString().split('T')[0] : ''],
@@ -106,8 +107,8 @@ export class ProfileComponent {
     const hasProfilePhoto = this.selectedProfileImage instanceof File;
 
     // Validar campos requeridos
-    if (!formData.firstName || !formData.lastName || !formData.email) {
-      this.infoService.showError('Por favor completa los campos requeridos (Nombre, Apellido, Email)');
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.username) {
+      this.infoService.showError('Por favor completa los campos requeridos (Nombre, Apellido, Email, Nombre de usuario)');
       return;
     }
     
@@ -128,6 +129,7 @@ export class ProfileComponent {
     formDataToSend.append('firstName', formData.firstName);
     formDataToSend.append('lastName', formData.lastName);
     formDataToSend.append('email', formData.email);
+    formDataToSend.append('username', formData.username);
     
     if (formData.phone && formData.phone.trim()) {
       formDataToSend.append('phone', formData.phone);
@@ -155,10 +157,12 @@ export class ProfileComponent {
         this.infoService.showSuccess('Perfil actualizado exitosamente');
         this.isSubmitting.set(false);
         
-        // Actualizar usuario en AuthService
+        // Actualizar usuario en AuthService sin recargar
         if (response.data) {
-          localStorage.setItem('user', JSON.stringify(response.data));
-          window.location.reload(); // Recargar para actualizar el signal
+          this.authService.updateCurrentUser(response.data);
+          
+          // Redirigir al dashboard correspondiente según el rol
+          this.redirectToDashboard(response.data);
         }
         
         // Limpiar la imagen seleccionada después de guardar
@@ -198,6 +202,7 @@ export class ProfileComponent {
     if (formValue.firstName !== currentUser.firstName) return true;
     if (formValue.lastName !== currentUser.lastName) return true;
     if (formValue.email !== currentUser.email) return true;
+    if (formValue.username !== currentUser.username) return true;
     if (formValue.phone !== (currentUser.phone || '')) return true;
     if (formValue.dni !== (currentUser.dni || '')) return true;
     
@@ -212,5 +217,21 @@ export class ProfileComponent {
     if (formValue.professionalDescription !== (currentUser.professionalDescription || '')) return true;
 
     return false;
+  }
+
+  /**
+   * Redirige al dashboard correspondiente según el rol del usuario
+   */
+  private redirectToDashboard(user: any): void {
+    if (user.roles.includes('ADMIN')) {
+      this.router.navigate(['/admin']);
+    } else if (user.roles.includes('PROFESOR')) {
+      this.router.navigate(['/profesor']);
+    } else if (user.roles.includes('ALUMNO')) {
+      this.router.navigate(['/alumno']);
+    } else {
+      // Si no tiene ningún rol conocido, ir al dashboard general
+      this.router.navigate(['/dashboard']);
+    }
   }
 }

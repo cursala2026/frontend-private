@@ -429,6 +429,14 @@ export class AuthService implements OnDestroy {
   }
 
   /**
+   * Actualiza el usuario actual en el estado y localStorage
+   */
+  updateCurrentUser(user: IUser): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this.userSignal.set(user);
+  }
+
+  /**
    * Registra un nuevo usuario en el backend.
    * No inicia sesión automáticamente; retorna la respuesta del backend.
    */

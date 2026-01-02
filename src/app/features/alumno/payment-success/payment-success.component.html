@@ -37,6 +37,13 @@
           <p class="text-green-700 mt-2">
             Recibirás un correo electrónico con la confirmación de tu compra y los detalles de acceso.
           </p>
+          @if (courseId()) {
+            <div class="mt-4 pt-4 border-t border-green-300">
+              <p class="text-green-800 font-semibold">
+                Serás redirigido al curso en {{ redirectCountdown() }} segundos...
+              </p>
+            </div>
+          }
         </div>
 
         <!-- Payment Details -->
@@ -62,12 +69,21 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            (click)="goToCourses()"
-            class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
-          >
-            Ir a Mis Cursos
-          </button>
+          @if (courseId()) {
+            <button
+              (click)="redirectToCourse()"
+              class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+            >
+              Ir al Curso Ahora
+            </button>
+          } @else {
+            <button
+              (click)="goToCourses()"
+              class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 duration-200"
+            >
+              Ir a Mis Cursos
+            </button>
+          }
           <button
             (click)="goToHome()"
             class="px-8 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
