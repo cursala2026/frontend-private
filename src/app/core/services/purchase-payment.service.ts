@@ -76,9 +76,12 @@ export class PurchasePaymentService {
       // Verificar respuesta
       if (response?.status === 200 && response?.data) {
         const preferenceData = response.data;
-        const initPoint = preferenceData.initPoint || preferenceData.sandboxInitPoint;
+        // El backend ya retorna el initPoint correcto según el modo (sandbox/production)
+        const initPoint = preferenceData.initPoint;
 
         if (initPoint) {
+          console.log('MercadoPago mode:', preferenceData.mode);
+          console.log('Redirecting to:', initPoint);
           this.isProcessing.set(false);
           return { success: true, initPoint };
         } else {

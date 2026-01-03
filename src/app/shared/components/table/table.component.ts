@@ -155,7 +155,8 @@ export class TableComponent<T = any> {
 
   executeAction(action: TableAction<T>, row: T, event: Event): void {
     event.stopPropagation();
-    if (!action.disabled || !action.disabled(row)) {
+    const isDisabled = action.disabled ? action.disabled(row) : false;
+    if (!isDisabled) {
       action.onClick(row);
     }
   }

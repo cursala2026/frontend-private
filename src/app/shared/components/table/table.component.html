@@ -16,7 +16,7 @@
 
 <!-- Table -->
 @if (!loading && data.length > 0) {
-  <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
+  <div class="bg-linear-to-br from-gray-50 to-white rounded-xl shadow-lg overflow-hidden">
     <!-- Search Bar -->
     @if (searchable) {
       <div class="px-3 sm:px-4 md:px-6 py-2.5 border-b border-gray-200/60 bg-white/95 backdrop-blur-sm">
@@ -55,7 +55,7 @@
     <!-- Mobile Cards View (Hidden on larger screens) -->
     <div class="lg:hidden divide-y divide-gray-100 min-h-[400px] bg-white">
       @for (row of paginatedData(); track trackByFn($index, row)) {
-        <div class="p-4 hover:bg-gradient-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary cursor-pointer" (click)="onRowClick(row)">
+        <div class="p-4 hover:bg-linear-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary cursor-pointer" (click)="onRowClick(row)">
           <div class="space-y-3">
             @for (column of columns; track column.header) {
               <div class="flex justify-between items-start">
@@ -69,8 +69,9 @@
               <div class="pt-3 border-t border-gray-100 flex gap-2 justify-end">
                 @for (action of actions; track $index) {
                   <button
+                    type="button"
                     (click)="executeAction(action, row, $event)"
-                    [disabled]="isActionDisabled(action, row)"
+                    [attr.disabled]="isActionDisabled(action, row) ? true : null"
                     [class]="action.class || 'inline-flex items-center justify-center p-1.5 sm:p-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'"
                     [title]="action.tooltip || ''"
                   >
@@ -80,7 +81,7 @@
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     } @else if (action.icon) {
-                      <div [innerHTML]="sanitizeHtml(action.icon)"></div>
+                      <div [innerHTML]="sanitizeHtml(action.icon)" class="pointer-events-none"></div>
                     } @else if (action.label) {
                       <span class="text-sm font-medium">{{ action.label }}</span>
                     }
@@ -96,7 +97,7 @@
     <!-- Desktop Table View (Hidden on mobile) -->
     <div class="hidden lg:block overflow-x-auto">
       <table class="w-full text-sm text-left border-collapse">
-        <thead class="bg-gradient-to-r from-slate-50 via-brand-primary/10 to-slate-50 sticky top-0 z-20 shadow-sm">
+        <thead class="bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50 sticky top-0 z-20 shadow-sm">
           <tr class="border-b-2 border-brand-primary/20">
             @for (column of columns; track column.header) {
               <th 
@@ -115,7 +116,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white min-h-[400px]">
           @for (row of paginatedData(); track trackByFn($index, row)) {
-            <tr class="group hover:bg-gradient-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary cursor-pointer" (click)="onRowClick(row)">
+            <tr class="group hover:bg-linear-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary cursor-pointer" (click)="onRowClick(row)">
               @for (column of columns; track column.header) {
                 <td 
                   class="px-2 sm:px-3 md:px-4 py-2 text-gray-900 text-xs sm:text-sm"
@@ -129,9 +130,10 @@
                   <div class="flex items-center justify-center gap-1">
                     @for (action of actions; track $index) {
                       <button
+                        type="button"
                         (click)="executeAction(action, row, $event)"
-                        [disabled]="isActionDisabled(action, row)"
-                        [class]="action.class || 'inline-flex items-center justify-center p-1.5 sm:p-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'"
+                        [attr.disabled]="isActionDisabled(action, row) ? true : null"
+                        [class]="action.class || 'inline-flex items-center justify-center p-1.5 sm:p-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer relative z-10'"
                         [title]="action.tooltip || ''"
                       >
                         @if (isActionLoading(action, row)) {
@@ -140,7 +142,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
                         } @else if (action.icon) {
-                          <div [innerHTML]="sanitizeHtml(action.icon)"></div>
+                          <div [innerHTML]="sanitizeHtml(action.icon)" class="pointer-events-none"></div>
                         } @else if (action.label) {
                           <span class="text-sm font-medium">{{ action.label }}</span>
                         }
@@ -221,9 +223,9 @@
               } @else {
                 <button
                   (click)="goToPage(page)"
-                  [class]="'min-w-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ' +
+                  [class]="'min-w-8 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ' +
                     (page === currentPage()
-                      ? 'bg-gradient-to-br from-brand-primary to-brand-primary-dark text-white shadow-md ring-2 ring-brand-primary/30 scale-105'
+                      ? 'bg-linear-to-br from-brand-primary to-brand-primary-dark text-white shadow-md ring-2 ring-brand-primary/30 scale-105'
                       : 'text-gray-700 bg-white border border-gray-300 hover:bg-brand-primary/10 hover:border-brand-primary hover:text-brand-primary shadow-sm')"
                 >
                   {{ page }}

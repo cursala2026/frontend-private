@@ -81,8 +81,14 @@ export class BankAccountsComponent implements OnInit {
       tooltip: 'Eliminar pago',
       icon: '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
       onClick: (row: any) => this.deletePayment(row),
-      isLoading: (row: any) => this.deletingPayment() === row.paymentId,
-      disabled: (row: any) => this.deletingPayment() === row.paymentId,
+      isLoading: (row: any) => {
+        const rowId = row._id || row.paymentId || row.id;
+        return this.deletingPayment() === rowId;
+      },
+      disabled: (row: any) => {
+        const rowId = row._id || row.paymentId || row.id;
+        return this.deletingPayment() === rowId;
+      },
       class: 'text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
     }
   ];
@@ -108,10 +114,17 @@ export class BankAccountsComponent implements OnInit {
 
 
   deletePayment(payment: any) {
+    console.log('deletePayment called for row:', payment);
+    console.log('payment.paymentId:', payment.paymentId);
+    console.log('payment._id:', payment._id);
+    console.log('payment.id:', payment.id);
     this.paymentToDelete.set(payment);
+
+    const idForDisplay = payment.paymentId || payment._id || payment.id || 'sin-id';
+
     this.deleteModalConfig = {
       title: 'Eliminar Pago',
-      message: `¿Estás seguro de que quieres eliminar el pago ${payment.paymentId}?`,
+      message: `¿Estás seguro de que quieres eliminar el pago ${idForDisplay}?`,
       confirmText: 'Eliminar Pago',
       cancelText: 'Cancelar',
       confirmButtonClass: 'bg-red-600',
@@ -125,10 +138,20 @@ export class BankAccountsComponent implements OnInit {
     if (!payment) return;
 
     this.showDeleteModal.set(false);
-    this.deletingPayment.set(payment.paymentId);
+    const idToDelete = payment._id || payment.paymentId || payment.id;
+    
+    if (!idToDelete) {
+      this.info.showError('No se pudo identificar el ID del pago a eliminar');
+      this.paymentToDelete.set(null);
+      return;
+    }
+    
+    console.log('Attempting to delete payment with id:', idToDelete);
+    this.deletingPayment.set(idToDelete);
 
-    this.mercadoPagoService.deletePayment(payment.paymentId).subscribe({
+    this.mercadoPagoService.deletePayment(idToDelete).subscribe({
       next: (response) => {
+        console.log('Delete response:', response);
         this.info.showSuccess('Pago eliminado exitosamente');
         this.deletingPayment.set(null);
         this.paymentToDelete.set(null);
@@ -137,7 +160,10 @@ export class BankAccountsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error deleting payment:', error);
-        this.info.showError('Error al eliminar el pago');
+        console.error('Error status:', error?.status);
+        console.error('Error body:', error?.error);
+        const message = error?.error?.message || error?.message || 'Error al eliminar el pago';
+        this.info.showError(message);
         this.deletingPayment.set(null);
         this.paymentToDelete.set(null);
       }

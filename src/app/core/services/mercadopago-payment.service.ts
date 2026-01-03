@@ -116,7 +116,8 @@ export class MercadoPagoPaymentService {
     studentEmail: string
   ): Observable<any> {
     const timestamp = Date.now();
-    const externalReference = `course_${courseId}_${timestamp}`;
+    // Incluir email en external_reference para identificar al usuario en sandbox
+    const externalReference = `course_${courseId}_${studentEmail}_${timestamp}`;
 
     const preferenceData: MercadoPagoPreferenceData = {
       items: [
@@ -140,13 +141,12 @@ export class MercadoPagoPaymentService {
         excluded_payment_methods: []
       },
       backUrls: {
-        success: `${window.location.origin}/alumno/payment/success?external_reference=${externalReference}`,
-        failure: `${window.location.origin}/alumno/payment/failure?external_reference=${externalReference}`,
-        pending: `${window.location.origin}/alumno/payment/pending?external_reference=${externalReference}`
+        success: `${window.location.origin}/alumno/payment/success`,
+        failure: `${window.location.origin}/alumno/payment/failure`,
+        pending: `${window.location.origin}/alumno/payment/pending`
       },
-      auto_return: 'approved',
-      externalReference: externalReference,
-      notificationUrl: `${environment.apiUrl}/payment/payments/webhook`
+      externalReference: externalReference
+      // notificationUrl: se omite para que el backend use WEBHOOK_URL (ngrok) automáticamente
     };
 
     return this.createPaymentPreference(preferenceData);
