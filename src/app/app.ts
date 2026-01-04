@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
 
@@ -8,6 +8,10 @@ import { ToastComponent } from './shared/components/toast/toast.component';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App {
+export class App implements OnInit {
   protected readonly title = signal('frontend-private');
+
+  ngOnInit() {
+    document.body.classList.add('loaded');
+  }
 }

@@ -73,7 +73,7 @@ export interface RegisterPaymentData {
 })
 export class MercadoPagoPaymentService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/payment/payments`;
+  private apiUrl = `${environment.apiUrl}/payment`;
 
   /**
    * Crea una preferencia de pago en Mercado Pago
@@ -175,6 +175,6 @@ export class MercadoPagoPaymentService {
    * Elimina un pago específico
    */
   deletePayment(paymentId: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${paymentId}`);
+    return this.http.delete(`${environment.apiUrl}/payment/${paymentId}`);
   }
 }

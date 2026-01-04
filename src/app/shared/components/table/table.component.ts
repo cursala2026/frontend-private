@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, inject, ChangeDetectionStrategy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -25,12 +25,24 @@ export interface TableAction<T = any> {
   selector: 'app-table',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './table.component.html'
+  templateUrl: './table.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TableComponent<T = any> {
   private sanitizer = inject(DomSanitizer);
 
-  @Input() data: T[] = [];
+  private _data: T[] = [];
+  private dataSignal = signal<T[]>([]);
+
+  @Input() 
+  set data(value: T[]) {
+    this._data = value;
+    this.dataSignal.set(value);
+  }
+  get data(): T[] {
+    return this._data;
+  }
+
   @Input() columns: TableColumn<T>[] = [];
   @Input() actions: TableAction<T>[] = [];
   @Input() loading = false;
@@ -52,9 +64,10 @@ export class TableComponent<T = any> {
 
   filteredData = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
-    if (!term) return this.data;
+    const currentData = this.dataSignal();
+    if (!term) return currentData;
 
-    return this.data.filter(row => {
+    return currentData.filter(row => {
       return this.columns.some(column => {
         const value = this.getCellValue(row, column);
         return value?.toString().toLowerCase().includes(term);

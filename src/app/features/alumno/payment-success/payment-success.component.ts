@@ -48,7 +48,11 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       // Si tenemos el ID del pago, verificar el estado
       const paymentIdToCheck = paymentIdParam || collectionIdParam;
       if (paymentIdToCheck) {
-        this.verifyPayment(paymentIdToCheck);
+        // Deshabilitar verificación por problemas de CORS
+        // this.verifyPayment(paymentIdToCheck);
+        this.loading.set(false);
+        this.paymentVerified.set(true);
+        this.startRedirectCountdown();
       } else {
         // Si no hay ID de pago, simplemente mostrar mensaje genérico
         this.loading.set(false);

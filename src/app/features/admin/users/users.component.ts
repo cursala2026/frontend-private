@@ -57,13 +57,6 @@ export class UsersComponent implements OnInit {
         formatter: (value: string) => value || 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'
       },
       {
-        key: 'email',
-        label: 'Email',
-        sortable: true,
-        type: 'text',
-        width: '22%'
-      },
-      {
         key: 'firstName',
         label: 'Nombre',
         sortable: true,
@@ -76,6 +69,13 @@ export class UsersComponent implements OnInit {
         sortable: true,
         type: 'text',
         width: '15%'
+      },
+      {
+        key: 'phone',
+        label: 'Teléfono',
+        type: 'html',
+        width: '15%',
+        formatter: (value: string) => value ? `<a href="tel:${value}" class="text-blue-600 hover:text-blue-800 underline">${value}</a>` : '-'
       },
       {
         key: 'createdAt',
@@ -225,97 +225,121 @@ export class UsersComponent implements OnInit {
 
   editUser(user: any): void {
     this.selectedUser = user;
-    const isCreate = !user._id;
-    
+    this.buildEditModal(user, !user._id);
+  }
+
+  private buildEditModal(user: any, isCreate: boolean): void {
+    let fields: ModalField[] = [
+      // Sección 1: Información Personal
+      ...(!isCreate ? [{
+        key: 'profilePhotoUrl',
+        label: 'Foto de Perfil',
+        type: 'image' as const,
+        imageShape: 'circle' as const,
+        aspectRatio: '1:1' as const,
+        section: 'Información Personal'
+      }] : []),
+      {
+        key: 'firstName',
+        label: 'Nombre',
+        type: 'text' as const,
+        required: true,
+        placeholder: 'Juan',
+        section: 'Información Personal'
+      },
+      {
+        key: 'lastName',
+        label: 'Apellido',
+        type: 'text' as const,
+        required: true,
+        placeholder: 'Pérez',
+        section: 'Información Personal'
+      },
+      {
+        key: 'dni',
+        label: 'DNI',
+        type: 'text' as const,
+        placeholder: '12345678',
+        section: 'Información Personal'
+      },
+      {
+        key: 'phone',
+        label: 'Teléfono',
+        type: 'text' as const,
+        placeholder: '+54 9 11 1234-5678',
+        section: 'Información Personal'
+      },
+      {
+        key: 'birthDate',
+        label: 'Fecha de Nacimiento',
+        type: 'date' as const,
+        section: 'Información Personal'
+      },
+      // Sección 2: Información de Cuenta
+      {
+        key: 'email',
+        label: 'Email',
+        type: 'email' as const,
+        required: true,
+        placeholder: 'correo@ejemplo.com',
+        disabled: !isCreate,
+        section: 'Información de Cuenta'
+      },
+      {
+        key: 'username',
+        label: 'Nombre de Usuario',
+        type: 'text' as const,
+        required: true,
+        placeholder: 'usuario123',
+        section: 'Información de Cuenta'
+      },
+      {
+        key: 'password',
+        label: isCreate ? 'Contraseña' : 'Nueva Contraseña (dejar vacío para mantener)',
+        type: 'password' as const,
+        required: isCreate,
+        placeholder: '••••••••',
+        section: 'Información de Cuenta'
+      },
+      {
+        key: 'roles',
+        label: 'Roles',
+        type: 'select' as const,
+        required: true,
+        options: [
+          { value: 'ALUMNO', label: 'Alumno' },
+          { value: 'PROFESOR', label: 'Profesor' },
+          { value: 'ADMIN', label: 'Administrador' }
+        ],
+        section: 'Información de Cuenta'
+      },
+      // Sección 3: Información Profesional
+      {
+        key: 'professionalDescription',
+        label: 'Descripción Profesional',
+        type: 'textarea' as const,
+        placeholder: 'Descripción de la experiencia profesional...',
+        section: 'Información Profesional'
+      }
+    ];
+
+    // Agregar firma solo para profesores y admins
+    if (user.roles?.includes('PROFESOR') || user.roles?.includes('ADMIN')) {
+      fields.push({
+        key: 'professionalSignatureUrl',
+        label: 'Firma Digital',
+        type: 'image' as const,
+        imageShape: 'rectangle' as const,
+        aspectRatio: '3:1' as const,
+        section: 'Información Profesional'
+      });
+    }
+
     this.modalConfig = {
       title: isCreate ? 'Crear Nuevo Usuario' : 'Editar Usuario',
       mode: isCreate ? 'create' : 'edit',
       size: 'xl',
-      fields: [
-        // Sección 1: Información Personal
-        ...(!isCreate ? [{
-          key: 'profilePhotoUrl',
-          label: 'Foto de Perfil',
-          type: 'image' as const,
-          imageShape: 'circle' as const,
-          aspectRatio: '1:1' as const,
-          section: 'Información Personal'
-        }] : []),
-        {
-          key: 'firstName',
-          label: 'Nombre',
-          type: 'text' as const,
-          required: true,
-          placeholder: 'Juan',
-          section: 'Información Personal'
-        },
-        {
-          key: 'lastName',
-          label: 'Apellido',
-          type: 'text' as const,
-          required: true,
-          placeholder: 'Pérez',
-          section: 'Información Personal'
-        },
-        {
-          key: 'dni',
-          label: 'DNI',
-          type: 'text' as const,
-          placeholder: '12345678',
-          section: 'Información Personal'
-        },
-        {
-          key: 'phone',
-          label: 'Teléfono',
-          type: 'text' as const,
-          placeholder: '+54 9 11 1234-5678',
-          section: 'Información Personal'
-        },
-        {
-          key: 'birthDate',
-          label: 'Fecha de Nacimiento',
-          type: 'date' as const,
-          section: 'Información Personal'
-        },
-        // Sección 2: Información de Cuenta
-        {
-          key: 'email',
-          label: 'Email',
-          type: 'email' as const,
-          required: true,
-          placeholder: 'correo@ejemplo.com',
-          disabled: !isCreate,
-          section: 'Información de Cuenta'
-        },
-        {
-          key: 'password',
-          label: isCreate ? 'Contraseña' : 'Nueva Contraseña (dejar vacío para mantener)',
-          type: 'password' as const,
-          required: isCreate,
-          placeholder: '••••••••',
-          section: 'Información de Cuenta'
-        },
-        {
-          key: 'roles',
-          label: 'Roles',
-          type: 'select' as const,
-          required: true,
-          options: [
-            { value: 'ALUMNO', label: 'Alumno' },
-            { value: 'PROFESOR', label: 'Profesor' },
-            { value: 'ADMIN', label: 'Administrador' }
-          ],
-          section: 'Información de Cuenta'
-        },
-        // Sección 3: Información Profesional
-        {
-          key: 'professionalDescription',
-          label: 'Descripción Profesional',
-          type: 'textarea' as const,
-          placeholder: 'Descripción de la experiencia profesional...',
-          section: 'Información Profesional'
-        }
-      ]
+      fields: fields
     };
     
     this.isModalOpen.set(true);
@@ -324,23 +348,31 @@ export class UsersComponent implements OnInit {
   viewUser(user: any): void {
     this.selectedUser = user;
     
+    let fields: ModalField[] = [
+      { key: 'profilePhotoUrl', label: 'URL Foto de Perfil', type: 'text' },
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'username', label: 'Nombre de Usuario', type: 'text' },
+      { key: 'firstName', label: 'Nombre', type: 'text' },
+      { key: 'lastName', label: 'Apellido', type: 'text' },
+      { key: 'dni', label: 'DNI', type: 'text' },
+      { key: 'phone', label: 'Teléfono', type: 'text' },
+      { key: 'birthDate', label: 'Fecha de Nacimiento', type: 'date' },
+      { key: 'professionalDescription', label: 'Descripción Profesional', type: 'textarea' },
+      { key: 'roles', label: 'Roles', type: 'text' },
+      { key: 'createdAt', label: 'Fecha de Registro', type: 'date' },
+      { key: 'lastConnection', label: 'Última Conexión', type: 'date' }
+    ];
+
+    // Agregar firma solo para profesores y admins
+    if (user.roles?.includes('PROFESOR') || user.roles?.includes('ADMIN')) {
+      fields.push({ key: 'professionalSignatureUrl', label: 'Firma Digital', type: 'image' });
+    }
+
     this.modalConfig = {
       title: 'Detalles del Usuario',
       mode: 'view',
       size: 'xl',
-      fields: [
-        { key: 'profilePhotoUrl', label: 'URL Foto de Perfil', type: 'text' },
-        { key: 'email', label: 'Email', type: 'email' },
-        { key: 'firstName', label: 'Nombre', type: 'text' },
-        { key: 'lastName', label: 'Apellido', type: 'text' },
-        { key: 'dni', label: 'DNI', type: 'text' },
-        { key: 'phone', label: 'Teléfono', type: 'text' },
-        { key: 'birthDate', label: 'Fecha de Nacimiento', type: 'date' },
-        { key: 'professionalDescription', label: 'Descripción Profesional', type: 'textarea' },
-        { key: 'roles', label: 'Roles', type: 'text' },
-        { key: 'createdAt', label: 'Fecha de Registro', type: 'date' },
-        { key: 'lastConnection', label: 'Última Conexión', type: 'date' }
-      ]
+      fields: fields
     };
     
     this.isModalOpen.set(true);
@@ -399,9 +431,10 @@ export class UsersComponent implements OnInit {
     } else {
       // Update user
       const hasProfilePhoto = formData.profilePhotoUrl instanceof File;
+      const hasSignature = formData.professionalSignatureUrl instanceof File;
       
-      if (hasProfilePhoto) {
-        // Si hay foto, usar FormData y endpoint updateUserData
+      if (hasProfilePhoto || hasSignature) {
+        // Si hay foto o firma, usar FormData y endpoint updateUserData
         const formDataToSend = new FormData();
         
         Object.keys(formData).forEach(key => {
@@ -409,6 +442,8 @@ export class UsersComponent implements OnInit {
           if (value !== null && value !== undefined && value !== '') {
             if (key === 'profilePhotoUrl' && value instanceof File) {
               formDataToSend.append('photo', value);
+            } else if (key === 'professionalSignatureUrl' && value instanceof File) {
+              formDataToSend.append('signatureFile', value);
             } else if (key === 'roles') {
               // Convertir roles a array
               const rolesArray = Array.isArray(value) ? value : [value];
@@ -426,7 +461,7 @@ export class UsersComponent implements OnInit {
             this.onModalClose();
           },
           error: (error) => {
-            console.error('Error updating user with photo:', error);
+            console.error('Error updating user with photo/signature:', error);
             this.infoService.showError(error.error?.message || 'Error al actualizar el usuario');
           }
         });

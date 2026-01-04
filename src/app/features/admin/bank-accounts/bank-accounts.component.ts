@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InfoService } from '../../../core/services/info.service';
 import { MercadoPagoPaymentService } from '../../../core/services/mercadopago-payment.service';
@@ -15,6 +15,7 @@ import { TableComponent, TableColumn, TableAction } from '../../../shared/compon
 export class BankAccountsComponent implements OnInit {
   private info = inject(InfoService);
   private mercadoPagoService = inject(MercadoPagoPaymentService);
+  private cdr = inject(ChangeDetectorRef);
 
   // Lista de pagos de Mercado Pago
   payments = signal<any[]>([]);
@@ -114,12 +115,13 @@ export class BankAccountsComponent implements OnInit {
 
 
   deletePayment(payment: any) {
-    console.log('deletePayment called for row:', payment);
-    console.log('payment.paymentId:', payment.paymentId);
-    console.log('payment._id:', payment._id);
-    console.log('payment.id:', payment.id);
-    this.paymentToDelete.set(payment);
+    const idToDelete = payment.paymentId || payment._id || payment.id;
+    
+    if (this.deletingPayment() === idToDelete || this.showDeleteModal()) {
+      return;
+    }
 
+    this.paymentToDelete.set(payment);
     const idForDisplay = payment.paymentId || payment._id || payment.id || 'sin-id';
 
     this.deleteModalConfig = {
@@ -137,35 +139,40 @@ export class BankAccountsComponent implements OnInit {
     const payment = this.paymentToDelete();
     if (!payment) return;
 
-    this.showDeleteModal.set(false);
-    const idToDelete = payment._id || payment.paymentId || payment.id;
+    const idToDelete = payment.paymentId || payment._id || payment.id;
+    const paymentDbId = payment._id;
     
+    if (this.deletingPayment() === idToDelete) {
+      return;
+    }
+
     if (!idToDelete) {
       this.info.showError('No se pudo identificar el ID del pago a eliminar');
+      this.showDeleteModal.set(false);
       this.paymentToDelete.set(null);
       return;
     }
     
-    console.log('Attempting to delete payment with id:', idToDelete);
+    this.showDeleteModal.set(false);
     this.deletingPayment.set(idToDelete);
 
     this.mercadoPagoService.deletePayment(idToDelete).subscribe({
-      next: (response) => {
-        console.log('Delete response:', response);
+      next: () => {
         this.info.showSuccess('Pago eliminado exitosamente');
         this.deletingPayment.set(null);
         this.paymentToDelete.set(null);
-        // Recargar la lista de pagos
         this.loadPayments();
       },
       error: (error) => {
-        console.error('Error deleting payment:', error);
-        console.error('Error status:', error?.status);
-        console.error('Error body:', error?.error);
-        const message = error?.error?.message || error?.message || 'Error al eliminar el pago';
-        this.info.showError(message);
+        if (error?.status === 404) {
+          this.info.showSuccess('Pago ya fue eliminado');
+        } else {
+          const message = error?.error?.message || 'Error al eliminar el pago';
+          this.info.showError(message);
+        }
         this.deletingPayment.set(null);
         this.paymentToDelete.set(null);
+        this.loadPayments();
       }
     });
   }

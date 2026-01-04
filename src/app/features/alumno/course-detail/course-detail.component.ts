@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EnrollModalComponent } from '../../../shared/components/enroll-modal/enroll-modal.component';
 import { UnenrollModalComponent } from '../../../shared/components/unenroll-modal/unenroll-modal.component';
 import { PurchaseModalComponent } from '../../../shared/components/purchase-modal/purchase-modal.component';
+import { TransferModalComponent } from '../../../shared/components/transfer-modal/transfer-modal.component';
 
 interface CourseItem {
   type: 'class' | 'questionnaire';
@@ -22,7 +23,7 @@ interface CourseItem {
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent, PurchaseModalComponent],
+  imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent, PurchaseModalComponent, TransferModalComponent],
   templateUrl: './course-detail.component.html',
 })
 export class CourseDetailComponent implements OnInit, OnDestroy {
@@ -45,6 +46,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   showEnrollModal = signal<boolean>(false);
   showPurchaseModal = signal<boolean>(false);
   showUnenrollModal = signal<boolean>(false);
+  showTransferModal = signal<boolean>(false);
   isEnrolling = signal<boolean>(false);
   isUnenrolling = signal<boolean>(false);
   enrollError = signal<string | null>(null);
@@ -54,20 +56,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   certificateLoading = signal<boolean>(false);
   certificateVerificationCode = signal<string | null>(null);
 
+  // Enrollment state
+  isEnrolledSignal = signal<boolean>(false);
+
   currentUser = this.authService.currentUser;
-  isEnrolled = computed(() => {
-    const course = this.course();
-    const user = this.currentUser();
-    
-    if (!course || !user) return false;
-    
-    // Verificar si el usuario está en el array de estudiantes
-    const students = course.students || [];
-    return students.some((student: any) => {
-      const studentId = typeof student === 'string' ? student : student._id || student;
-      return studentId === user._id;
-    });
-  });
+  isEnrolled = computed(() => this.isEnrolledSignal());
 
   ngOnInit(): void {
     // Load course initially
@@ -114,14 +107,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         // Cargar cuestionarios del curso
         this.loadQuestionnaires(courseId);
 
-        // Cargar progreso del curso si el usuario está inscrito
-        if (this.isEnrolled()) {
-          this.loadCourseProgress(courseId);
-          // Verificar si existe certificado si el curso está completado
-          this.checkCertificateExists(courseId);
-        } else {
-          this.loading.set(false);
-        }
+        // Cargar progreso del curso para determinar si está inscrito
+        this.loadCourseProgress(courseId);
       },
       error: (error) => {
         console.error('Error loading course:', error);
@@ -226,15 +213,33 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   loadCourseProgress(courseId: string): void {
     // No cargar progreso si es un curso tipo workshop
     if (this.isWorkshopType()) {
+      this.isEnrolledSignal.set(false);
       this.loading.set(false);
       return;
     }
 
+    console.log('[course-detail] Loading course progress for courseId:', courseId);
     this.progressService.getProgress(courseId).subscribe({
       next: (response: any) => {
         const progress = response?.data || response;
+        console.log('[course-detail] Course progress received:', progress);
+        console.log('[course-detail] Classes progress:', progress?.classesProgress);
         this.courseProgress.set(progress);
+        
+        // Verificar inscripción: usuario en lista de estudiantes o tiene progreso
+        const user = this.authService.currentUser();
+        const course = this.course();
+        const isInStudents = user && course && course.students && course.students.some(student => student.userId === user._id);
+        const hasProgress = progress && typeof progress.overallProgress === 'number';
+        
+        if (isInStudents || hasProgress) {
+          this.isEnrolledSignal.set(true);
+        } else {
+          this.isEnrolledSignal.set(false);
+        }
+        
         this.loading.set(false);
+        
         // Si el curso está completado (>= 100%), verificar certificado
         if (progress?.overallProgress >= 100) {
           this.checkCertificateExists(courseId);
@@ -242,6 +247,13 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading course progress:', error);
+        
+        // En caso de error, verificar si está inscrito vía lista de estudiantes
+        const user = this.authService.currentUser();
+        const course = this.course();
+        const isInStudents = user && course && course.students && course.students.some(student => student.userId === user._id);
+        this.isEnrolledSignal.set(!!isInStudents);
+        
         this.loading.set(false);
       }
     });
@@ -263,14 +275,19 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    */
   isClassCompleted(classId: string): boolean {
     const progress = this.courseProgress();
-    if (!progress || !progress.classesProgress) return false;
+    if (!progress || !progress.classesProgress) {
+      console.log('[course-detail] isClassCompleted: no progress data for classId:', classId);
+      return false;
+    }
     
     const normalizedClassId = this.normalizeId(classId);
     const classProgress = progress.classesProgress.find(cp => {
       const cpClassId = this.normalizeId(cp.classId);
       return cpClassId === normalizedClassId;
     });
-    return classProgress?.completed || false;
+    const isCompleted = classProgress?.completed || false;
+    console.log(`[course-detail] isClassCompleted(${normalizedClassId}):`, isCompleted, 'classProgress:', classProgress);
+    return isCompleted;
   }
 
   /**
@@ -362,6 +379,14 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   closePurchaseModal(): void {
     this.showPurchaseModal.set(false);
+  }
+
+  openTransferModal(): void {
+    this.showTransferModal.set(true);
+  }
+
+  closeTransferModal(): void {
+    this.showTransferModal.set(false);
   }
 
   closeEnrollModal(): void {
@@ -639,22 +664,28 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    */
   canAccessItem(itemIndex: number): boolean {
     const items = this.courseItems();
+    console.log(`[course-detail] canAccessItem(${itemIndex}): checking access`);
     if (itemIndex === 0) return true; // Primer item siempre disponible
 
     // Verificar que todos los items anteriores estén completados
     for (let i = 0; i < itemIndex; i++) {
       const item = items[i];
       if (item.type === 'class') {
-        if (!this.isClassCompleted(item.data._id)) {
+        const completed = this.isClassCompleted(item.data._id);
+        console.log(`[course-detail] Item ${i} (class ${item.data._id}):`, completed ? 'COMPLETED' : 'NOT COMPLETED');
+        if (!completed) {
           return false;
         }
       } else if (item.type === 'questionnaire') {
-        if (!this.isQuestionnaireCompleted(item.data._id)) {
+        const completed = this.isQuestionnaireCompleted(item.data._id);
+        console.log(`[course-detail] Item ${i} (questionnaire ${item.data._id}):`, completed ? 'COMPLETED' : 'NOT COMPLETED');
+        if (!completed) {
           return false;
         }
       }
     }
 
+    console.log(`[course-detail] canAccessItem(${itemIndex}): TRUE - all previous items completed`);
     return true;
   }
 

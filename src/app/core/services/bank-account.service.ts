@@ -21,7 +21,7 @@ export interface UpdateBankAccountDto {
 })
 export class BankAccountService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/bankAccount`;
+  private apiUrl = `${environment.apiUrl}`;
 
   /**
    * Obtiene todas las cuentas bancarias

@@ -1,4 +1,4 @@
-<div class="h-full flex flex-col bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg">
+<div class="h-full flex flex-col bg-linear-to-br from-gray-50 to-white rounded-xl shadow-lg">
   <!-- Search Bar -->
   @if (config.searchable) {
     <div class="px-3 sm:px-4 md:px-6 py-2.5 border-b border-gray-200/60 bg-white/95 backdrop-blur-sm">
@@ -38,10 +38,10 @@
       }
 
       <table class="w-full text-sm text-left border-collapse">
-        <thead class="bg-gradient-to-r from-slate-50 via-brand-primary/10 to-slate-50 sticky top-0 z-20 shadow-sm">
+        <thead class="bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50 sticky top-0 z-20 shadow-sm">
         <tr class="border-b-2 border-brand-primary/20">
           @if (config.selectable) {
-            <th class="px-2 sm:px-3 py-2 w-10 bg-gradient-to-r from-slate-50 via-brand-primary/10 to-slate-50">
+            <th class="px-2 sm:px-3 py-2 w-10 bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50">
               <div class="flex items-center justify-center">
                 <input
                   type="checkbox"
@@ -55,7 +55,7 @@
           }
           @for (column of config.columns; track column.key) {
             <th
-              [class]="'px-2 sm:px-3 md:px-4 py-2 font-semibold text-gray-800 whitespace-nowrap uppercase text-[10px] sm:text-xs tracking-wide bg-gradient-to-r from-slate-50 via-brand-primary/10 to-slate-50 ' +
+              [class]="'px-2 sm:px-3 md:px-4 py-2 font-semibold text-gray-800 whitespace-nowrap uppercase text-[10px] sm:text-xs tracking-wide bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50 ' +
                 (column.sortable ? 'cursor-pointer hover:bg-brand-primary/10 active:bg-brand-primary/20 select-none transition-all duration-150' : '') +
                 (column.align === 'center' ? ' text-center' : '') +
                 (column.align === 'right' ? ' text-right' : '')"
@@ -87,7 +87,7 @@
             </th>
           }
           @if (config.actions && config.actions.length > 0) {
-            <th class="px-2 sm:px-3 py-2 text-center font-semibold text-gray-800 uppercase text-[10px] sm:text-xs tracking-wide bg-gradient-to-r from-slate-50 via-brand-primary/10 to-slate-50">Acciones</th>
+            <th class="px-2 sm:px-3 py-2 text-center font-semibold text-gray-800 uppercase text-[10px] sm:text-xs tracking-wide bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50">Acciones</th>
           }
         </tr>
       </thead>
@@ -98,7 +98,7 @@
                 class="px-4 py-8 text-center">
               <div class="flex flex-col items-center justify-center">
                 <div class="relative mb-2">
-                  <div class="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                  <div class="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
                     <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                     </svg>
@@ -116,7 +116,7 @@
           </tr>
         }
         @for (row of data; track row._id || row.id || $index) {
-          <tr [class]="'group hover:bg-gradient-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary ' + (selectedRows().has(row) ? 'bg-brand-primary/10 border-brand-primary' : '')">
+          <tr [class]="'group hover:bg-linear-to-r hover:from-brand-primary/10 hover:to-transparent transition-all duration-150 border-l-2 border-transparent hover:border-brand-primary ' + (selectedRows().has(row) ? 'bg-brand-primary/10 border-brand-primary' : '')">
             @if (config.selectable) {
               <td class="px-2 sm:px-3 py-2">
                 <div class="flex items-center justify-center">
@@ -205,6 +205,9 @@
                       <span class="text-gray-700 text-[10px] sm:text-xs whitespace-nowrap">{{ getCellValue(row, column) | date: 'dd/MM/yyyy HH:mm' }}</span>
                     </div>
                   }
+                  @case ('html') {
+                    <span class="text-gray-800 text-xs sm:text-sm" [innerHTML]="getCellValue(row, column)"></span>
+                  }
                   @default {
                     @if (column.onClick) {
                       <button
@@ -285,9 +288,9 @@
             } @else {
               <button
                 (click)="onPageChange(page)"
-                [class]="'min-w-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ' +
+                [class]="'min-w-8 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ' +
                   (page === pagination.page
-                    ? 'bg-gradient-to-br from-brand-primary to-brand-primary-dark text-white shadow-md ring-2 ring-brand-primary/30 scale-105'
+                    ? 'bg-linear-to-br from-brand-primary to-brand-primary-dark text-white shadow-md ring-2 ring-brand-primary/30 scale-105'
                     : 'text-gray-700 bg-white border border-gray-300 hover:bg-brand-primary/10 hover:border-brand-primary hover:text-brand-primary shadow-sm')"
               >
                 {{ page }}

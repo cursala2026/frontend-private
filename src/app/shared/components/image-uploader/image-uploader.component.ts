@@ -10,7 +10,7 @@ import { environment } from '../../../core/config/environment';
   template: `
     <div class="space-y-4">
       <!-- Vista previa actual -->
-      <div class="flex items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
+      <div class="flex items-center justify-center p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
         <div class="text-center">
           <div class="relative inline-block group">
             <img

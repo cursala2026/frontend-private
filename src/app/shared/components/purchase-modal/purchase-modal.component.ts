@@ -1,4 +1,4 @@
-import { Component, inject, input, output, computed } from '@angular/core';
+import { Component, inject, input, output, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PurchasePaymentService } from '../../../core/services/purchase-payment.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -20,15 +20,24 @@ export class PurchaseModalComponent {
   maxInstallments = input<number>(12);
 
   onCancel = output<void>();
+  onTransferSelected = output<void>();
+
+  // Estado del método de pago seleccionado
+  selectedPaymentMethod = signal<'mercadopago' | 'transfer' | null>(null);
 
   // Exponer señales del servicio
   isProcessing = computed(() => this.purchasePaymentService.isProcessing());
   processingError = computed(() => this.purchasePaymentService.processingError());
   currentUser = this.authService.currentUser;
 
+  selectPaymentMethod(method: 'mercadopago' | 'transfer'): void {
+    this.selectedPaymentMethod.set(method);
+  }
+
   cancel(): void {
     if (!this.isProcessing()) {
       this.purchasePaymentService.reset();
+      this.selectedPaymentMethod.set(null);
       this.onCancel.emit();
     }
   }
@@ -53,5 +62,9 @@ export class PurchaseModalComponent {
       window.location.href = result.initPoint;
     }
     // Si hay error, el servicio ya lo maneja
+  }
+
+  proceedWithTransfer(): void {
+    this.onTransferSelected.emit();
   }
 }

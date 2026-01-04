@@ -670,6 +670,14 @@
     [coursePrice]="course()?.price || 0"
     [maxInstallments]="course()?.maxInstallments || 12"
     (onCancel)="closePurchaseModal()"
+    (onTransferSelected)="openTransferModal()"
   ></app-purchase-modal>
+
+  <!-- Transfer Modal -->
+  <app-transfer-modal
+    [isOpen]="showTransferModal()"
+    [amount]="course()?.price || 0"
+    (onClose)="closeTransferModal()"
+  ></app-transfer-modal>
 </div>
 

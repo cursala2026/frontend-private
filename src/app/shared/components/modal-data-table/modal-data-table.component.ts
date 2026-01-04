@@ -69,6 +69,19 @@ export class ModalDataTableComponent {
         }
       }
       
+      // Para campos de fecha, formatear al formato YYYY-MM-DD para input[type="date"]
+      if (field.type === 'date' && value) {
+        if (value instanceof Date) {
+          value = value.toISOString().split('T')[0];
+        } else if (typeof value === 'string') {
+          // Intentar parsear diferentes formatos de fecha
+          const date = new Date(value);
+          if (!isNaN(date.getTime())) {
+            value = date.toISOString().split('T')[0];
+          }
+        }
+      }
+      
       formControls[field.key] = [
         { value, disabled: field.disabled || this.config.mode === 'view' }
       ];

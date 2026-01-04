@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { InfoService } from '../../core/services/info.service';
 import { UsersService } from '../../core/services/users.service';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-profile',
@@ -18,12 +19,15 @@ export class ProfileComponent {
   private infoService = inject(InfoService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private location = inject(Location);
 
   user = this.authService.currentUser;
   profileForm!: FormGroup;
   isSubmitting = signal(false);
   selectedProfileImage: File | null = null;
   profileImagePreview: string | null = null;
+  selectedSignatureImage: File | null = null;
+  signatureImagePreview: string | null = null;
 
   constructor() {
     const currentUser = this.user();
@@ -47,12 +51,23 @@ export class ProfileComponent {
     if (currentUser.profilePhotoUrl) {
       this.profileImagePreview = this.buildImageUrl(currentUser.profilePhotoUrl);
     }
+
+    // Establecer preview de firma actual
+    if (currentUser.professionalSignatureUrl) {
+      this.signatureImagePreview = this.buildImageUrl(currentUser.professionalSignatureUrl);
+    }
   }
 
   get userProfileImageUrl(): string | null {
     const currentUser = this.user();
     if (!currentUser?.profilePhotoUrl) return null;
     return this.buildImageUrl(currentUser.profilePhotoUrl);
+  }
+
+  get userSignatureImageUrl(): string | null {
+    const currentUser = this.user();
+    if (!currentUser?.professionalSignatureUrl) return null;
+    return this.buildImageUrl(currentUser.professionalSignatureUrl);
   }
 
   private buildImageUrl(photoUrl: string): string {
@@ -97,6 +112,41 @@ export class ProfileComponent {
   removeImage(): void {
     this.selectedProfileImage = null;
     this.profileImagePreview = this.userProfileImageUrl;
+  }
+
+  onSignatureSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validar tipo
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        this.infoService.showError('Solo se permiten imágenes PNG, JPG o JPEG');
+        return;
+      }
+
+      // Validar tamaño (5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        this.infoService.showError('La imagen no debe superar los 5MB');
+        return;
+      }
+
+      this.selectedSignatureImage = file;
+
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.signatureImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeSignature(): void {
+    this.selectedSignatureImage = null;
+    this.signatureImagePreview = this.userSignatureImageUrl;
   }
 
   onSubmit(): void {
@@ -149,6 +199,12 @@ export class ProfileComponent {
       formDataToSend.append('photo', this.selectedProfileImage);
     }
     
+    // Agregar la firma si existe
+    const hasSignaturePhoto = this.selectedSignatureImage instanceof File;
+    if (hasSignaturePhoto && this.selectedSignatureImage) {
+      formDataToSend.append('signatureFile', this.selectedSignatureImage);
+    }
+    
     console.log('Actualizando perfil para usuario ID:', currentUser._id);
     
     // Usar siempre updateUserData que tiene requireAdminOrSelf
@@ -161,12 +217,17 @@ export class ProfileComponent {
         if (response.data) {
           this.authService.updateCurrentUser(response.data);
           
-          // Redirigir al dashboard correspondiente según el rol
-          this.redirectToDashboard(response.data);
+          // Intentar volver a la página anterior si hay historial, sino ir al dashboard
+          if (window.history.length > 1) {
+            this.location.back();
+          } else {
+            this.redirectToDashboard(response.data);
+          }
         }
         
         // Limpiar la imagen seleccionada después de guardar
         this.selectedProfileImage = null;
+        this.selectedSignatureImage = null;
       },
       error: (error) => {
         console.error('Error updating profile:', error);
@@ -195,6 +256,11 @@ export class ProfileComponent {
       return true;
     }
 
+    // Si hay una firma seleccionada, hay cambios pendientes
+    if (this.selectedSignatureImage) {
+      return true;
+    }
+
     // Verificar si el formulario tiene cambios
     const formValue = this.profileForm.value;
     
@@ -217,6 +283,19 @@ export class ProfileComponent {
     if (formValue.professionalDescription !== (currentUser.professionalDescription || '')) return true;
 
     return false;
+  }
+
+  onCancel(): void {
+    // Intentar volver a la página anterior si hay historial
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      // Si no hay historial, redirigir al dashboard correspondiente al rol del usuario
+      const currentUser = this.user();
+      if (currentUser) {
+        this.redirectToDashboard(currentUser);
+      }
+    }
   }
 
   /**

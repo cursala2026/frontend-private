@@ -8,7 +8,7 @@ export interface TableColumn {
   label: string;
   sortable?: boolean;
   filterable?: boolean;
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'badge' | 'image' | 'actions' | 'switch' | 'select';
+  type?: 'number' | 'boolean' | 'select' | 'text' | 'date' | 'badge' | 'image' | 'actions' | 'switch' | 'html';
   formatter?: (value: any, row: any) => string;
   width?: string;
   align?: 'left' | 'center' | 'right';

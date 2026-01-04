@@ -11,23 +11,14 @@
 
       <!-- Body -->
       <div class="px-6 py-6">
-        <div class="text-center mb-4">
-          <!-- Mercado Pago Logo -->
-          <div class="flex items-center justify-center mb-4">
-            <svg class="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-          </div>
-        </div>
-
         @if (courseName()) {
-          <p class="text-lg font-semibold text-gray-800 text-center mb-2">
+          <p class="text-lg font-semibold text-gray-800 text-center mb-4">
             {{ courseName() }}
           </p>
         }
 
         <!-- Precio -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div class="flex justify-between items-center">
             <span class="text-gray-700 font-medium">Precio del curso:</span>
             <span class="text-2xl font-bold text-blue-600">{{ formatPrice(coursePrice()) }}</span>
@@ -39,17 +30,80 @@
           }
         </div>
 
-        <!-- Información de pago -->
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-          <p class="text-sm text-gray-700 mb-2">
-            <strong>Métodos de pago aceptados:</strong>
-          </p>
-          <ul class="text-sm text-gray-600 space-y-1 ml-4">
-            <li>• Tarjetas de crédito y débito</li>
-            <li>• Transferencia bancaria</li>
-            <li>• Efectivo (Rapipago, Pago Fácil)</li>
-          </ul>
+        <!-- Opciones de pago -->
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4 text-center">Elige tu método de pago</h3>
+          
+          <!-- Opción Mercado Pago -->
+          <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:border-blue-300 transition-colors cursor-pointer"
+               [class.bg-blue-50]="selectedPaymentMethod() === 'mercadopago'"
+               (click)="selectPaymentMethod('mercadopago')">
+            <div class="flex items-center">
+              <input type="radio" 
+                     [checked]="selectedPaymentMethod() === 'mercadopago'"
+                     class="mr-3" readonly>
+              <div class="flex-1">
+                <div class="flex items-center">
+                  <svg class="w-8 h-8 text-blue-500 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <div>
+                    <h4 class="font-semibold text-gray-800">Mercado Pago</h4>
+                    <p class="text-sm text-gray-600">Pago online seguro con tarjeta, transferencia o efectivo</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opción Transferencia -->
+          <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors cursor-pointer"
+               [class.bg-green-50]="selectedPaymentMethod() === 'transfer'"
+               (click)="selectPaymentMethod('transfer')">
+            <div class="flex items-center">
+              <input type="radio" 
+                     [checked]="selectedPaymentMethod() === 'transfer'"
+                     class="mr-3" readonly>
+              <div class="flex-1">
+                <div class="flex items-center">
+                  <svg class="w-8 h-8 text-green-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <div>
+                    <h4 class="font-semibold text-gray-800">Transferencia Bancaria</h4>
+                    <p class="text-sm text-gray-600">Pago por transferencia - activación en 24-48 horas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Información adicional según método seleccionado -->
+        @if (selectedPaymentMethod() === 'mercadopago') {
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-blue-700 mb-2">
+              <strong>Métodos de pago aceptados:</strong>
+            </p>
+            <ul class="text-sm text-blue-600 space-y-1 ml-4">
+              <li>• Tarjetas de crédito y débito</li>
+              <li>• Transferencia bancaria</li>
+              <li>• Efectivo (Rapipago, Pago Fácil)</li>
+            </ul>
+            <p class="text-xs text-blue-600 mt-2 text-center">
+              Serás redirigido a Mercado Pago para completar el pago de forma segura.
+            </p>
+          </div>
+        } @else if (selectedPaymentMethod() === 'transfer') {
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p class="text-green-800 text-sm font-medium mb-1">
+              ✓ Proceso simple y seguro
+            </p>
+            <p class="text-green-700 text-sm">
+              Realiza la transferencia y envía el comprobante. Tu acceso será activado en 24-48 horas hábiles.
+            </p>
+          </div>
+        }
 
         <!-- Información de acceso -->
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
@@ -68,10 +122,6 @@
           </div>
         }
 
-        <!-- Información adicional -->
-        <p class="text-xs text-gray-500 text-center">
-          Serás redirigido a Mercado Pago para completar el pago de forma segura.
-        </p>
       </div>
 
       <!-- Footer -->
@@ -83,24 +133,36 @@
         >
           Cancelar
         </button>
-        <button
-          (click)="proceedToPayment()"
-          [disabled]="isProcessing()"
-          class="cursor-pointer px-4 py-2 text-white bg-green-600 rounded-full hover:bg-green-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          @if (isProcessing()) {
-            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Procesando...
-          } @else {
+        @if (selectedPaymentMethod() === 'mercadopago') {
+          <button
+            (click)="proceedToPayment()"
+            [disabled]="isProcessing() || !selectedPaymentMethod()"
+            class="cursor-pointer px-4 py-2 text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (isProcessing()) {
+              <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Procesando...
+            } @else {
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              Pagar con Mercado Pago
+            }
+          </button>
+        } @else if (selectedPaymentMethod() === 'transfer') {
+          <button
+            (click)="proceedWithTransfer()"
+            class="cursor-pointer px-4 py-2 text-white bg-green-600 rounded-full hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+          >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Proceder al Pago</span>
-          }
-        </button>
+            Ver Datos de Transferencia
+          </button>
+        }
       </div>
     </div>
   </div>
