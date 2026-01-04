@@ -201,29 +201,30 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     }));
   }
 
+  // Notificaciones deshabilitadas temporalmente
   loadPendingExams(): void {
-    this.questionnairesService.getPendingGradingByTeacher().subscribe({
-      next: (response: any) => {
-        const exams = response?.data || [];
-        this.pendingExams.set(Array.isArray(exams) ? exams : []);
-        
-        // Agrupar exámenes por estudiante
-        const byStudent = new Map<string, PendingExam[]>();
-        this.pendingExams().forEach(exam => {
-          const studentId = exam.studentId;
-          if (!byStudent.has(studentId)) {
-            byStudent.set(studentId, []);
-          }
-          byStudent.get(studentId)!.push(exam);
-        });
-        this.pendingExamsByStudent.set(byStudent);
-      },
-      error: (error) => {
-        console.error('Error loading pending exams:', error);
-        this.pendingExams.set([]);
-        this.pendingExamsByStudent.set(new Map());
-      }
-    });
+    // this.questionnairesService.getPendingGradingByTeacher().subscribe({
+    //   next: (response: any) => {
+    //     const exams = response?.data || [];
+    //     this.pendingExams.set(Array.isArray(exams) ? exams : []);
+
+    //     // Agrupar exámenes por estudiante
+    //     const byStudent = new Map<string, PendingExam[]>();
+    //     this.pendingExams().forEach(exam => {
+    //       const studentId = exam.studentId;
+    //       if (!byStudent.has(studentId)) {
+    //         byStudent.set(studentId, []);
+    //       }
+    //       byStudent.get(studentId)!.push(exam);
+    //     });
+    //     this.pendingExamsByStudent.set(byStudent);
+    //   },
+    //   error: (error) => {
+    //     console.error('Error loading pending exams:', error);
+    //     this.pendingExams.set([]);
+    //     this.pendingExamsByStudent.set(new Map());
+    //   }
+    // });
   }
 
   getPendingExamsForStudent(studentId: string): PendingExam[] {

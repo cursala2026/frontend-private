@@ -32,8 +32,8 @@
 
         <!-- Usuario y acciones -->
         <div class="hidden sm:ml-6 sm:flex sm:items-center gap-4">
-          <!-- Notificación de exámenes pendientes -->
-          @if (pendingExamsCount() > 0) {
+          <!-- Notificación de exámenes pendientes - DESHABILITADA TEMPORALMENTE -->
+          <!-- @if (pendingExamsCount() > 0) {
             <button
               (click)="goToPendingExams()"
               class="relative inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
@@ -48,7 +48,7 @@
                 <span class="relative inline-flex rounded-full h-5 w-5 bg-red-500"></span>
               </span>
             </button>
-          }
+          } -->
           
           <!-- User Menu Dropdown -->
           @if (user(); as currentUser) {
@@ -148,8 +148,8 @@
 
         <!-- Mobile menu button -->
         <div class="flex items-center gap-2 sm:hidden">
-          <!-- Notificación móvil de exámenes pendientes -->
-          @if (pendingExamsCount() > 0) {
+          <!-- Notificación móvil de exámenes pendientes - DESHABILITADA TEMPORALMENTE -->
+          <!-- @if (pendingExamsCount() > 0) {
             <button
               (click)="goToPendingExams()"
               class="relative inline-flex items-center p-2 text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors"
@@ -163,7 +163,7 @@
                 <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-xs text-white items-center justify-center">{{ pendingExamsCount() > 9 ? '9+' : pendingExamsCount() }}</span>
               </span>
             </button>
-          }
+          } -->
           
           <button
             (click)="toggleMobileMenu()"

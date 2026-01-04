@@ -60,6 +60,7 @@ export interface QuestionnaireSubmission {
   studentId: string;
   studentName?: string;
   studentEmail?: string;
+  profilePhotoUrl?: string;
   attemptNumber: number;
   answers: Answer[];
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'GRADED';

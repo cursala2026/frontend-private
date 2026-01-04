@@ -40,82 +40,74 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
   isMobileMenuOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
   user = this.authService.currentUser;
-  
-  pendingExams = signal<PendingExam[]>([]);
-  pendingExamsCount = signal<number>(0);
-  private refreshSubscription?: Subscription;
-  private routerSubscription?: Subscription;
-  private visibilityChangeListener?: () => void;
-  private isTabVisible = true;
+
+  // Notificaciones deshabilitadas temporalmente
+  // pendingExams = signal<PendingExam[]>([]);
+  // pendingExamsCount = signal<number>(0);
+  // private refreshSubscription?: Subscription;
+  // private routerSubscription?: Subscription;
+  // private visibilityChangeListener?: () => void;
+  // private isTabVisible = true;
 
   ngOnInit(): void {
     // Asegurar que el modo de vista esté inicializado
     this.viewModeService.initializeViewMode();
-    // Cargar exámenes pendientes
-    this.loadPendingExams();
-    
-    // Configurar Page Visibility API para pausar polling cuando la pestaña no está visible
-    this.setupVisibilityListener();
-    
-    // Refrescar cada 60 segundos (solo cuando la pestaña está visible)
-    this.refreshSubscription = interval(60000).subscribe(() => {
-      if (this.isTabVisible) {
-        this.loadPendingExams();
-      }
-    });
-    
-    // Actualizar cuando se navega (especialmente después de calificar)
-    this.routerSubscription = this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
-        // Actualizar inmediatamente después de navegar
-        this.loadPendingExams();
-      });
-    
-    // También escuchar evento personalizado cuando se califica un examen
-    window.addEventListener('exam-graded', () => {
-      this.loadPendingExams();
-    });
+
+    // Notificaciones de exámenes pendientes deshabilitadas temporalmente
+    // this.loadPendingExams();
+    // this.setupVisibilityListener();
+    // this.refreshSubscription = interval(60000).subscribe(() => {
+    //   if (this.isTabVisible) {
+    //     this.loadPendingExams();
+    //   }
+    // });
+    // this.routerSubscription = this.router.events
+    //   .pipe(filter(event => event instanceof NavigationEnd))
+    //   .subscribe(() => {
+    //     this.loadPendingExams();
+    //   });
+    // window.addEventListener('exam-graded', () => {
+    //   this.loadPendingExams();
+    // });
   }
 
-  private setupVisibilityListener(): void {
-    this.visibilityChangeListener = () => {
-      this.isTabVisible = !document.hidden;
-      // Si la pestaña se vuelve visible, actualizar inmediatamente
-      if (this.isTabVisible) {
-        this.loadPendingExams();
-      }
-    };
-    document.addEventListener('visibilitychange', this.visibilityChangeListener);
-  }
+  // Notificaciones deshabilitadas temporalmente
+  // private setupVisibilityListener(): void {
+  //   this.visibilityChangeListener = () => {
+  //     this.isTabVisible = !document.hidden;
+  //     if (this.isTabVisible) {
+  //       this.loadPendingExams();
+  //     }
+  //   };
+  //   document.addEventListener('visibilitychange', this.visibilityChangeListener);
+  // }
 
   ngOnDestroy(): void {
-    this.refreshSubscription?.unsubscribe();
-    this.routerSubscription?.unsubscribe();
-    if (this.visibilityChangeListener) {
-      document.removeEventListener('visibilitychange', this.visibilityChangeListener);
-    }
+    // this.refreshSubscription?.unsubscribe();
+    // this.routerSubscription?.unsubscribe();
+    // if (this.visibilityChangeListener) {
+    //   document.removeEventListener('visibilitychange', this.visibilityChangeListener);
+    // }
   }
 
-  loadPendingExams(): void {
-    this.questionnairesService.getPendingGradingByTeacher().subscribe({
-      next: (response: any) => {
-        const exams = response?.data || [];
-        this.pendingExams.set(Array.isArray(exams) ? exams : []);
-        this.pendingExamsCount.set(this.pendingExams().length);
-      },
-      error: (error) => {
-        console.error('Error loading pending exams:', error);
-        this.pendingExams.set([]);
-        this.pendingExamsCount.set(0);
-      }
-    });
-  }
+  // loadPendingExams(): void {
+  //   this.questionnairesService.getPendingGradingByTeacher().subscribe({
+  //     next: (response: any) => {
+  //       const exams = response?.data || [];
+  //       this.pendingExams.set(Array.isArray(exams) ? exams : []);
+  //       this.pendingExamsCount.set(this.pendingExams().length);
+  //     },
+  //     error: (error) => {
+  //       console.error('Error loading pending exams:', error);
+  //       this.pendingExams.set([]);
+  //       this.pendingExamsCount.set(0);
+  //     }
+  //   });
+  // }
 
-  goToPendingExams(): void {
-    // Navegar a la lista de alumnos donde se mostrarán las notificaciones
-    this.router.navigate(['/profesor/students']);
-  }
+  // goToPendingExams(): void {
+  //   this.router.navigate(['/profesor/students']);
+  // }
 
   // Verificar si el usuario es admin
   get isAdmin(): boolean {

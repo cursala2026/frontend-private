@@ -43,6 +43,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   submitting = signal<boolean>(false);
   showResults = signal<boolean>(false);
   canRetry = signal<boolean>(false);
+  started = signal<boolean>(false);
 
   // Timer
   timeRemaining = signal<number | null>(null); // Tiempo restante en segundos
@@ -160,7 +161,11 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error auto-submitting questionnaire:', error);
-        this.infoService.showError('Error al enviar el cuestionario automáticamente');
+        let errorMessage = 'Error al enviar el cuestionario automáticamente';
+        if (error.error?.message) {
+          errorMessage += `: ${error.error.message}`;
+        }
+        this.infoService.showError(errorMessage);
         this.submitting.set(false);
       }
     });
@@ -327,6 +332,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       this.currentSubmission.set(mostRecent);
       this.loadAnswersFromSubmission(mostRecent);
       this.showResults.set(false);
+      this.started.set(true);
       this.startTimer(); // Iniciar el temporizador al reanudar
       return;
     }
@@ -351,7 +357,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         this.currentSubmission.set(submission);
         this.showResults.set(false); // Ensure we show the form, not results
         this.initializeAnswers();
-        this.startTimer(); // Iniciar el temporizador
+        this.started.set(false); // Esperar a que el usuario haga clic en comenzar
       },
       error: (error) => {
         console.error('Error starting submission:', error);
@@ -386,6 +392,11 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     submission.answers.forEach(answer => {
       this.answers[answer.questionId] = answer;
     });
+  }
+
+  startQuestionnaire(): void {
+    this.started.set(true);
+    this.startTimer();
   }
 
   onMultipleChoiceChange(questionId: string, optionId: string): void {
@@ -434,6 +445,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
+    console.log('Submitting answers:', answersArray); // For debugging
+
     this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
       next: (response) => {
         const updatedSubmission = response?.data;
@@ -470,7 +483,13 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error submitting questionnaire:', error);
-        this.infoService.showError('Error al enviar el cuestionario');
+        let errorMessage = 'Error al enviar el cuestionario';
+        if (error.error?.message) {
+          errorMessage += `: ${error.error.message}`;
+        } else if (error.status === 500) {
+          errorMessage += '. Error interno del servidor. Contacta al administrador.';
+        }
+        this.infoService.showError(errorMessage);
         this.submitting.set(false);
       }
     });

@@ -16,7 +16,6 @@ import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/co
   standalone: true,
   imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './questionnaire-results.component.html',
-  styleUrls: ['./questionnaire-results.component.css']
 })
 export class QuestionnaireResultsComponent implements OnInit {
   private questionnairesService = inject(QuestionnairesService);
@@ -26,11 +25,11 @@ export class QuestionnaireResultsComponent implements OnInit {
 
   questionnaireId = '';
   questionnaire = signal<Questionnaire | null>(null);
+  allSubmissions = signal<QuestionnaireSubmission[]>([]);
   gradeReport = signal<GradeReportEntry[]>([]);
   pendingSubmissions = signal<QuestionnaireSubmission[]>([]);
 
   loading = signal<boolean>(true);
-  loadingPending = signal<boolean>(false);
 
   // For grading modal
   showGradingModal = signal<boolean>(false);
@@ -60,7 +59,6 @@ export class QuestionnaireResultsComponent implements OnInit {
         this.questionnaireId = params['id'];
         this.loadQuestionnaire();
         this.loadGradeReport();
-        this.loadPendingSubmissions();
       } else {
         this.router.navigate(['/profesor/questionnaires']);
       }
@@ -85,26 +83,57 @@ export class QuestionnaireResultsComponent implements OnInit {
   loadGradeReport(): void {
     this.questionnairesService.getGradeReport(this.questionnaireId).subscribe({
       next: (response) => {
-        this.gradeReport.set(response?.data || []);
+        const allSubmissions = response?.data || [];
+        this.allSubmissions.set(allSubmissions);
+
+        // Filtrar pendientes de calificar (estado SUBMITTED)
+        const pending = allSubmissions.filter((s: QuestionnaireSubmission) => s.status === 'SUBMITTED');
+        this.pendingSubmissions.set(pending);
+
+        // Filtrar calificados (estado GRADED) - estos van al grade report
+        const graded = allSubmissions.filter((s: QuestionnaireSubmission) => s.status === 'GRADED');
+
+        // Crear el reporte agrupado por estudiante
+        const reportMap = new Map<string, GradeReportEntry>();
+
+        graded.forEach((submission: QuestionnaireSubmission) => {
+          const studentId = submission.studentId;
+
+          if (!reportMap.has(studentId)) {
+            reportMap.set(studentId, {
+              studentId: studentId,
+              studentName: submission.studentName || 'Sin nombre',
+              studentEmail: submission.studentEmail || '',
+              profilePhotoUrl: submission.profilePhotoUrl,
+              attemptCount: 0,
+              bestScore: null,
+              lastAttempt: null,
+              allSubmissions: []
+            });
+          }
+
+          const entry = reportMap.get(studentId)!;
+          entry.allSubmissions.push(submission);
+          entry.attemptCount = entry.allSubmissions.length;
+
+          const score = submission.finalScore || submission.autoGradedScore || 0;
+          if (entry.bestScore === null || score > entry.bestScore) {
+            entry.bestScore = score;
+          }
+
+          const submittedAt = submission.submittedAt ? new Date(submission.submittedAt) : null;
+          if (submittedAt && (!entry.lastAttempt || submittedAt > new Date(entry.lastAttempt))) {
+            entry.lastAttempt = submittedAt;
+          }
+        });
+
+        this.gradeReport.set(Array.from(reportMap.values()));
+        this.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading grade report:', error);
         this.infoService.showError('Error al cargar el reporte de calificaciones');
-      }
-    });
-  }
-
-  loadPendingSubmissions(): void {
-    this.loadingPending.set(true);
-    this.questionnairesService.getPendingGrading(this.questionnaireId).subscribe({
-      next: (response) => {
-        this.pendingSubmissions.set(response?.data || []);
-        this.loadingPending.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading pending submissions:', error);
-        this.infoService.showError('Error al cargar envíos pendientes');
-        this.loadingPending.set(false);
+        this.loading.set(false);
       }
     });
   }
@@ -114,7 +143,6 @@ export class QuestionnaireResultsComponent implements OnInit {
       next: (response) => {
         const submissions = response?.data || [];
         if (submissions.length > 0) {
-          // Get best submission or latest
           const bestSubmission = submissions.reduce((best: QuestionnaireSubmission, current: QuestionnaireSubmission) => {
             const currentScore = current.finalScore || current.autoGradedScore || 0;
             const bestScore = best.finalScore || best.autoGradedScore || 0;
@@ -131,6 +159,10 @@ export class QuestionnaireResultsComponent implements OnInit {
   }
 
   openGradingModal(submission: QuestionnaireSubmission): void {
+    this.setCurrentSubmissionAndOpenModal(submission);
+  }
+
+  private setCurrentSubmissionAndOpenModal(submission: QuestionnaireSubmission): void {
     this.currentSubmission.set(submission);
     this.gradingAnswers = {};
     this.overallFeedback = submission.feedback || '';
@@ -180,12 +212,9 @@ export class QuestionnaireResultsComponent implements OnInit {
         this.infoService.showSuccess('Calificación guardada exitosamente');
         this.closeGradingModal();
         this.loadGradeReport();
-        this.loadPendingSubmissions();
         this.savingGrade.set(false);
         // Forzar actualización de la notificación en el layout
-        // Esto se hará automáticamente cuando se navegue, pero también podemos disparar un evento
         setTimeout(() => {
-          // Pequeño delay para asegurar que el backend haya actualizado
           window.dispatchEvent(new Event('exam-graded'));
         }, 500);
       },
@@ -295,7 +324,6 @@ export class QuestionnaireResultsComponent implements OnInit {
         this.infoService.showSuccess('Intentos del estudiante reseteados exitosamente');
         // Recargar los datos
         this.loadGradeReport();
-        this.loadPendingSubmissions();
         this.showResetConfirmModal.set(false);
         this.studentIdToReset = null;
       },
