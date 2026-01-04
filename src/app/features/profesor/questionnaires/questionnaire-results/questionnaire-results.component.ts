@@ -15,8 +15,7 @@ import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/co
   selector: 'app-questionnaire-results',
   standalone: true,
   imports: [CommonModule, FormsModule, ConfirmModalComponent],
-  templateUrl: './questionnaire-results.component.html',
-  styleUrls: ['./questionnaire-results.component.css']
+  templateUrl: './questionnaire-results.component.html'
 })
 export class QuestionnaireResultsComponent implements OnInit {
   private questionnairesService = inject(QuestionnairesService);
