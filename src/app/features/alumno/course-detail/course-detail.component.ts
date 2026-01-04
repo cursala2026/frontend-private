@@ -54,13 +54,21 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   // Certificate state
   certificateExists = signal<boolean>(false);
   certificateLoading = signal<boolean>(false);
+  certificateRegenerating = signal<boolean>(false);
   certificateVerificationCode = signal<string | null>(null);
+  certificateId = signal<string | null>(null);
 
   // Enrollment state
   isEnrolledSignal = signal<boolean>(false);
 
   currentUser = this.authService.currentUser;
   isEnrolled = computed(() => this.isEnrolledSignal());
+
+  // Computed for item access to avoid repeated calculations
+  itemAccess = computed(() => {
+    const items = this.courseItems();
+    return items.map((_, index) => this.canAccessItemLogic(index));
+  });
 
   ngOnInit(): void {
     // Load course initially
@@ -100,9 +108,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         const courseData = response?.data || response;
         this.course.set(courseData);
 
-        // Construir items del curso inmediatamente después de cargar el curso
-        // Esto asegura que las clases se muestren incluso si no hay cuestionarios
-        this.buildCourseItems();
+        // NO construir items aquí, esperar a tener cuestionarios
+        // this.buildCourseItems();
 
         // Cargar cuestionarios del curso
         this.loadQuestionnaires(courseId);
@@ -123,7 +130,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         const questionnaires = response?.data || [];
         // Solo mostrar cuestionarios activos
-        this.questionnaires.set(questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE'));
+        const activeQuestionnaires = questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE');
+        this.questionnaires.set(activeQuestionnaires);
         this.buildCourseItems();
       },
       error: (error) => {
@@ -176,9 +184,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Agregar cuestionarios finales (exámenes)
-    const finalExams = questionnaires.filter(q => q.position.type === 'FINAL_EXAM');
-    finalExams.forEach(quest => {
+    // Agregar cuestionarios finales (exámenes) y cualquier otro no agregado
+    const addedQuestionnaireIds = new Set(items.filter(i => i.type === 'questionnaire').map(i => i.data._id));
+    const remainingQuestionnaires = questionnaires.filter(q => !addedQuestionnaireIds.has(q._id));
+    remainingQuestionnaires.forEach(quest => {
       items.push({
         type: 'questionnaire',
         data: quest,
@@ -218,12 +227,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('[course-detail] Loading course progress for courseId:', courseId);
     this.progressService.getProgress(courseId).subscribe({
       next: (response: any) => {
         const progress = response?.data || response;
-        console.log('[course-detail] Course progress received:', progress);
-        console.log('[course-detail] Classes progress:', progress?.classesProgress);
         this.courseProgress.set(progress);
         
         // Verificar inscripción: usuario en lista de estudiantes o tiene progreso
@@ -276,7 +282,6 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   isClassCompleted(classId: string): boolean {
     const progress = this.courseProgress();
     if (!progress || !progress.classesProgress) {
-      console.log('[course-detail] isClassCompleted: no progress data for classId:', classId);
       return false;
     }
     
@@ -286,7 +291,6 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return cpClassId === normalizedClassId;
     });
     const isCompleted = classProgress?.completed || false;
-    console.log(`[course-detail] isClassCompleted(${normalizedClassId}):`, isCompleted, 'classProgress:', classProgress);
     return isCompleted;
   }
 
@@ -356,6 +360,30 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       month: 'long',
       day: 'numeric'
     }).format(dateObj);
+  }
+
+  /**
+   * Verifica si el usuario puede inscribirse al curso según la fecha de apertura de inscripciones
+   */
+  canEnroll(): boolean {
+    const courseData = this.course();
+    if (!courseData?.registrationOpenDate) return true; // Si no hay fecha, se puede inscribir
+    
+    const now = new Date();
+    const registrationDate = new Date(courseData.registrationOpenDate);
+    return now >= registrationDate;
+  }
+
+  /**
+   * Verifica si el curso ya comenzó según la fecha de inicio
+   */
+  canStartCourse(): boolean {
+    const courseData = this.course();
+    if (!courseData?.startDate) return true; // Si no hay fecha de inicio, se puede cursar
+    
+    const now = new Date();
+    const startDate = new Date(courseData.startDate);
+    return now >= startDate;
   }
 
   goBack(): void {
@@ -663,8 +691,14 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Verifica si el usuario puede acceder a un item del curso (clase o cuestionario)
    */
   canAccessItem(itemIndex: number): boolean {
+    return this.itemAccess()[itemIndex] ?? false;
+  }
+
+  /**
+   * Lógica interna para verificar acceso a un item
+   */
+  private canAccessItemLogic(itemIndex: number): boolean {
     const items = this.courseItems();
-    console.log(`[course-detail] canAccessItem(${itemIndex}): checking access`);
     if (itemIndex === 0) return true; // Primer item siempre disponible
 
     // Verificar que todos los items anteriores estén completados
@@ -672,20 +706,17 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       const item = items[i];
       if (item.type === 'class') {
         const completed = this.isClassCompleted(item.data._id);
-        console.log(`[course-detail] Item ${i} (class ${item.data._id}):`, completed ? 'COMPLETED' : 'NOT COMPLETED');
         if (!completed) {
           return false;
         }
       } else if (item.type === 'questionnaire') {
         const completed = this.isQuestionnaireCompleted(item.data._id);
-        console.log(`[course-detail] Item ${i} (questionnaire ${item.data._id}):`, completed ? 'COMPLETED' : 'NOT COMPLETED');
         if (!completed) {
           return false;
         }
       }
     }
 
-    console.log(`[course-detail] canAccessItem(${itemIndex}): TRUE - all previous items completed`);
     return true;
   }
 
@@ -700,7 +731,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }
 
     // Verificar si puede acceder a este cuestionario
-    if (!this.canAccessItem(itemIndex)) {
+    const canAccess = this.canAccessItem(itemIndex);
+    if (!canAccess) {
       this.info.showInfo('Debes completar los elementos anteriores para acceder a este cuestionario');
       return;
     }
@@ -742,6 +774,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         if (check?.exists && check?.certificate) {
           this.certificateExists.set(true);
           this.certificateVerificationCode.set(check.certificate.verificationCode);
+          this.certificateId.set(check.certificate._id || check.certificate.certificateId);
         } else {
           this.certificateExists.set(false);
         }
@@ -774,20 +807,14 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       }
 
       // Si no existe, generar uno nuevo
-      const teacherId = course.mainTeacher || course.mainTeacherInfo?.teacherId;
-      if (!teacherId) {
-        this.info.showError('Error: No se encontró el profesor del curso');
-        this.certificateLoading.set(false);
-        return;
-      }
-
       // Generar el certificado
-      this.certificateService.generateCertificate(user._id, course._id, teacherId).subscribe({
+      this.certificateService.generateCertificate(user._id, course._id).subscribe({
         next: async (response: any) => {
           const certificate = response?.data;
           if (certificate?.verificationCode) {
             this.certificateExists.set(true);
             this.certificateVerificationCode.set(certificate.verificationCode);
+            this.certificateId.set(certificate._id || certificate.certificateId);
             // Descargar el certificado
             await this.downloadCertificatePDF(certificate.verificationCode);
             this.info.showSuccess('Certificado generado y descargado exitosamente');
@@ -815,6 +842,33 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       this.info.showError('Error al procesar la solicitud del certificado');
       this.certificateLoading.set(false);
     }
+  }
+
+  regenerateCertificate(): void {
+    const certId = this.certificateId();
+    if (!certId) {
+      this.info.showError('Error: No se encontró el ID del certificado');
+      return;
+    }
+
+    this.certificateRegenerating.set(true);
+    this.certificateService.regenerateCertificate(certId).subscribe({
+      next: async (response: any) => {
+        const certificate = response?.data;
+        if (certificate?.verificationCode) {
+          this.certificateVerificationCode.set(certificate.verificationCode);
+          // Descargar el certificado regenerado
+          await this.downloadCertificatePDF(certificate.verificationCode);
+          this.info.showSuccess('Certificado regenerado exitosamente');
+        }
+        this.certificateRegenerating.set(false);
+      },
+      error: (error) => {
+        console.error('Error regenerating certificate:', error);
+        this.info.showError('Error al regenerar el certificado');
+        this.certificateRegenerating.set(false);
+      }
+    });
   }
 
   private downloadCertificatePDF(verificationCode: string): Promise<void> {

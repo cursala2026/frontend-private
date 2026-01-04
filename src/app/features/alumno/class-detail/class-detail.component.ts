@@ -672,6 +672,9 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     const questionnaires = this.questionnaires();
     const currentClassId = this.classId();
     
+    console.log('[class-detail] getQuestionnaireAfterClass - currentClassId:', currentClassId);
+    console.log('[class-detail] Available questionnaires:', questionnaires.map(q => ({ id: q._id, title: q.title, position: q.position })));
+    
     if (!questionnaires || questionnaires.length === 0) {
       return null;
     }
@@ -682,7 +685,21 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       q.position.afterClassId === currentClassId
     );
 
-    return questionnaireAfter || null;
+    if (questionnaireAfter) {
+      console.log('[class-detail] Found questionnaire BETWEEN_CLASSES:', questionnaireAfter.title);
+      return questionnaireAfter;
+    }
+
+    // Si no hay cuestionario entre clases y es la última clase, buscar cuestionarios finales u otros
+    const isLastClass = !this.hasNextClass();
+    console.log('[class-detail] Is last class?', isLastClass);
+    if (isLastClass) {
+      const finalOrRemaining = questionnaires.find(q => q.position.type !== 'BETWEEN_CLASSES');
+      console.log('[class-detail] Found final/remaining questionnaire:', finalOrRemaining?.title || 'none');
+      return finalOrRemaining || null;
+    }
+
+    return null;
   }
 
   /**

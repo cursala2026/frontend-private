@@ -46,6 +46,28 @@
                 />
               </div>
               <p class="text-xs text-gray-500 mt-2 text-center max-w-[140px]">Escanea para verificar</p>
+              
+              <!-- Teacher Signature - Desktop (below QR) -->
+              @if (cert.teacher) {
+                <div class="mt-6 text-center">
+                  @if (cert.teacher.professionalSignatureUrl) {
+                    <div class="flex justify-center mb-2">
+                      <img 
+                        [src]="cert.teacher.professionalSignatureUrl" 
+                        [alt]="'Firma de ' + cert.teacher.firstName + ' ' + cert.teacher.lastName"
+                        class="h-12 object-contain"
+                        (error)="$event.target.style.display='none'"
+                      />
+                    </div>
+                  }
+                  <div class="inline-block border-t border-gray-800 pt-1">
+                    <p class="text-xs font-bold text-gray-900">
+                      {{ cert.teacher.firstName }} {{ cert.teacher.lastName }}
+                    </p>
+                    <p class="text-[10px] text-gray-600">INSTRUCTOR DE CURSALA</p>
+                  </div>
+                </div>
+              }
             </div>
           }
 
@@ -80,16 +102,6 @@
             }
           </div>
 
-          <!-- Teacher Signature -->
-          @if (cert.teacher) {
-            <div class="border-t pt-6 mt-8 text-center">
-              <p class="text-lg font-bold text-gray-900 mb-1">
-                {{ cert.teacher.firstName }} {{ cert.teacher.lastName }}
-              </p>
-              <p class="text-sm text-gray-600">INSTRUCTOR DE CURSALA</p>
-            </div>
-          }
-
           <!-- QR Code - Mobile (below content) -->
           @if (verificationCode()) {
             <div class="md:hidden flex flex-col items-center mt-8 mb-4">
@@ -102,16 +114,41 @@
                 />
               </div>
               <p class="text-xs text-gray-500 mt-2 text-center">Escanea para verificar</p>
+              
+              <!-- Teacher Signature - Mobile (below QR) -->
+              @if (cert.teacher) {
+                <div class="mt-6 text-center">
+                  @if (cert.teacher.professionalSignatureUrl) {
+                    <div class="flex justify-center mb-3">
+                      <img 
+                        [src]="cert.teacher.professionalSignatureUrl" 
+                        [alt]="'Firma de ' + cert.teacher.firstName + ' ' + cert.teacher.lastName"
+                        class="h-16 object-contain"
+                        (error)="$event.target.style.display='none'"
+                      />
+                    </div>
+                  }
+                  <div class="inline-block border-t-2 border-gray-800 pt-2">
+                    <p class="text-base font-bold text-gray-900 mb-1">
+                      {{ cert.teacher.firstName }} {{ cert.teacher.lastName }}
+                    </p>
+                    <p class="text-sm text-gray-600">INSTRUCTOR DE CURSALA</p>
+                  </div>
+                </div>
+              }
             </div>
           }
 
           <!-- Verification Info -->
           <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p class="text-xs text-gray-500 text-center">
-              Código de verificación: <span class="font-mono font-bold">{{ verificationCode() }}</span>
+            <p class="text-xs text-gray-500 text-center mb-1">
+              Código de verificación:
+            </p>
+            <p class="text-xs font-mono font-bold text-gray-700 text-center break-all px-2">
+              {{ verificationCode() }}
             </p>
             @if (cert.certificateInfo?.certificateId) {
-              <p class="text-xs text-gray-400 text-center mt-2">
+              <p class="text-xs text-gray-400 text-center mt-3">
                 Certificado N°: {{ cert.certificateInfo?.certificateId }}
               </p>
             }

@@ -88,10 +88,10 @@
             <!-- Vista simplificada para cursos tipo workshop -->
             <div class="absolute inset-0 flex flex-col items-center justify-center z-10 p-8">
               <!-- Contenedor principal con diseño mejorado -->
-              <div class="max-w-2xl w-full bg-gradient-to-br from-gray-800/95 via-gray-900/95 to-black/95 rounded-2xl shadow-2xl p-8 border border-gray-700/50 backdrop-blur-xl">
+              <div class="max-w-2xl w-full bg-linear-to-br from-gray-800/95 via-gray-900/95 to-black/95 rounded-2xl shadow-2xl p-8 border border-gray-700/50 backdrop-blur-xl">
                 <!-- Información del workshop -->
                 <div class="text-center mb-6">
-                  <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-500 to-red-700 rounded-full mb-4 shadow-lg">
+                  <div class="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-red-500 to-red-700 rounded-full mb-4 shadow-lg">
                     <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
@@ -110,7 +110,7 @@
                       target="_blank"
                       rel="noopener noreferrer"
                       (click)="handleWorkshopLinkClick($event)"
-                      class="block w-full px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl shadow-xl transition-all hover:scale-105 hover:shadow-2xl font-bold text-lg flex items-center justify-center gap-3 group"
+                      class="block w-full px-8 py-4 bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl shadow-xl transition-all hover:scale-105 hover:shadow-2xl font-bold text-lg items-center justify-center gap-3 group"
                     >
                       <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -123,7 +123,7 @@
                   } @else {
                     <button
                       (click)="handleWorkshopLinkClick($event)"
-                      class="block w-full px-8 py-4 bg-gray-600/50 text-gray-300 rounded-xl shadow-lg cursor-not-allowed font-bold text-lg flex items-center justify-center gap-3"
+                      class="block w-full px-8 py-4 bg-gray-600/50 text-gray-300 rounded-xl shadow-lg cursor-not-allowed font-bold text-lg items-center justify-center gap-3"
                       disabled
                     >
                       <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -35,11 +35,10 @@ export class CertificateService {
   /**
    * Genera un certificado para un estudiante
    */
-  generateCertificate(studentId: string, courseId: string, teacherId: string): Observable<{ data: Certificate }> {
+  generateCertificate(studentId: string, courseId: string): Observable<{ data: Certificate }> {
     return this.http.post<{ data: Certificate }>(`${this.apiUrl}/generate`, {
       studentId,
-      courseId,
-      teacherId
+      courseId
     });
   }
 
@@ -57,6 +56,13 @@ export class CertificateService {
    */
   getCertificatesByStudent(studentId: string): Observable<{ data: Certificate[] }> {
     return this.http.get<{ data: Certificate[] }>(`${this.apiUrl}/student/${studentId}`);
+  }
+
+  /**
+   * Regenera un certificado existente
+   */
+  regenerateCertificate(certificateId: string): Observable<{ data: Certificate }> {
+    return this.http.patch<{ data: Certificate }>(`${this.apiUrl}/regenerate/${certificateId}`, {});
   }
 }
 

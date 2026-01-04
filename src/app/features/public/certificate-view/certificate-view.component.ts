@@ -19,6 +19,7 @@ interface CertificateData {
   teacher?: {
     firstName: string;
     lastName: string;
+    professionalSignatureUrl?: string;
   } | null;
   certificateInfo?: {
     certificateId: string;
