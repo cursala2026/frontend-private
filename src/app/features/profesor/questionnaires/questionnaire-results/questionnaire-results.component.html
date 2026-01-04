@@ -71,11 +71,11 @@
       <div class="bg-white rounded-lg shadow-md overflow-hidden">
         @if (gradeReport().length === 0) {
           <div class="text-center py-16 px-4">
-            <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No hay resultados calificados</h3>
-            <p class="text-gray-600">Aún no hay estudiantes con cuestionarios calificados. Los cuestionarios pendientes de calificar aparecen en la pestaña "Pendientes de Calificar".</p>
+            <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay resultados calificados</h3>
+            <p class="mt-1 text-sm text-brand-tertiary max-w-2xl mx-auto">Aún no hay estudiantes con cuestionarios calificados. <br>Los cuestionarios pendientes de calificar aparecen en la pestaña "Pendientes de Calificar".</p>
           </div>
         } @else {
           <div class="overflow-x-auto">
@@ -255,7 +255,11 @@
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" (click)="$event.stopPropagation()">
       <!-- Modal Header -->
       <div class="bg-linear-to-br from-amber-400 to-amber-600 px-6 py-4 flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-white">Revisar y Calificar</h2>
+        <div class="flex items-center">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8 mr-2 text-white"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <h2 class="text-2xl font-bold text-white">Revisar y Calificar</h2>
+        </div>
+        
         <button
           (click)="closeGradingModal()"
           class="cursor-pointer text-white/50 hover:text-white transition-colors"
@@ -270,7 +274,7 @@
       <div class="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
         @if (currentSubmission()) {
           <!-- Submission Info -->
-          <div class="mb-6 p-5 bg-brand-primary/20 rounded-lg">
+          <div class="mb-6 p-5 bg-brand-tertiary/10 rounded-lg">
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <span class="text-sm text-gray-600">Estudiante:</span>
@@ -290,16 +294,19 @@
               </div>
             </div>
             @if (currentSubmission() && getTimeElapsed(currentSubmission()!)) {
-              <div class="mt-4 pt-4 border-t border-brand-primary/30">
+              <div class="mt-4 pt-4 border-t border-brand-tertiary/30">
                 <span class="text-sm text-gray-600">Tiempo de Resolución:</span>
-                <p class="font-bold text-lg text-blue-600">
-                  {{ getTimeElapsed(currentSubmission()!) }}
-                  @if (questionnaire()?.timeLimitMinutes) {
-                    <span class="text-sm font-normal text-gray-500 ml-2">
-                      (Límite: {{ questionnaire()?.timeLimitMinutes }} min)
-                    </span>
-                  }
-                </p>
+                <div class="mt-2">
+                  <p class="font-bold text-lg text-brand-primary bg-brand-primary/20 inline-block px-3 py-1 rounded">
+                    {{ getTimeElapsed(currentSubmission()!) }}
+                    @if (questionnaire()?.timeLimitMinutes) {
+                      <span class="text-sm font-normal text-gray-500 ml-2">
+                        (Límite: {{ questionnaire()?.timeLimitMinutes }} min)
+                      </span>
+                    }
+                  </p>
+                </div>
+                
               </div>
             }
           </div>
@@ -309,11 +316,11 @@
             @for (question of questionnaire()?.questions; track question._id; let i = $index) {
               @if (currentSubmission()) {
                 @let answer = getAnswerForQuestion(currentSubmission()!, question._id!.toString());
-                <div class="border border-brand-tertiary-lighten rounded-lg p-5">
+                <div class="border-2 border-brand-tertiary rounded-lg p-5">
                   <!-- Question Header -->
                   <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xl font-medium text-brand-primary mb-2 px-3 py-2">{{ i + 1 }}. {{ question.questionText }}</h3>
-                    <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/10 px-2 py-1 font-bold  whitespace-nowrap ml-4">{{ question.points }} puntos</span>
+                    <h3 class="text-xl font-bold text-brand-tertiary mb-2 px-3 py-2">{{ i + 1 }}. {{ question.questionText }}</h3>
+                    <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/20 px-2 py-1 font-bold  whitespace-nowrap ml-4">{{ question.points }} puntos</span>
                   </div>
 
                   <!-- Multiple Choice Answer -->
@@ -327,13 +334,13 @@
                         @for (option of question.options; track option._id) {
                         <div
                           class="flex items-center gap-2 px-3 py-2 rounded"
-                          [class.bg-green-100]="isCorrectOption(question, option._id!.toString())"
+                          [class.bg-green-200]="isCorrectOption(question, option._id!.toString())"
                           [class.bg-red-100]="!isCorrectOption(question, option._id!.toString()) && answer.selectedOptionId?.toString() === option._id?.toString()"
-                          [class.bg-gray-50]="answer.selectedOptionId?.toString() !== option._id?.toString() && !isCorrectOption(question, option._id!.toString())"
+                          [class.bg-brand-tertiary-lighten/20]="answer.selectedOptionId?.toString() !== option._id?.toString() && !isCorrectOption(question, option._id!.toString())"
                         >
                           <span class="flex-1">{{ option.text }}</span>
                           @if (answer.selectedOptionId?.toString() === option._id?.toString()) {
-                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
                               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                           }

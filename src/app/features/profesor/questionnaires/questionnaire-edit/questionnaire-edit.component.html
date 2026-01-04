@@ -44,7 +44,7 @@
               <label class="block text-base font-bold text-brand-tertiary mb-2">
                 Curso
               </label>
-              <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+              <div class="w-full px-3 py-2 border border-brand-tertiary-lighten/30 rounded-md bg-brand-tertiary-lighten/30 text-brand-tertiary font-bold">
                 {{ getPreselectedCourseName() }}
               </div>
               <input type="hidden" formControlName="courseId" />
@@ -80,7 +80,7 @@
               type="text"
               id="title"
               formControlName="title"
-              placeholder="Ej: Examen del Módulo 1"
+              placeholder="Ej: Examen del Módulo 1..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
               [class.border-red-500]="questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched"
             />
@@ -98,20 +98,20 @@
               id="description"
               formControlName="description"
               rows="3"
-              placeholder="Descripción opcional del cuestionario"
+              placeholder="Descripción opcional del cuestionario..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             ></textarea>
           </div>
 
           <!-- Status -->
-          <div>
+          <div class="mb-4">
             <label for="status" class="block text-base font-bold text-brand-tertiary mb-2">
               Estado
             </label>
             <select
               id="status"
               formControlName="status"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             >
               <option value="ACTIVE">Activo</option>
               <option value="INACTIVE">Inactivo</option>
@@ -127,7 +127,7 @@
             <select
               id="positionType"
               formControlName="positionType"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             >
               <option value="BETWEEN_CLASSES">Entre Clases</option>
               <option value="FINAL_EXAM">Examen Final</option>
@@ -146,7 +146,7 @@
                 <select
                   id="afterClassId"
                   formControlName="afterClassId"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+                  class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
                 >
                   <option value="">Selecciona una clase</option>
                   @for (classItem of getAvailableClassesForQuestionnaire(); track classItem._id) {
@@ -186,7 +186,7 @@
               formControlName="passingScore"
               min="0"
               max="100"
-              placeholder="Ej: 70"
+              placeholder="Ej: 70..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             />
           </div>
@@ -201,7 +201,7 @@
               id="maxRetries"
               formControlName="maxRetries"
               min="1"
-              placeholder="Dejar vacío para ilimitado"
+              placeholder="Dejar vacío para ilimitado..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             />
           </div>
@@ -214,7 +214,7 @@
               formControlName="allowRetries"
               class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label for="allowRetries" class="cursor-pointer ml-2 block text-sm text-gray-700">
+            <label for="allowRetries" class="cursor-pointer ml-2 block font-bold text-sm text-gray-700">
               Permitir Reintentos
             </label>
           </div>
@@ -243,7 +243,7 @@
               formControlName="timeLimitMinutes"
               min="1"
               max="1440"
-              placeholder="Dejar vacío para tiempo ilimitado (ej: 60 para 1 hora)"
+              placeholder="Dejar vacío para tiempo ilimitado (ej: 60 para 1 hora)..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             />
             <p class="mt-1 text-sm text-gray-600">
@@ -287,16 +287,16 @@
                 }
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Question Type -->
-                <div>
+                <div class="mb-2">
                   <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Tipo de Pregunta <span class="text-red-500">*</span>
                   </label>
                   <select
                     formControlName="type"
                     (change)="onQuestionTypeChange(i)"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
+                    class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   >
                     <option value="MULTIPLE_CHOICE">Opción Múltiple</option>
                     <option value="TEXT">Texto Libre</option>
@@ -304,7 +304,7 @@
                 </div>
 
                 <!-- Points -->
-                <div>
+                <div class="mb-2">
                   <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Puntos <span class="text-red-500">*</span>
                   </label>
@@ -317,20 +317,20 @@
                 </div>
 
                 <!-- Question Text -->
-                <div class="md:col-span-2">
+                <div class="md:col-span-2 mb-2">
                   <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Enunciado de la Pregunta <span class="text-red-500">*</span>
                   </label>
                   <textarea
                     formControlName="questionText"
-                    rows="2"
+                    rows="3"
                     placeholder="Escribe aquí la pregunta"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   ></textarea>
                 </div>
 
                 <!-- Required Checkbox -->
-                <div class="md:col-span-2 flex items-center">
+                <div class="md:col-span-2 flex items-center mb-2">
                   <input
                     type="checkbox"
                     formControlName="required"
@@ -343,7 +343,7 @@
 
                 <!-- Multiple Choice Options -->
                 @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
-                  <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200">
+                  <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200 mb-4">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="block text-base font-bold text-brand-tertiary mb-2">Opciones de Respuesta</h4>
                       <button
@@ -382,7 +382,7 @@
                             <button
                               type="button"
                               (click)="removeOption(i, j)"
-                              class="cursor-pointer text-red-600 hover:text-red-700"
+                              class="cursor-pointer text-red-600 p-2 transition-all rounded-xs hover:bg-red-600 hover:text-white"
                               title="Eliminar opción"
                             >
                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -394,7 +394,7 @@
                       }
                     </div>
 
-                    <p class="text-sm text-brand-tertiary bg-brand-secondary/30 mt-4 p-3 ">
+                    <p class="text-sm text-brand-tertiary bg-brand-secondary/30 mt-4 mb-2 p-3 ">
                       💡 Selecciona el círculo junto a la opción correcta
                     </p>
                   </div>
@@ -419,7 +419,7 @@
       </div>
 
       <!-- Form Actions -->
-      <div class="flex justify-center space-x-4 py-8 ">
+      <div class="flex justify-center space-x-4 py-6 ">
         <button
           type="button"
           (click)="cancel()"

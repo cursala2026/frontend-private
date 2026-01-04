@@ -48,7 +48,7 @@
     
     
     <!-- Stat Card 1: Cursos -->
-    <a routerLink="/profesor/courses" class="bg-linear-to-br p-4 from-amber-500 to-amber-600 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+    <a routerLink="/profesor/courses" class="bg-brand-primary p-4  overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
       <div class="flex items-center justify-between ">
         <div>
           <p class="text-sm font-medium text-white/85">Mis Cursos</p>
@@ -70,7 +70,7 @@
     </a>
 
     <!-- Stat Card 2: Clases -->
-    <a routerLink="/profesor/classes" class="bg-linear-to-br from-violet-500 p-4 to-violet-600 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+    <a routerLink="/profesor/classes" class="bg-brand-primary-dark p-4 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-white/85">Mis Clases</p>
@@ -92,20 +92,20 @@
     </a>
 
     <!-- Stat Card 3: Cuestionarios -->
-    <a routerLink="/profesor/questionnaires" class="bg-linear-to-br from-rose-500 to-rose-600 p-4 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200"> 
+    <a routerLink="/profesor/questionnaires" class="bg-brand-secondary p-4 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200"> 
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-white/85">Mis Cuestionarios</p>
-          <p class="text-5xl font-bold text-white mt-1">
+          <p class="text-sm font-medium text-brand-tertiary/85">Mis Cuestionarios</p>
+          <p class="text-5xl font-bold text-brand-tertiary mt-1">
             @if (loading()) {
-              <span class="animate-pulse text-gray-300">--</span>
+              <span class="animate-pulse text-brand-tertiary-lighten">--</span>
             } @else {
               {{ totalStudents() }}
             }
           </p>
         </div>
         <div class="shrink-0 bg-white/20 h-14 w-14 rounded-xl flex items-center justify-center">
-          <svg class="h-9 w-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="h-9 w-9 text-brand-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
@@ -113,7 +113,7 @@
     </a>
 
     <!-- Stat Card 4: Estudiantes -->
-    <a routerLink="/profesor/students" class="bg-linear-to-br from-emerald-500 to-emerald-600 p-4 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
+    <a routerLink="/profesor/students" class="bg-brand-tertiary p-4 overflow-hidden shadow-sm rounded-xl hover:shadow-xl transition-all hover:scale-105 duration-200">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-white/85">Mis Alumnos</p>

@@ -24,10 +24,10 @@
       <p class="mt-4 text-gray-500">Cargando clase...</p>
     </div>
   } @else {
-    <form [formGroup]="classForm" (ngSubmit)="onSubmit()" class="bg-white mx-auto shadow-xs rounded-lg p-8 space-y-6">
+    <form [formGroup]="classForm" (ngSubmit)="onSubmit()" class="bg-white mx-auto shadow-md rounded-lg p-8 space-y-6">
       <!-- Course Selection (solo en modo creación) -->
       @if (!isEditMode) {
-        <div>
+        <div class="mb-10">
           <label for="courseId" class="block text-base font-bold text-brand-tertiary mb-2">
             Curso <span class="text-red-500">*</span>
           </label>
@@ -49,9 +49,9 @@
       } @else {
         <!-- En modo edición, mostrar el curso como información -->
         @if (course()) {
-          <div>
+          <div class="mb-8">
             <label class="block text-base font-bold text-brand-tertiary mb-2">Curso</label>
-            <div class="w-full px-3 py-2 border border-brand-tertiary-lighten rounded-md bg-brand-tertiary-lighten/30 text-brand-tertiary">
+            <div class="w-full px-3 py-2 border border-brand-tertiary-lighten/30 rounded-md bg-brand-tertiary-lighten/30 text-brand-tertiary font-bold">
               {{ course()?.name }}
             </div>
           </div>
@@ -59,7 +59,7 @@
       }
 
       <!-- Name -->
-      <div>
+      <div class="mb-10">
         <label for="name" class="block text-base font-bold text-brand-tertiary mb-2">
           Nombre de la Clase <span class="text-red-500">*</span>
         </label>
@@ -68,7 +68,7 @@
           id="name"
           formControlName="name"
           class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-          placeholder="Ej: Introducción a React"
+          placeholder="Ej: Introducción a React..."
         />
         @if (classForm.get('name')?.invalid && classForm.get('name')?.touched) {
           <p class="mt-1 text-sm text-red-600">El nombre es requerido</p>
@@ -76,7 +76,7 @@
       </div>
 
       <!-- Description -->
-      <div>
+      <div class="mb-10">
         <label for="description" class="block text-base font-bold text-brand-tertiary mb-2">
           Descripción
         </label>
@@ -90,7 +90,7 @@
       </div>
 
       <!-- Image -->
-      <div class="mb-8">
+      <div class="mb-10">
         <label class="block text-base font-bold text-brand-tertiary mb-2">
           Imagen de la Clase (opcional)
         </label>
@@ -216,7 +216,7 @@
                 (change)="toggleDeleteVideo()"
                 class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
               />
-              <label for="deleteCurrentVideo" class="text-sm text-gray-700 cursor-pointer">
+              <label for="deleteCurrentVideo" class="text-sm text-brand-tertiary font-bold hover:text-brand-primary cursor-pointer">
                 Eliminar video actual de la clase
               </label>
             </div>
@@ -233,14 +233,14 @@
           <!-- Archivos existentes -->
           @if (isEditMode && existingSupportMaterials.length > 0) {
             <div class="space-y-2">
-              <p class="text-xs text-gray-600">Archivos actuales:</p>
+              <p class="text-xs text-brand-tertiary-light">Archivos actuales:</p>
               @for (material of existingSupportMaterials; track material) {
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div class="flex items-center justify-between p-3 bg-brand-tertiary-lighten/20 rounded-md border border-brand-tertiary-lighten/40">
                   <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <svg class="w-5 h-5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-5 h-5 text-brand-tertiary-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span class="text-sm text-gray-700 truncate">{{ getSupportMaterialName(material) }}</span>
+                    <span class="text-sm text-brand-tertiary-light font-bold truncate">{{ getSupportMaterialName(material) }}</span>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
                     <button
@@ -272,20 +272,20 @@
           <!-- Archivos nuevos seleccionados -->
           @if (selectedSupportFiles.length > 0) {
             <div class="space-y-2">
-              <p class="text-xs text-gray-600">Archivos nuevos a subir:</p>
+              <p class="text-xs text-brand-tertiary-light">Archivos nuevos a subir:</p>
               @for (file of selectedSupportFiles; track $index; let i = $index) {
-                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-200">
+                <div class="flex items-center justify-between p-3 bg-brand-primary/10 rounded-md border border-brand-primary/20">
                   <div class="flex items-center gap-2 flex-1 min-w-0">
-                    <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-5 h-5 text-brand-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span class="text-sm text-blue-700 truncate">{{ file.name }}</span>
-                    <span class="text-xs text-blue-500">({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                    <span class="text-sm text-brand-primary font-bold truncate">{{ file.name }}</span>
+                    <span class="text-xs text-brand-tertiary-light">({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
                   </div>
                   <button
                     type="button"
                     (click)="removeSupportFile(i)"
-                    class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors shrink-0"
+                    class="cursor-pointer p-2 text-red-600  hover:bg-red-600 hover:text-white rounded-md transition-colors"
                     title="Quitar archivo"
                   >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -298,16 +298,16 @@
           }
 
           <!-- Input para agregar archivos -->
-          <div>
+          <div class="mb-10">
             <input
               type="file"
               id="supportFiles"
               multiple
               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
               (change)="onSupportFilesSelected($event)"
-              class="cursor-pointer block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all"
+              class="cursor-pointer block w-full text-sm text-brand-tertiary-light file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white file:transition-all"
             />
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="text-xs text-brand-tertiary-light mt-1">
               Formatos soportados: PDF, Word, Excel, PowerPoint, TXT, ZIP, RAR. Puedes seleccionar múltiples archivos.
             </p>
           </div>
@@ -315,7 +315,7 @@
       </div>
 
       <!-- Link Live -->
-      <div>
+      <div class="mb-10">
         <label for="linkLive" class="block text-base font-bold text-brand-tertiary mb-2">
           Enlace de Clase en Vivo (opcional)
         </label>
@@ -326,14 +326,14 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="https://meet.google.com/..."
         />
-        <p class="mt-2 text-sm text-gray-600">
-          <strong>Nota:</strong> Si el curso tiene una sola clase con enlace en vivo y sin video, se tratará automáticamente como un <strong>workshop</strong>. 
+        <p class="mt-2 text-sm text-brand-tertiary bg-brand-secondary/20 p-4 rounded-lg">
+          📢 Si el curso tiene <strong>una sola clase con enlace en vivo y sin video</strong>, se tratará automáticamente como un <strong>workshop</strong>. 
           En este caso, los estudiantes solo verán el enlace para acceder a la clase en vivo, sin sistema de progreso ni navegación entre clases.
         </p>
       </div>
 
       <!-- Submit Button -->
-      <div class="flex justify-center space-x-4 py-8 bg-brand-tertiary-lighten/10 border-t border-gray-400">
+      <div class="flex justify-center space-x-4 py-8 bg-brand-tertiary-lighten/20 border-t border-gray-400 rounded-bl-lg rounded-br-lg">
         <button
           type="button"
           (click)="onCancel()"

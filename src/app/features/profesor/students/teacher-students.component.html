@@ -14,7 +14,7 @@
   <div>
     @if (loading()) {
       <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-tertiary mx-auto"></div>
         <p class="mt-4 text-gray-500">Cargando alumnos...</p>
       </div>
     } @else if (students().length === 0) {
@@ -32,7 +32,7 @@
             
             
             <!-- Course Header -->
-            <div class="bg-white px-6 py-4 border-b border-indigo-100">
+            <div class="bg-white px-6 py-4 border-b border-brand-tertiary-lighten/50">
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
@@ -71,14 +71,14 @@
                       <div class="min-w-0 flex-1">
                         <p class="text-sm text-gray-900 truncate">
                           <span class="font-medium">{{ student.firstName }} {{ student.lastName }}</span>
-                          <span class="text-gray-400 mx-2">·</span>
-                          <span class="text-gray-500">{{ student.email }}</span>
+                          <span class="text-brand-tertiary mx-2">·</span>
+                          <span class="text-brand-tertiary-light">{{ student.email }}</span>
                         </p>
                       </div>
                     </div>
 
                     <!-- Right: Progress and Notifications -->
-                    <div class="flex items-center gap-4 ml-4">
+                    <div class="flex items-center gap-6 ml-4">
                       <!-- Pending Exams Notification -->
                       @if (hasPendingExams(student.userId)) {
                         @let exams = getPendingExamsForStudent(student.userId);
@@ -121,7 +121,7 @@
                           <div class="w-full bg-gray-200 rounded-full h-2">
                             <div 
                               class="h-2 rounded-full transition-all duration-300"
-                              [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'bg-green-500' : 'bg-indigo-500'"
+                              [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'bg-green-500' : 'bg-brand-primary'"
                               [style.width.%]="student.totalClasses > 0 ? (student.completedClasses / student.totalClasses * 100) : 0">
                             </div>
                           </div>
@@ -143,7 +143,7 @@
                           <div class="w-full bg-gray-200 rounded-full h-2">
                             <div 
                               class="h-2 rounded-full transition-all duration-300"
-                              [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'bg-green-500' : 'bg-purple-500'"
+                              [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'bg-green-500' : 'bg-brand-primary'"
                               [style.width.%]="student.totalQuestionnaires > 0 ? (student.completedQuestionnaires / student.totalQuestionnaires * 100) : 0">
                             </div>
                           </div>
@@ -151,7 +151,7 @@
 
                         <!-- Overall Progress Percentage -->
                         <div class="text-right">
-                          <span class="text-xs font-semibold" [class]="student.progress === 100 ? 'text-green-600' : 'text-gray-500'">
+                          <span class="text-xs font-semibold" [class]="student.progress === 100 ? 'text-green-600' : 'text-brand-tertiary-light'">
                             Progreso total: {{ student.progress }}%
                           </span>
                         </div>

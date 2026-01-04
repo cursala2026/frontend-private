@@ -1,0 +1,52 @@
+<!-- SOLO SIRVE DE REFERENCIA PARA SABER QUE CLASES USAR 
+     Estan ordenados según orden de jerarquía visual
+     1. Botón CTA Amarillo: debería haber 1 por pantalla, es el botón principal de acción en esa pantalla.
+     2. Botón Blanco: botón secundario de acción en esa pantalla. Pueden haber varios en una misma pantalla.
+     3. Botón Negro: botón de tercer nivel que solo se puede usar para cancelar una acción. 
+-->
+ 
+
+<!-- 1. Botón CTA Amarillo - Guardar -->
+<button
+    type="submit"
+    [disabled]="saving() || (courseForm.invalid && !courseForm.dirty)"
+    class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white  "
+    >
+    Guardar Cambios
+</button>
+
+
+
+
+<!-- 2. Botón Blanco - Varios en pantalla - Editar -->
+ <button
+        (click)="cancel()"
+        class="cursor-pointer text-sm text-brand-primary font-bold inline-flex items-center border border-brand-primary transition-all group-hover:bg-brand-primary/10 py-2 rounded-full px-4 mt-2 ring-1 ring-brand-primary active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07]"
+    >
+    Editar
+    <svg class="w-5 h-5 ml-2 text-brand-primary group-active:text-white transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+</button>
+
+<!-- 3. Botón Claro - Cancel -->
+<button
+    class="cursor-pointer text-sm text-brand-tertiary/70 bg-transparent font-bold inline-flex items-center border border-brand-tertiary/70 transition-all hover:bg-white py-2 rounded-full px-4 ring-1 ring-brand-tertiary/70 active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07]">
+    Cancelar
+</button>
+
+
+<!-- 3. Botón Negro - Cancel -->
+ <button
+        (click)="cancel()"
+        class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white active:ring-[#dcab07]"
+    >
+    Cancelar
+</button>
+
+
+
+
+
+
+<!-- Botón blanco con borde azul -->
