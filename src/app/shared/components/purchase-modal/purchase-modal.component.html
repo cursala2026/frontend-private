@@ -1,8 +1,8 @@
 @if (isOpen()) {
   <div
-    class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center transition-opacity duration-300"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start h-screen justify-center transition-opacity duration-300"
     (click)="cancel()">
-    <div class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100"
+    <div class="bg-white rounded-lg shadow-2xl overflow-y-auto mt-10 max-w-[90vh] max-h-[90vh] w-full mx-4 transform transition-all duration-300 scale-100"
          (click)="$event.stopPropagation()">
       <!-- Header -->
       <div class="bg-linear-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-t-lg">

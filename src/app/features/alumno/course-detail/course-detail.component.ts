@@ -446,6 +446,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   openTransferModal(): void {
+    this.showPurchaseModal.set(false);
     this.showTransferModal.set(true);
   }
 

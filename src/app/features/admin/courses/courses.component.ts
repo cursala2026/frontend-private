@@ -655,44 +655,12 @@ export class CoursesComponent implements OnInit {
     this.showDuplicateModal.set(true);
   }
 
-  async confirmDuplicate(): Promise<void> {
+  confirmDuplicate(): void {
     this.showDuplicateModal.set(false);
     const course = this.duplicateCandidate;
     if (!course) return;
 
-    const newName = `${course.name} (copia)`;
-    const dto: any = {
-      name: newName,
-      description: course.description,
-      longDescription: course.longDescription,
-      status: course.status || 'ACTIVE',
-      order: course.order,
-      days: course.days,
-      time: course.time,
-      startDate: course.startDate,
-      registrationOpenDate: course.registrationOpenDate,
-      modality: course.modality,
-      price: course.price,
-      maxInstallments: course.maxInstallments,
-      interestFree: course.interestFree
-    };
-
-    if (course.imageUrl && typeof course.imageUrl === 'string' && course.imageUrl.startsWith('http')) {
-      try {
-        const resp = await fetch(course.imageUrl);
-        if (resp.ok) {
-          const blob = await resp.blob();
-          const ext = (blob.type && blob.type.split('/')[1]) || 'jpg';
-          const filename = `copy-image.${ext}`;
-          const file = new File([blob], filename, { type: blob.type });
-          dto.imageFile = file;
-        }
-      } catch (err) {
-        console.warn('No se pudo descargar la imagen del curso para duplicar, se creará sin imagen.', err);
-      }
-    }
-
-    this.coursesService.createCourse(dto).subscribe({
+    this.coursesService.duplicateCourse(course._id).subscribe({
       next: () => {
         this.infoService.showSuccess('Curso duplicado correctamente');
         this.loadCourses();

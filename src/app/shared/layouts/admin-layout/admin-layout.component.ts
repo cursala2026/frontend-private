@@ -1,5 +1,5 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, signal, inject, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
@@ -7,21 +7,53 @@ import { ViewModeService } from '../../../core/services/view-mode.service';
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './admin-layout.component.html',
 })
-export class AdminLayoutComponent implements OnInit {
+export class AdminLayoutComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private viewModeService = inject(ViewModeService);
+  private platformId = inject(PLATFORM_ID);
 
-  isSidebarOpen = signal<boolean>(true);
+  isSidebarOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  private resizeListener?: () => void;
+
+  constructor() {
+    // Detectar si es móvil y ajustar el sidebar
+    if (isPlatformBrowser(this.platformId)) {
+      const isMobile = window.innerWidth < 1024; // lg breakpoint en Tailwind
+      this.isSidebarOpen.set(!isMobile);
+
+      // Crear listener para cambios de tamaño de ventana
+      this.resizeListener = () => {
+        const mobile = window.innerWidth < 1024;
+        if (!mobile) {
+          // En desktop, abrir el sidebar
+          this.isSidebarOpen.set(true);
+        } else {
+          // En móvil, cerrar el sidebar
+          this.isSidebarOpen.set(false);
+        }
+      };
+
+      window.addEventListener('resize', this.resizeListener);
+    }
+  }
 
   ngOnInit(): void {
     // Asegurar que el modo de vista esté inicializado
     this.viewModeService.initializeViewMode();
+  }
+
+  ngOnDestroy(): void {
+    // Limpiar el event listener al destruir el componente
+    if (this.resizeListener && isPlatformBrowser(this.platformId)) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
   }
 
   // Getter para construir la URL completa de la imagen de perfil

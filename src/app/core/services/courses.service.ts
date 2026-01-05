@@ -292,4 +292,8 @@ export class CoursesService {
   getStudentCourses(): Observable<any> {
     return this.http.get(`${this.apiUrl}/me/courses`);
   }
+
+  duplicateCourse(courseId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${courseId}/duplicate`, {});
+  }
 }

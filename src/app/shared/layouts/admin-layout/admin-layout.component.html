@@ -2,7 +2,7 @@
   <!-- Sidebar -->
   <aside
     [class]="isSidebarOpen() ? 'translate-x-0' : '-translate-x-full'"
-    class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0"
+    class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-800  text-white transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0"
   >
     <!-- Logo -->
     <div class="flex items-center justify-between h-16 px-6 bg-gray-900">
@@ -48,11 +48,11 @@
               <img 
                 [src]="userProfileImageUrl" 
                 alt="Foto de perfil"
-                class="h-10 w-10 rounded-full object-cover flex-shrink-0 border-2 border-gray-700"
+                class="h-10 w-10 rounded-full object-cover shrink-0 border-2 border-gray-700"
                 (error)="onImageError($event)"
               />
             } @else {
-              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold shrink-0">
                 {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
               </div>
             }
@@ -133,7 +133,9 @@
 </div>
 
 <!-- Overlay para cerrar sidebar en móvil -->
-<div *ngIf="isSidebarOpen()"
-  (click)="toggleSidebar()"
-  class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
-></div>
+@if (isSidebarOpen()) {
+  <div
+    (click)="toggleSidebar()"
+    class="fixed inset-0 z-20 bg-black/70 backdrop-blur-sm bg-opacity-50 lg:hidden"
+  ></div>
+}
