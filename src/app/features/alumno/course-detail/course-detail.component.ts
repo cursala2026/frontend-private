@@ -106,24 +106,15 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
         const courseData = response?.data || response;
-        console.log('[course-detail] Course data received:', courseData);
-        console.log('[course-detail] orderedContent available:', !!courseData.orderedContent);
-        if (courseData.orderedContent) {
-          console.log('[course-detail] orderedContent:', courseData.orderedContent);
-        }
+
         this.course.set(courseData);
 
-        // El backend ahora envía orderedContent pre-ordenado
-        // Solo necesitamos extraer cuestionarios para compatibilidad
         if (courseData.questionnaires) {
           const activeQuestionnaires = courseData.questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE');
           this.questionnaires.set(activeQuestionnaires);
         }
 
-        // Construir items usando orderedContent del backend
         this.buildCourseItems();
-
-        // Cargar progreso del curso para determinar si está inscrito
         this.loadCourseProgress(courseId);
       },
       error: (error) => {
@@ -138,7 +129,6 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Construir items del curso usando orderedContent del backend
    * El backend envía un array pre-ordenado que combina clases y cuestionarios
    */
-
   buildCourseItems(): void {
     const course = this.course();
 
@@ -149,7 +139,6 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
     // Usar orderedContent si está disponible (nuevo formato del backend)
     if (course.orderedContent && Array.isArray(course.orderedContent)) {
-      console.log('[course-detail] Using orderedContent from backend');
       const items: CourseItem[] = course.orderedContent
         .filter((item: any) => {
           // Filtrar solo elementos activos
@@ -167,12 +156,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           index
         }));
 
-      console.log('[course-detail] Built items from orderedContent:', items);
       this.courseItems.set(items);
       return;
     }
-
-    console.log('[course-detail] orderedContent not available, using fallback logic');
 
     // Fallback: usar lógica antigua si orderedContent no está disponible
     const questionnaires = this.questionnaires();
@@ -241,9 +227,12 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   loadCourseProgress(courseId: string): void {
-    // No cargar progreso si es un curso tipo workshop
+    // Para workshops, verificar inscripción sin cargar progreso
     if (this.isWorkshopType()) {
-      this.isEnrolledSignal.set(false);
+      const user = this.authService.currentUser();
+      const course = this.course();
+      const isInStudents = user && course && course.students && course.students.some(student => student.userId === user._id);
+      this.isEnrolledSignal.set(!!isInStudents);
       this.loading.set(false);
       return;
     }
@@ -273,7 +262,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error loading course progress:', error);
+        console.error('error al cargar el progreso del curso:', error);
         
         // En caso de error, verificar si está inscrito vía lista de estudiantes
         const user = this.authService.currentUser();
@@ -375,11 +364,27 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   formatDate(date?: Date | string): string {
     if (!date) return '';
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    let dateObj: Date;
+    
+    if (typeof date === 'string') {
+      // Si es una fecha en formato YYYY-MM-DD, parsearlo como fecha local
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const [year, month, day] = date.split('-').map(Number);
+        dateObj = new Date(year, month - 1, day);
+      } else {
+        // Para fechas ISO (2026-01-08T00:00:00.000Z), crear Date y ajustar a fecha local
+        dateObj = new Date(date);
+      }
+    } else {
+      dateObj = date;
+    }
+    
+    // Usar UTC para evitar conversiones de zona horaria
     return new Intl.DateTimeFormat('es-AR', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     }).format(dateObj);
   }
 
@@ -390,9 +395,14 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     const courseData = this.course();
     if (!courseData?.registrationOpenDate) return true; // Si no hay fecha, se puede inscribir
     
+    // Usar UTC para evitar problemas de zona horaria
     const now = new Date();
+    const nowUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    
     const registrationDate = new Date(courseData.registrationOpenDate);
-    return now >= registrationDate;
+    const registrationUTC = Date.UTC(registrationDate.getUTCFullYear(), registrationDate.getUTCMonth(), registrationDate.getUTCDate());
+    
+    return nowUTC >= registrationUTC;
   }
 
   /**
@@ -402,9 +412,14 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     const courseData = this.course();
     if (!courseData?.startDate) return true; // Si no hay fecha de inicio, se puede cursar
     
+    // Usar UTC para evitar problemas de zona horaria
     const now = new Date();
+    const nowUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    
     const startDate = new Date(courseData.startDate);
-    return now >= startDate;
+    const startUTC = Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate());
+    
+    return nowUTC >= startUTC;
   }
 
   goBack(): void {
@@ -464,22 +479,41 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         this.isEnrolling.set(false);
         this.showEnrollModal.set(false);
-        
+
         // Mostrar mensaje de éxito con toast
         this.info.showSuccess('¡Inscripción completada! Ya estás inscrito en este curso.');
-        
-        // Redirigir a "Mis Cursos"
-        this.router.navigate(['/alumno/courses']);
+
+        // Actualizar estado de inscripción inmediatamente (solo señales/local state)
+        const id = this.normalizeId(courseData._id || courseData);
+        this.isEnrolledSignal.set(true);
+
+        // Añadir usuario a la lista local de estudiantes para actualizar la UI del sidebar
+        const user = this.currentUser();
+        if (user && id) {
+          this.course.update(c => {
+            if (!c) return c;
+            c.students = c.students || [];
+            // Evitar duplicados
+            const exists = c.students.some((s: any) => this.normalizeId(s.userId) === this.normalizeId(user._id));
+            if (!exists) {
+              c.students.push({ userId: user._id, enrolledAt: new Date(), enrollmentType: 'SELF' });
+            }
+            return c;
+          });
+
+          // Actualizar sólo el progreso del curso para refrescar barra lateral sin recargar todo
+          this.loadCourseProgress(id);
+        }
       },
       error: (error) => {
         console.error('Error enrolling in course:', error);
         this.isEnrolling.set(false);
-        
+
         let errorMessage = 'Error al inscribirse en el curso. Por favor, intenta nuevamente.';
         if (error?.error?.message) {
           errorMessage = error.error.message;
         }
-        
+
         this.enrollError.set(errorMessage);
       }
     });
@@ -498,22 +532,36 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         this.isUnenrolling.set(false);
         this.showUnenrollModal.set(false);
-        
+
         // Mostrar mensaje de éxito con toast
         this.info.showSuccess('¡Te has desinscrito del curso exitosamente!');
-        
-        // Redirigir a "Mis Cursos"
-        this.router.navigate(['/alumno/courses']);
+
+        // Actualizar estado de inscripción en señales y estado local del curso sin recargar toda la vista
+        this.isEnrolledSignal.set(false);
+        const user = this.currentUser();
+        if (user) {
+          this.course.update(c => {
+            if (!c) return c;
+            c.students = (c.students || []).filter((s: any) => this.normalizeId(s.userId) !== this.normalizeId(user._id));
+            return c;
+          });
+        }
+
+        // Limpiar progreso local y estado de certificado para reflejar la desinscripción
+        this.courseProgress.set(null);
+        this.certificateExists.set(false);
+        this.certificateVerificationCode.set(null);
+        this.certificateId.set(null);
       },
       error: (error) => {
         console.error('Error unenrolling from course:', error);
         this.isUnenrolling.set(false);
-        
+
         let errorMessage = 'Error al desinscribirse del curso. Por favor, intenta nuevamente.';
         if (error?.error?.message) {
           errorMessage = error.error.message;
         }
-        
+
         this.info.showError(errorMessage);
       }
     });
@@ -684,6 +732,12 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Bloquear acceso si el curso aún no comenzó
+    if (!this.canStartCourse()) {
+      const start = course.startDate ? this.formatDate(course.startDate) : 'la fecha de inicio';
+      this.info.showInfo(`El curso aún no comenzó. Podrás acceder a las clases desde ${start}`);
+      return;
+    }
     // Verificar si puede acceder a esta clase usando canAccessItem que considera cuestionarios
     if (!this.canAccessItem(itemIndex)) {
       this.info.showInfo('Debes completar los elementos anteriores (clases y cuestionarios) para acceder a esta clase');
@@ -755,6 +809,13 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     const canAccess = this.canAccessItem(itemIndex);
     if (!canAccess) {
       this.info.showInfo('Debes completar los elementos anteriores para acceder a este cuestionario');
+      return;
+    }
+
+    // Bloquear acceso si el curso aún no comenzó
+    if (!this.canStartCourse()) {
+      const start = course.startDate ? this.formatDate(course.startDate) : 'la fecha de inicio';
+      this.info.showInfo(`El curso aún no comenzó. Podrás acceder a los cuestionarios desde ${start}`);
       return;
     }
 

@@ -1,0 +1,30 @@
+/* Animaciones para el toast: aparece desde arriba hacia abajo, desaparece subiendo */
+.enter-animation {
+  animation: slide-down 520ms ease-out both;
+}
+
+.leave-animation {
+  animation: slide-up 420ms ease-in both;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}

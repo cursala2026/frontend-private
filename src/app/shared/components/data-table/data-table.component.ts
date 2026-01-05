@@ -185,12 +185,17 @@ export class DataTableComponent {
   }
 
   getActionClass(actionClass?: string): string {
+    // Si se pasa una cadena de clases completa (p. ej. utilidades Tailwind), devolverla directamente
+    if (actionClass && (actionClass.includes(' ') || actionClass.startsWith('bg-') || actionClass.includes('text-') || actionClass.includes('border-'))) {
+      return actionClass;
+    }
+
     const classes: Record<string, string> = {
-      'btn-primary': 'text-brand-primary hover:bg-brand-primary/10 border border-brand-primary/30',
-      'btn-secondary': 'text-gray-600 hover:bg-gray-50 border border-gray-200',
-      'btn-danger': 'text-red-600 hover:bg-red-50 border border-red-200',
-      'btn-success': 'text-green-600 hover:bg-green-50 border border-green-200',
-      'btn-info': 'text-blue-600 hover:bg-blue-50 border border-blue-200'
+      'btn-primary': 'text-brand-primary hover:bg-brand-primary/10 border-1 border-brand-primary/30',
+      'btn-secondary': 'text-gray-600 hover:bg-gray-50 border-1 border-gray-200',
+      'btn-danger': 'text-red-600 hover:bg-red-50 border-1 border-red-200',
+      'btn-success': 'text-green-600 hover:bg-green-50 border-1 border-green-200',
+      'btn-info': 'text-blue-600 hover:bg-blue-50 border-1 border-blue-200'
     };
     return classes[actionClass || ''] || 'text-gray-600 hover:bg-gray-50 border border-gray-200';
   }

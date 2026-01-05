@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InfoService, InfoMessage } from '../../../core/services/info.service';
 import { Subscription, timer } from 'rxjs';
@@ -7,28 +7,33 @@ import { Subscription, timer } from 'rxjs';
   selector: 'app-toast',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './toast.component.html'
+  templateUrl: './toast.component.html',
+  styleUrls: ['./toast.component.css']
 })
 export class ToastComponent implements OnDestroy {
-  message: InfoMessage | null = null;
+  message: WritableSignal<InfoMessage | null> = signal(null);
   private sub?: Subscription;
+  private timeoutSub?: Subscription;
 
   constructor(private info: InfoService) {
     this.sub = this.info.messages.subscribe(msg => {
       if (!msg) return;
-      this.message = msg;
+      this.message.set(msg);
+      // reset any previous timeout
+      this.timeoutSub?.unsubscribe();
       if (msg.timeout && msg.timeout > 0) {
-        // dismiss after timeout
-        timer(msg.timeout).subscribe(() => this.message = null);
+        this.timeoutSub = timer(msg.timeout).subscribe(() => this.message.set(null));
       }
     });
   }
 
   dismiss() {
-    this.message = null;
+    this.timeoutSub?.unsubscribe();
+    this.message.set(null);
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.timeoutSub?.unsubscribe();
   }
 }

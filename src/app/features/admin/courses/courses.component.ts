@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig } from '../../../shared/components/modal-data-table/modal-data-table.component';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
@@ -12,7 +13,7 @@ import { TeacherAssignmentModalComponent } from './teacher-assignment-modal/teac
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent],
+  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
@@ -26,15 +27,24 @@ export class CoursesComponent implements OnInit {
 
   isModalOpen = signal<boolean>(false);
   isTeacherAssignmentModalOpen = signal<boolean>(false);
+  showDuplicateModal = signal<boolean>(false);
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
+  duplicateModalConfig: ConfirmModalConfig = {
+    title: 'Duplicar Curso',
+    message: '¿Deseas crear una copia de este curso?',
+    confirmText: 'Duplicar',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-blue-600 hover:bg-blue-700 '
+  };
+  duplicateCandidate: any = null;
   selectedCourseForAssignment: any = null;
   teachers = signal<any[]>([]);
 
   currentPage = 1;
   pageSize = 10;
-  sortColumn = 'createdAt';
-  sortDirection: 'ASC' | 'DESC' = 'DESC';
+  sortColumn = 'name';
+  sortDirection: 'ASC' | 'DESC' = 'ASC';
   searchTerm = '';
 
   tableConfig: TableConfig = {
@@ -134,6 +144,12 @@ export class CoursesComponent implements OnInit {
     selectable: false,
     actions: [
       {
+        label: 'Duplicar',
+        iconSvg: 'M8 6h8v2H8z M8 10h8v2H8z M8 14h5v2H8z',
+        handler: (row) => this.duplicateCourse(row),
+        class: 'text-purple-600 border border-purple-700 px-3 py-2 rounded-md font-semibold hover:bg-purple-50'
+      },
+      {
         label: 'Editar',
         iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
         handler: (row) => this.editCourse(row),
@@ -192,18 +208,49 @@ export class CoursesComponent implements OnInit {
     this.coursesService.getCourses(params).subscribe({
       next: (response: any) => {
         // Handle backend response format
-        const data = response?.data || [];
+        let data: any[] = Array.isArray(response?.data) ? response.data : [];
 
-        // Since backend returns all courses, we need to implement client-side pagination
+        // Aplicar ordenamiento cliente según sortColumn/sortDirection (fallback si backend no ordena)
+        const sortKey = this.sortColumn;
+        const direction = this.sortDirection === 'ASC' ? 1 : -1;
+        if (sortKey && data.length > 1) {
+          data = data.slice().sort((a: any, b: any) => {
+            const va = a?.[sortKey];
+            const vb = b?.[sortKey];
+
+            // Normalizar valores
+            if (va === undefined || va === null) return 1 * direction;
+            if (vb === undefined || vb === null) return -1 * direction;
+
+            // Fechas
+            if (typeof va === 'string' && Date.parse(va) && typeof vb === 'string' && Date.parse(vb)) {
+              return (new Date(va).getTime() - new Date(vb).getTime()) * direction;
+            }
+
+            // Números
+            if (typeof va === 'number' && typeof vb === 'number') {
+              return (va - vb) * direction;
+            }
+
+            // Strings (comparación case-insensitive)
+            const sa = String(va).toLowerCase();
+            const sb = String(vb).toLowerCase();
+            if (sa < sb) return -1 * direction;
+            if (sa > sb) return 1 * direction;
+            return 0;
+          });
+        }
+
+        // Paginación cliente
         const startIndex = (this.currentPage - 1) * this.pageSize;
         const endIndex = startIndex + this.pageSize;
-        const paginatedData = Array.isArray(data) ? data.slice(startIndex, endIndex) : [];
+        const paginatedData = data.slice(startIndex, endIndex);
 
         const pagination = {
           page: this.currentPage,
           page_size: this.pageSize,
-          total: Array.isArray(data) ? data.length : 0,
-          totalPages: Math.ceil((Array.isArray(data) ? data.length : 0) / this.pageSize)
+          total: data.length,
+          totalPages: Math.ceil(data.length / this.pageSize)
         };
 
         this.courses.set(paginatedData);
@@ -387,29 +434,7 @@ export class CoursesComponent implements OnInit {
           placeholder: '0',
           section: 'Datos del Cursado'
         },
-        {
-          key: 'isPublished',
-          label: 'Publicado',
-          type: 'checkbox',
-          section: 'Datos del Cursado'
-        },
-        {
-          key: 'teachers',
-          label: 'Profesores',
-          type: 'multiselect',
-          required: true,
-          options: (() => {
-            const teachersList = this.teachers();
-            return teachersList.map(teacher => ({
-              value: teacher._id,
-              label: `${teacher.firstName} ${teacher.lastName || ''}${teacher.email ? ` (${teacher.email})` : ''}`
-            }));
-          })(),
-          minSelections: 1,
-          maxSelections: 3,
-          placeholder: 'Selecciona entre 1 y 3 profesores',
-          section: 'Datos del Cursado'
-        },
+        
         // Sección 3: Precio y Financiación (al final como solicitó el usuario)
         {
           key: 'price',
@@ -486,13 +511,7 @@ export class CoursesComponent implements OnInit {
       return;
     }
 
-    // Validar profesores
-    const teachers = Array.isArray(formData.teachers) ? formData.teachers : [];
-    if (teachers.length < 1 || teachers.length > 3) {
-      this.infoService.showError('El curso debe tener entre 1 y 3 profesores asignados');
-      this.modalComponent.isSubmitting.set(false);
-      return;
-    }
+    // Los profesores se resuelven desde la lista principal; no se validan aquí
 
     // Procesar los datos antes de enviar
     const processedData: any = {
@@ -503,8 +522,7 @@ export class CoursesComponent implements OnInit {
         : formData.days,
       // Asegurar que siempre se cree con estado activo
       status: 'ACTIVE',
-      // Asegurar que teachers sea un array
-      teachers: teachers.filter((t: string) => t && t.trim() !== '')
+      // No modificamos `teachers` aquí; se gestiona desde la asignación específica
     };
 
     // Manejar programFile: incluir solo si es un File, o si es null (para eliminarlo)
@@ -629,6 +647,68 @@ export class CoursesComponent implements OnInit {
         this.infoService.showError(errorMsg);
       }
     });
+  }
+
+  duplicateCourse(course: any): void {
+    this.duplicateCandidate = course;
+    this.duplicateModalConfig.message = `Se creará una copia del curso "${course.name}".`;
+    this.showDuplicateModal.set(true);
+  }
+
+  async confirmDuplicate(): Promise<void> {
+    this.showDuplicateModal.set(false);
+    const course = this.duplicateCandidate;
+    if (!course) return;
+
+    const newName = `${course.name} (copia)`;
+    const dto: any = {
+      name: newName,
+      description: course.description,
+      longDescription: course.longDescription,
+      status: course.status || 'ACTIVE',
+      order: course.order,
+      days: course.days,
+      time: course.time,
+      startDate: course.startDate,
+      registrationOpenDate: course.registrationOpenDate,
+      modality: course.modality,
+      price: course.price,
+      maxInstallments: course.maxInstallments,
+      interestFree: course.interestFree
+    };
+
+    if (course.imageUrl && typeof course.imageUrl === 'string' && course.imageUrl.startsWith('http')) {
+      try {
+        const resp = await fetch(course.imageUrl);
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const ext = (blob.type && blob.type.split('/')[1]) || 'jpg';
+          const filename = `copy-image.${ext}`;
+          const file = new File([blob], filename, { type: blob.type });
+          dto.imageFile = file;
+        }
+      } catch (err) {
+        console.warn('No se pudo descargar la imagen del curso para duplicar, se creará sin imagen.', err);
+      }
+    }
+
+    this.coursesService.createCourse(dto).subscribe({
+      next: () => {
+        this.infoService.showSuccess('Curso duplicado correctamente');
+        this.loadCourses();
+      },
+      error: (error) => {
+        console.error('Error duplicando curso:', error);
+        const errorMsg = error?.error?.message || 'Error al duplicar el curso';
+        this.infoService.showError(errorMsg);
+      }
+    });
+    this.duplicateCandidate = null;
+  }
+
+  cancelDuplicate(): void {
+    this.showDuplicateModal.set(false);
+    this.duplicateCandidate = null;
   }
 
   openTeacherAssignmentModal(course: any): void {

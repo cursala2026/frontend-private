@@ -7,6 +7,13 @@ export interface PublicData {
   _id: string;
   privacyPolicy: string;
   termsOfService: string;
+  bankAccounts?: Array<{
+    _id: string;
+    cbu: string;
+    alias: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
 }
 
 export interface PublicDataResponse {

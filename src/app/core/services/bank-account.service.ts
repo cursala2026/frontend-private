@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../config/environment';
 
 export interface BankAccount {
@@ -21,13 +22,19 @@ export interface UpdateBankAccountDto {
 })
 export class BankAccountService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}`;
+  private apiUrl = `${environment.apiUrl}/companySpecificData/company-specific-data`;
 
   /**
-   * Obtiene todas las cuentas bancarias
+   * Obtiene todas las cuentas bancarias desde companySpecificData
    */
   getAllBankAccounts(): Observable<{ data: BankAccount[] }> {
-    return this.http.get<{ data: BankAccount[] }>(`${this.apiUrl}/bank-accounts`);
+    return this.http.get<any>(this.apiUrl).pipe(
+      map((response: any) => {
+        // Extraer bankAccounts del primer elemento del array data
+        const bankAccounts = response?.data?.[0]?.bankAccounts || [];
+        return { data: bankAccounts };
+      })
+    );
   }
 
   /**

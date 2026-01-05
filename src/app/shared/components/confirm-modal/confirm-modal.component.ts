@@ -14,7 +14,8 @@ export interface ConfirmModalConfig {
   selector: 'app-confirm-modal',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './confirm-modal.component.html'
+  templateUrl: './confirm-modal.component.html',
+  styleUrl: './confirm-modal.component.css'
 })
 export class ConfirmModalComponent {
   @Input() isOpen = signal<boolean>(false);

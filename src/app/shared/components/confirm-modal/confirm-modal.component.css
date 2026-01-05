@@ -1,0 +1,49 @@
+/* Overlay fades in/out */
+.overlay-enter {
+  animation: fade-in 480ms ease-out both;
+}
+
+.overlay-leave {
+  animation: fade-out 380ms ease-in both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Modal: slight slide + scale */
+.modal-enter {
+  animation: modal-pop-in 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.modal-leave {
+  animation: modal-pop-out 480ms ease-in both;
+}
+
+@keyframes modal-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modal-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.96);
+  }
+}
