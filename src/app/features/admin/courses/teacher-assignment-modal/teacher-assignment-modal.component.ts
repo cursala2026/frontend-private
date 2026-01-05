@@ -92,7 +92,10 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
       },
       error: (error: any) => {
         console.error('Error loading teachers:', error);
-        this.infoService.showError('Error al cargar la lista de profesores');
+        this.teachers.set([]);
+        const statusCode = error?.status || 'desconocido';
+        const errorMsg = error?.error?.message || `Error ${statusCode} al cargar la lista de profesores. Por favor, verifica que el servidor esté funcionando correctamente.`;
+        this.infoService.showError(errorMsg);
         this.loadingTeachers.set(false);
       }
     });

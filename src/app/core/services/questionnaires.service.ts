@@ -18,6 +18,9 @@ export interface Question {
   required: boolean;
   options?: QuestionOption[];
   correctOptionId?: string;
+  promptType?: 'TEXT' | 'IMAGE' | 'VIDEO';
+  promptMediaUrl?: string;
+  promptMediaProvider?: 'BUNNY';
 }
 
 export interface QuestionnairePosition {
@@ -206,5 +209,29 @@ export class QuestionnairesService {
    */
   resetStudentAttempts(questionnaireId: string, studentId: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${questionnaireId}/submissions/student/${studentId}`);
+  }
+
+  /**
+   * Subir imagen o video para una pregunta
+   */
+  uploadQuestionMedia(
+    questionnaireId: string, 
+    questionId: string, 
+    file: File, 
+    promptType?: 'IMAGE' | 'VIDEO'
+  ): Observable<any> {
+    const formData = new FormData();
+    formData.append('mediaFile', file);
+    if (promptType) {
+      formData.append('promptType', promptType);
+    }
+    return this.http.post(
+      `${this.apiUrl}/${questionnaireId}/questions/${questionId}/media`,
+      formData,
+      {
+        reportProgress: true,
+        observe: 'events'
+      }
+    );
   }
 }

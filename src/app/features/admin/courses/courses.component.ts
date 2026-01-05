@@ -171,6 +171,9 @@ export class CoursesComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading teachers:', error);
+        this.teachers.set([]);
+        const errorMsg = error?.error?.message || 'Error al cargar la lista de profesores. Por favor, verifica que el servidor esté funcionando correctamente.';
+        this.infoService.showError(errorMsg);
       }
     });
   }

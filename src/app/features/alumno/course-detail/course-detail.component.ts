@@ -106,13 +106,22 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
         const courseData = response?.data || response;
+        console.log('[course-detail] Course data received:', courseData);
+        console.log('[course-detail] orderedContent available:', !!courseData.orderedContent);
+        if (courseData.orderedContent) {
+          console.log('[course-detail] orderedContent:', courseData.orderedContent);
+        }
         this.course.set(courseData);
 
-        // NO construir items aquí, esperar a tener cuestionarios
-        // this.buildCourseItems();
+        // El backend ahora envía orderedContent pre-ordenado
+        // Solo necesitamos extraer cuestionarios para compatibilidad
+        if (courseData.questionnaires) {
+          const activeQuestionnaires = courseData.questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE');
+          this.questionnaires.set(activeQuestionnaires);
+        }
 
-        // Cargar cuestionarios del curso
-        this.loadQuestionnaires(courseId);
+        // Construir items usando orderedContent del backend
+        this.buildCourseItems();
 
         // Cargar progreso del curso para determinar si está inscrito
         this.loadCourseProgress(courseId);
@@ -125,56 +134,69 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadQuestionnaires(courseId: string): void {
-    this.questionnairesService.getQuestionnairesByCourse(courseId).subscribe({
-      next: (response: any) => {
-        const questionnaires = response?.data || [];
-        // Solo mostrar cuestionarios activos
-        const activeQuestionnaires = questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE');
-        this.questionnaires.set(activeQuestionnaires);
-        this.buildCourseItems();
-      },
-      error: (error) => {
-        console.error('Error loading questionnaires:', error);
-        // No mostrar error, simplemente continuar sin cuestionarios
-        this.questionnaires.set([]);
-        this.buildCourseItems();
-      }
-    });
-  }
+  /**
+   * Construir items del curso usando orderedContent del backend
+   * El backend envía un array pre-ordenado que combina clases y cuestionarios
+   */
 
   buildCourseItems(): void {
     const course = this.course();
-    const questionnaires = this.questionnaires();
 
-    if (!course || !course.classes) {
+    if (!course) {
+      this.courseItems.set([]);
+      return;
+    }
+
+    // Usar orderedContent si está disponible (nuevo formato del backend)
+    if (course.orderedContent && Array.isArray(course.orderedContent)) {
+      console.log('[course-detail] Using orderedContent from backend');
+      const items: CourseItem[] = course.orderedContent
+        .filter((item: any) => {
+          // Filtrar solo elementos activos
+          if (item.type === 'CLASS') {
+            return item.data?.status === 'ACTIVE';
+          }
+          if (item.type === 'QUESTIONNAIRE') {
+            return item.data?.status === 'ACTIVE';
+          }
+          return false;
+        })
+        .map((item: any, index: number) => ({
+          type: item.type === 'CLASS' ? 'class' : 'questionnaire',
+          data: item.data,
+          index
+        }));
+
+      console.log('[course-detail] Built items from orderedContent:', items);
+      this.courseItems.set(items);
+      return;
+    }
+
+    console.log('[course-detail] orderedContent not available, using fallback logic');
+
+    // Fallback: usar lógica antigua si orderedContent no está disponible
+    const questionnaires = this.questionnaires();
+    if (!course.classes) {
       this.courseItems.set([]);
       return;
     }
 
     const items: CourseItem[] = [];
-    // Filtrar solo clases activas
     const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
-
-    // Ordenar clases por order
     const sortedClasses = [...classes].sort((a: any, b: any) => a.order - b.order);
 
-    // Insertar clases y cuestionarios en orden
-    sortedClasses.forEach((classData: any, index: number) => {
-      // Agregar la clase
+    sortedClasses.forEach((classData: any) => {
       items.push({
         type: 'class',
         data: classData,
         index: items.length
       });
 
-      // Buscar cuestionarios que van después de esta clase
       const questionnairesAfterClass = questionnaires.filter(q =>
         q.position.type === 'BETWEEN_CLASSES' &&
         q.position.afterClassId === classData._id
       );
 
-      // Agregar cuestionarios después de la clase
       questionnairesAfterClass.forEach(quest => {
         items.push({
           type: 'questionnaire',
@@ -184,7 +206,6 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Agregar cuestionarios finales (exámenes) y cualquier otro no agregado
     const addedQuestionnaireIds = new Set(items.filter(i => i.type === 'questionnaire').map(i => i.data._id));
     const remainingQuestionnaires = questionnaires.filter(q => !addedQuestionnaireIds.has(q._id));
     remainingQuestionnaires.forEach(quest => {

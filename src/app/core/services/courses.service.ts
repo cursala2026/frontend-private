@@ -30,6 +30,8 @@ export interface Course {
   order: number;
   imageUrl?: string;
   classes: Class[];
+  questionnaires?: any[]; // Array de cuestionarios del curso
+  orderedContent?: OrderedContentItem[]; // Array pre-ordenado de clases y cuestionarios
   students?: CourseStudent[]; // Array de estudiantes con metadata de inscripción
   meta?: {
     totalClasses: number;
@@ -56,6 +58,12 @@ export interface Course {
   isMainTeacher?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface OrderedContentItem {
+  type: 'CLASS' | 'QUESTIONNAIRE';
+  order: number;
+  data: any; // Puede ser Class o Questionnaire
 }
 
 export interface Class {

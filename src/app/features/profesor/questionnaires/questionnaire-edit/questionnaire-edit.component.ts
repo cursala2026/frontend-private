@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, ChangeDetectorRef } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { HttpEventType } from '@angular/common/http';
 import {
   QuestionnairesService,
   Questionnaire,
@@ -53,6 +54,12 @@ export class QuestionnaireEditComponent implements OnInit {
   loadingClasses = signal<boolean>(false);
   preselectedCourseId = signal<string | null>(null); // CourseId from query params
   preselectedCourseName = signal<string>(''); // Name of the preselected course
+
+  // Media upload tracking
+  mediaUploading = signal<{ [questionIndex: number]: boolean }>({});
+  uploadProgress = signal<{ [questionIndex: number]: number }>({});
+  mediaPreviews = signal<{ [questionIndex: number]: string }>({});
+  pendingMediaFiles = signal<{ [questionIndex: number]: { file: File, promptType: 'IMAGE' | 'VIDEO' } }>({});
 
   ngOnInit(): void {
     this.initForm();
@@ -333,7 +340,10 @@ export class QuestionnaireEditComponent implements OnInit {
       required: [question?.required ?? true],
       options: this.fb.array([]),
       correctOptionId: [''], // This will store the index as string for the radio button
-      originalCorrectOptionId: [question?.correctOptionId || null] // Store original ObjectId from backend
+      originalCorrectOptionId: [question?.correctOptionId || null], // Store original ObjectId from backend
+      promptType: [question?.promptType || 'TEXT'],
+      promptMediaUrl: [question?.promptMediaUrl || ''],
+      promptMediaProvider: [question?.promptMediaProvider || 'BUNNY']
     });
 
     // If multiple choice, add options
@@ -493,7 +503,10 @@ export class QuestionnaireEditComponent implements OnInit {
         questionText: q.questionText,
         order: index,
         points: q.points,
-        required: q.required
+        required: q.required,
+        promptType: q.promptType || 'TEXT',
+        promptMediaUrl: q.promptMediaUrl || undefined,
+        promptMediaProvider: q.promptMediaProvider || undefined
       };
 
       if (q.type === 'MULTIPLE_CHOICE') {
@@ -606,12 +619,21 @@ export class QuestionnaireEditComponent implements OnInit {
 
     request.subscribe({
       next: (response) => {
-        this.infoService.showSuccess(
-          this.isEditMode ? 'Cuestionario actualizado exitosamente' : 'Cuestionario creado exitosamente'
-        );
-        this.router.navigate(['/profesor/questionnaires'], {
-          queryParams: { courseId: formValue.courseId }
-        });
+        const savedQuestionnaire = response?.data;
+        
+        // Si es modo creación y hay archivos pendientes, subirlos
+        if (!this.isEditMode && savedQuestionnaire && Object.keys(this.pendingMediaFiles()).length > 0) {
+          this.questionnaireId = savedQuestionnaire._id;
+          this.isEditMode = true; // Cambiar a modo edición para los uploads
+          this.uploadPendingMediaFiles(savedQuestionnaire, formValue.courseId);
+        } else {
+          this.infoService.showSuccess(
+            this.isEditMode ? 'Cuestionario actualizado exitosamente' : 'Cuestionario creado exitosamente'
+          );
+          this.router.navigate(['/profesor/questionnaires'], {
+            queryParams: { courseId: formValue.courseId }
+          });
+        }
       },
       error: (error) => {
         console.error('Error saving questionnaire:', error);
@@ -624,5 +646,331 @@ export class QuestionnaireEditComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/profesor/questionnaires']);
+  }
+
+  // ==================== MEDIA UPLOAD METHODS ====================
+
+  onMediaFileSelected(event: Event, questionIndex: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+
+    const file = input.files[0];
+    
+    // Validar tipo de archivo
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'];
+    const allAllowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+
+    if (!allAllowedTypes.includes(file.type)) {
+      this.infoService.showError('Tipo de archivo no permitido. Usa: JPG, PNG, GIF, MP4, WEBM, OGG, AVI, MOV');
+      input.value = '';
+      return;
+    }
+
+    // Validar tamaño (1GB = 1073741824 bytes)
+    const maxSize = 1073741824;
+    if (file.size > maxSize) {
+      this.infoService.showError('El archivo es demasiado grande. Tamaño máximo: 1GB');
+      input.value = '';
+      return;
+    }
+
+    // Determinar el tipo de media
+    let promptType: 'IMAGE' | 'VIDEO';
+    if (allowedImageTypes.includes(file.type)) {
+      promptType = 'IMAGE';
+    } else {
+      promptType = 'VIDEO';
+    }
+
+    // Crear preview local
+    const previewUrl = URL.createObjectURL(file);
+    const currentPreviews = this.mediaPreviews();
+    this.mediaPreviews.set({ ...currentPreviews, [questionIndex]: previewUrl });
+
+    // Actualizar el formulario
+    const question = this.questions.at(questionIndex);
+    question.patchValue({ promptType });
+
+    // Si estamos editando, subir inmediatamente
+    if (this.isEditMode) {
+      this.uploadMedia(file, questionIndex, promptType);
+    } else {
+      // En modo creación, guardar el archivo para subir después de crear el cuestionario
+      const currentPending = this.pendingMediaFiles();
+      this.pendingMediaFiles.set({ ...currentPending, [questionIndex]: { file, promptType } });
+      this.infoService.showInfo('El archivo se subirá automáticamente al crear el cuestionario');
+    }
+  }
+
+  uploadMedia(file: File, questionIndex: number, promptType: 'IMAGE' | 'VIDEO'): void {
+    const question = this.questions.at(questionIndex);
+    const questionId = question.value._id;
+
+    if (!questionId) {
+      this.infoService.showError('Debes guardar el cuestionario primero antes de subir archivos multimedia');
+      return;
+    }
+
+    // Marcar como subiendo
+    const currentUploading = this.mediaUploading();
+    this.mediaUploading.set({ ...currentUploading, [questionIndex]: true });
+
+    const currentProgress = this.uploadProgress();
+    this.uploadProgress.set({ ...currentProgress, [questionIndex]: 0 });
+
+    this.questionnairesService.uploadQuestionMedia(
+      this.questionnaireId,
+      questionId,
+      file,
+      promptType
+    ).subscribe({
+      next: (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          // Actualizar progreso
+          const percentDone = event.total ? Math.round(100 * event.loaded / event.total) : 0;
+          const currentProgress = this.uploadProgress();
+          this.uploadProgress.set({ ...currentProgress, [questionIndex]: percentDone });
+        } else if (event.type === HttpEventType.Response) {
+          // Upload completado
+          const updatedQuestionnaire = event.body?.data;
+          if (updatedQuestionnaire) {
+            // Actualizar la pregunta con la nueva URL
+            const updatedQuestion = updatedQuestionnaire.questions.find(
+              (q: Question) => q._id === questionId
+            );
+            if (updatedQuestion) {
+              question.patchValue({
+                promptMediaUrl: updatedQuestion.promptMediaUrl,
+                promptMediaProvider: updatedQuestion.promptMediaProvider
+              });
+            }
+          }
+          
+          // Limpiar estado de upload
+          const currentUploading = this.mediaUploading();
+          delete currentUploading[questionIndex];
+          this.mediaUploading.set({ ...currentUploading });
+
+          const currentProgress = this.uploadProgress();
+          delete currentProgress[questionIndex];
+          this.uploadProgress.set({ ...currentProgress });
+
+          this.infoService.showSuccess('Archivo multimedia subido exitosamente');
+        }
+      },
+      error: (error) => {
+        console.error('Error uploading media:', error);
+        const errorMsg = error?.error?.message || 'Error al subir el archivo multimedia';
+        this.infoService.showError(errorMsg);
+
+        // Limpiar estado de upload
+        const currentUploading = this.mediaUploading();
+        delete currentUploading[questionIndex];
+        this.mediaUploading.set({ ...currentUploading });
+
+        const currentProgress = this.uploadProgress();
+        delete currentProgress[questionIndex];
+        this.uploadProgress.set({ ...currentProgress });
+
+        // Limpiar preview
+        const currentPreviews = this.mediaPreviews();
+        if (currentPreviews[questionIndex]) {
+          URL.revokeObjectURL(currentPreviews[questionIndex]);
+          delete currentPreviews[questionIndex];
+          this.mediaPreviews.set({ ...currentPreviews });
+        }
+      }
+    });
+  }
+
+  removeMedia(questionIndex: number): void {
+    const question = this.questions.at(questionIndex);
+    question.patchValue({
+      promptType: 'TEXT',
+      promptMediaUrl: '',
+      promptMediaProvider: 'BUNNY'
+    });
+
+    // Limpiar preview
+    const currentPreviews = this.mediaPreviews();
+    if (currentPreviews[questionIndex]) {
+      URL.revokeObjectURL(currentPreviews[questionIndex]);
+      delete currentPreviews[questionIndex];
+      this.mediaPreviews.set({ ...currentPreviews });
+    }
+
+    // Limpiar archivos pendientes
+    const currentPending = this.pendingMediaFiles();
+    if (currentPending[questionIndex]) {
+      delete currentPending[questionIndex];
+      this.pendingMediaFiles.set({ ...currentPending });
+    }
+
+    // TODO: Llamar al backend para eliminar el archivo si es necesario
+    this.infoService.showSuccess('Archivo multimedia eliminado');
+  }
+
+  getMediaPreview(questionIndex: number): string | null {
+    const question = this.questions.at(questionIndex);
+    const promptMediaUrl = question.value.promptMediaUrl;
+    const localPreview = this.mediaPreviews()[questionIndex];
+
+    return localPreview || promptMediaUrl || null;
+  }
+
+  isMediaUploading(questionIndex: number): boolean {
+    return this.mediaUploading()[questionIndex] || false;
+  }
+
+  getUploadProgress(questionIndex: number): number {
+    return this.uploadProgress()[questionIndex] || 0;
+  }
+
+  uploadPendingMediaFiles(questionnaire: Questionnaire, courseId: string): void {
+    const pendingFiles = this.pendingMediaFiles();
+    const questionIndexes = Object.keys(pendingFiles).map(k => parseInt(k));
+    
+    if (questionIndexes.length === 0) {
+      this.infoService.showSuccess('Cuestionario creado exitosamente');
+      this.router.navigate(['/profesor/questionnaires'], {
+        queryParams: { courseId }
+      });
+      return;
+    }
+
+    this.infoService.showInfo(`Subiendo ${questionIndexes.length} archivo(s) multimedia...`);
+    
+    let uploadedCount = 0;
+    let hasErrors = false;
+
+    questionIndexes.forEach(questionIndex => {
+      const pendingFile = pendingFiles[questionIndex];
+      const question = questionnaire.questions[questionIndex];
+      
+      if (!question || !question._id) {
+        console.error(`No se encontró la pregunta en el índice ${questionIndex}`);
+        uploadedCount++;
+        if (uploadedCount === questionIndexes.length) {
+          this.finishPendingUploads(hasErrors, courseId);
+        }
+        return;
+      }
+
+      // Actualizar el cuestionario form con el _id de la pregunta
+      const questionControl = this.questions.at(questionIndex);
+      questionControl.patchValue({ _id: question._id });
+
+      this.uploadMediaWithCallback(
+        pendingFile.file,
+        questionIndex,
+        pendingFile.promptType,
+        question._id,
+        () => {
+          uploadedCount++;
+          if (uploadedCount === questionIndexes.length) {
+            this.finishPendingUploads(hasErrors, courseId);
+          }
+        },
+        () => {
+          hasErrors = true;
+          uploadedCount++;
+          if (uploadedCount === questionIndexes.length) {
+            this.finishPendingUploads(hasErrors, courseId);
+          }
+        }
+      );
+    });
+  }
+
+  uploadMediaWithCallback(
+    file: File,
+    questionIndex: number,
+    promptType: 'IMAGE' | 'VIDEO',
+    questionId: string,
+    onSuccess: () => void,
+    onError: () => void
+  ): void {
+    // Marcar como subiendo
+    const currentUploading = this.mediaUploading();
+    this.mediaUploading.set({ ...currentUploading, [questionIndex]: true });
+
+    const currentProgress = this.uploadProgress();
+    this.uploadProgress.set({ ...currentProgress, [questionIndex]: 0 });
+
+    this.questionnairesService.uploadQuestionMedia(
+      this.questionnaireId,
+      questionId,
+      file,
+      promptType
+    ).subscribe({
+      next: (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          const percentDone = event.total ? Math.round(100 * event.loaded / event.total) : 0;
+          const currentProgress = this.uploadProgress();
+          this.uploadProgress.set({ ...currentProgress, [questionIndex]: percentDone });
+        } else if (event.type === HttpEventType.Response) {
+          const updatedQuestionnaire = event.body?.data;
+          if (updatedQuestionnaire) {
+            const updatedQuestion = updatedQuestionnaire.questions.find(
+              (q: Question) => q._id === questionId
+            );
+            if (updatedQuestion) {
+              const question = this.questions.at(questionIndex);
+              question.patchValue({
+                promptMediaUrl: updatedQuestion.promptMediaUrl,
+                promptMediaProvider: updatedQuestion.promptMediaProvider
+              });
+            }
+          }
+          
+          // Limpiar estado
+          const currentUploading = this.mediaUploading();
+          delete currentUploading[questionIndex];
+          this.mediaUploading.set({ ...currentUploading });
+
+          const currentProgress = this.uploadProgress();
+          delete currentProgress[questionIndex];
+          this.uploadProgress.set({ ...currentProgress });
+
+          // Limpiar pending
+          const currentPending = this.pendingMediaFiles();
+          delete currentPending[questionIndex];
+          this.pendingMediaFiles.set({ ...currentPending });
+
+          onSuccess();
+        }
+      },
+      error: (error) => {
+        console.error('Error uploading media:', error);
+        
+        // Limpiar estado
+        const currentUploading = this.mediaUploading();
+        delete currentUploading[questionIndex];
+        this.mediaUploading.set({ ...currentUploading });
+
+        const currentProgress = this.uploadProgress();
+        delete currentProgress[questionIndex];
+        this.uploadProgress.set({ ...currentProgress });
+
+        onError();
+      }
+    });
+  }
+
+  finishPendingUploads(hasErrors: boolean, courseId: string): void {
+    this.saving.set(false);
+    
+    if (hasErrors) {
+      this.infoService.showError('Cuestionario creado, pero algunos archivos multimedia no se pudieron subir');
+    } else {
+      this.infoService.showSuccess('Cuestionario creado exitosamente con todos los archivos multimedia');
+    }
+    
+    this.router.navigate(['/profesor/questionnaires'], {
+      queryParams: { courseId }
+    });
   }
 }
