@@ -81,7 +81,7 @@
               id="title"
               formControlName="title"
               placeholder="Ej: Examen del Módulo 1..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
               [class.border-red-500]="questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched"
             />
             @if (questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched) {
@@ -99,7 +99,7 @@
               formControlName="description"
               rows="3"
               placeholder="Descripción opcional del cuestionario..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             ></textarea>
           </div>
 
@@ -190,7 +190,7 @@
               min="0"
               max="100"
               placeholder="Ej: 70..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
           </div>
 
@@ -204,8 +204,8 @@
               id="maxRetries"
               formControlName="maxRetries"
               min="1"
-              placeholder="Dejar vacío para ilimitado..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              placeholder="Dejar vacío para intentos ilimitados..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
           </div>
 
@@ -230,7 +230,7 @@
               formControlName="showCorrectAnswers"
               class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label for="showCorrectAnswers" class="cursor-pointer ml-2 block text-sm text-gray-700">
+            <label for="showCorrectAnswers" class="cursor-pointer ml-2 block font-bold text-sm text-gray-700">
               Mostrar Respuestas Correctas
             </label>
           </div>
@@ -247,10 +247,10 @@
               min="1"
               max="1440"
               placeholder="Dejar vacío para tiempo ilimitado (ej: 60 para 1 hora)..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
             <p class="mt-1 text-sm text-gray-600">
-              Establece un tiempo límite en minutos para resolver el cuestionario. Deja vacío para tiempo ilimitado.
+              Establece un tiempo límite en minutos para resolver el cuestionario. <br>Deja vacío para tiempo ilimitado.
             </p>
           </div>
         </div>
@@ -328,15 +328,15 @@
                   <textarea
                     formControlName="questionText"
                     rows="3"
-                    placeholder="Escribe aquí la pregunta"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
+                    placeholder="Escribe aquí la pregunta..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic bg-white"
                   ></textarea>
                 </div>
 
                 <!-- Media Upload Section -->
                 <div class="md:col-span-2 mb-4">
                   <label class="block text-base font-bold text-brand-tertiary mb-2">
-                    Imagen o Video (Opcional)
+                    Agregar Imagen o Video (es opcional)
                   </label>
                   
                   <!-- Preview Section -->
@@ -395,7 +395,7 @@
                   <div class="flex items-center gap-3">
                     <label 
                       [for]="'mediaFile' + i" 
-                      class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                      class="cursor-pointer text-sm text-brand-primary font-bold inline-flex items-center border border-brand-primary transition-all group-hover:bg-brand-primary/10 py-2 rounded-full px-4 mt-2 ring-1 ring-brand-primary hover:ring-[4px] active:bg-brand-tertiary active:text-white active:ring-brand-primary active:border-brand-primary"
                       [class.opacity-50]="isMediaUploading(i)"
                       [class.cursor-not-allowed]="isMediaUploading(i)"
                     >
@@ -423,28 +423,28 @@
                   <input
                     type="checkbox"
                     formControlName="required"
-                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label class="block text-base font-bold text-brand-tertiary ml-2">
-                    Pregunta Obligatoria
+                    ¿Es una pregunta obligatoria?
                   </label>
                 </div>
 
                 <!-- Multiple Choice/Select Options -->
                 @if (question.get('type')?.value === 'MULTIPLE_CHOICE' || question.get('type')?.value === 'MULTIPLE_SELECT') {
-                  <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                      <h4 class="block text-base font-bold text-brand-tertiary mb-2">Opciones de Respuesta</h4>
+                  <div class="md:col-span-2 mb-4">
+                    <div class="flex items-center justify-between mb-4">
+                      <h4 class="block text-base font-bold text-brand-tertiary ">Escriba las opciones de respuesta</h4>
                       <button
                         type="button"
                         (click)="addOption(i)"
-                        class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary hover:bg-brand-primary/10 active:bg-brand-tertiary active:text-white"
+                        class="cursor-pointer group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary hover:bg-brand-primary/10 active:bg-brand-tertiary active:text-white"
                       >
                         + Agregar Opción
                       </button>
                     </div>
 
-                    <div formArrayName="options" class="space-y-2">
+                    <div formArrayName="options" class="space-y-2 py-6 bg-white rounded-lg p-4 border border-gray-200 ">
                       @for (option of getQuestionOptions(i).controls; track $index; let j = $index) {
                         <div [formGroupName]="j" class="flex items-center gap-2">
                           <!-- Radio button for single correct answer (MULTIPLE_CHOICE) -->
@@ -455,7 +455,7 @@
                               [value]="j.toString()"
                               [formControl]="$any(question.get('correctOptionId'))"
                               [checked]="question.get('correctOptionId')?.value === j.toString()"
-                              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                              class="cursor-pointer h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                               title="Marcar como respuesta correcta"
                             />
                           }
@@ -466,7 +466,7 @@
                               type="checkbox"
                               [checked]="isOptionCorrect(i, j)"
                               (change)="toggleCorrectOption(i, j)"
-                              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                              class="cursor-pointer h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                               title="Marcar como respuesta correcta"
                             />
                           }
@@ -475,8 +475,8 @@
                           <input
                             type="text"
                             formControlName="text"
-                            placeholder="Opción {{ j + 1 }}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+                            placeholder="Escriba la opción {{ j + 1 }} o elimínela haciendo clic en la X..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
                           />
 
                           <!-- Remove button -->
