@@ -11,6 +11,7 @@ export interface ClassData {
   order: number;
   imageUrl?: string;
   videoUrl?: string;
+  videoOriginalName?: string;
   videoStatus?: 'ready' | 'processing' | 'error';
   courseId: string;
   supportMaterials?: string[];
@@ -44,6 +45,7 @@ export interface CreateClassDto {
   imageFileId?: string;
   videoFileId?: string;
   supportMaterialIds?: string[];
+  videoOriginalName?: string;
 }
 
 export interface UpdateClassDto {
@@ -56,8 +58,10 @@ export interface UpdateClassDto {
   imageFileId?: string;
   videoFileId?: string;
   supportMaterialIds?: string[];
+  supportMaterialsToDelete?: string[];
   deleteCurrentVideo?: string;
   deleteCurrentImage?: string;
+  videoOriginalName?: string;
 }
 
 @Injectable({
@@ -99,6 +103,11 @@ export class ClassesService {
       formData.append('videoFileId', classData.videoFileId);
     }
 
+    // Nombre original del archivo de video (si el frontend lo proporciona)
+    if ((classData as any).videoOriginalName) {
+      formData.append('videoOriginalName', (classData as any).videoOriginalName);
+    }
+
     if (classData.supportMaterials && classData.supportMaterials.length > 0) {
       classData.supportMaterials.forEach((file) => {
         formData.append('supportMaterials', file);
@@ -107,12 +116,20 @@ export class ClassesService {
       formData.append('supportMaterialIds', JSON.stringify(classData.supportMaterialIds));
     }
 
+    // Enviar la lista explícita de materiales a eliminar si existe (create)
+    if ((classData as any).supportMaterialsToDelete && (classData as any).supportMaterialsToDelete.length > 0) {
+      formData.append('supportMaterialsToDelete', JSON.stringify((classData as any).supportMaterialsToDelete));
+    }
+
+
     if (classData.linkLive) {
       formData.append('linkLive', classData.linkLive);
     }
 
     // Usar uploadUrl si hay video, apiUrl en caso contrario
     const url = classData.videoFile ? this.uploadUrl : this.apiUrl;
+    // Log temporal: listar contenido de FormData antes de enviar
+    // (debug logs removed)
     return this.http.post(url, formData);
   }
 
@@ -134,12 +151,27 @@ export class ClassesService {
       formData.append('videoFileId', classData.videoFileId);
     }
 
+    // Nombre original del archivo de video (si el frontend lo proporciona)
+    if ((classData as any).videoOriginalName) {
+      formData.append('videoOriginalName', (classData as any).videoOriginalName);
+    }
+
     if (classData.supportMaterials && classData.supportMaterials.length > 0) {
       classData.supportMaterials.forEach((file) => {
         formData.append('supportMaterials', file);
       });
     } else if (classData.supportMaterialIds && classData.supportMaterialIds.length > 0) {
       formData.append('supportMaterialIds', JSON.stringify(classData.supportMaterialIds));
+    }
+
+    // Incluir lista explícita de materiales a eliminar si viene desde el frontend (update)
+    if ((classData as any).supportMaterialsToDelete && (classData as any).supportMaterialsToDelete.length > 0) {
+      // Enviar como JSON (un único campo)
+      formData.append('supportMaterialsToDelete', JSON.stringify((classData as any).supportMaterialsToDelete));
+      // Enviar también como múltiples entradas con sufijo [] por compatibilidad con backends que esperan arrays en FormData
+      (classData as any).supportMaterialsToDelete.forEach((name: string) => {
+        formData.append('supportMaterialsToDelete[]', name);
+      });
     }
 
     if (classData.linkLive !== undefined) {
@@ -156,7 +188,23 @@ export class ClassesService {
 
     // Usar uploadUrl si hay video, apiUrl en caso contrario
     const url = classData.videoFile ? this.uploadUrl : this.apiUrl;
+    // Log temporal: listar contenido de FormData antes de enviar
+    // (debug logs removed)
+
     return this.http.patch(`${url}/${classId}`, formData);
+  }
+
+  /**
+   * Sube un archivo de video para una clase existente en background.
+   * Usa el mismo endpoint de `uploadUrl` que `updateClass` cuando incluye video.
+   */
+  uploadClassVideo(classId: string, videoFile: File, videoOriginalName?: string): Observable<any> {
+    const formData = new FormData();
+    formData.append('videoFile', videoFile);
+    if (videoOriginalName) {
+      formData.append('videoOriginalName', videoOriginalName);
+    }
+    return this.http.patch(`${this.uploadUrl}/${classId}`, formData);
   }
 
   deleteClass(classId: string): Observable<any> {
@@ -173,6 +221,15 @@ export class ClassesService {
 
   moveClassDown(classId: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${classId}/down`, {});
+  }
+
+  /**
+   * Pide al backend metadata de un video de Bunny Stream (title, etc.).
+   * El backend debe exponer un endpoint seguro que llame a la API de Bunny.
+   */
+  getBunnyVideoMetadata(libraryId: string, videoId: string): Observable<any> {
+    // Endpoint backend recomendado: /internal/bunny/video-metadata
+    return this.http.get(`/internal/bunny/video-metadata?libraryId=${encodeURIComponent(libraryId)}&videoId=${encodeURIComponent(videoId)}`);
   }
 }
 

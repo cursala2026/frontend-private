@@ -38,41 +38,38 @@ export class ForgotPasswordComponent {
       this.info.showError('Por favor ingresa un correo válido.');
       return;
     }
-
     this.isLoading = true;
     const email = this.form.value.email as string;
 
     this.auth.initiateResetPassword(email).subscribe({
       next: (data) => {
         this.isLoading = false;
-        const expiresIn = data?.expiresIn;
         const tokenForDev = data?.tokenForDev;
         const resetUrlForDev = data?.resetUrlForDev;
-        
-        // En desarrollo, si el email falló, mostrar el token
+
         if (tokenForDev) {
+          // Solo en desarrollo: mostrar en consola, nunca en UI
           console.log('🔧 [DESARROLLO] Token de restablecimiento:', tokenForDev);
           console.log('🔗 [DESARROLLO] URL de restablecimiento:', resetUrlForDev);
-          this.info.showSuccess('Token generado (email no enviado en desarrollo). Revisa la consola para obtener el token.');
-        } else {
-          this.info.showSuccess('Correo de restablecimiento enviado. Revisa tu bandeja.');
         }
-        
-        // Redirigir a la pantalla de reset
-        const queryParams: any = { email };
-        if (tokenForDev) {
-          queryParams.token = tokenForDev;
-        }
-        this.router.navigate(['/reset-password'], { queryParams });
+
+        // Mensaje genérico para evitar filtrado de cuentas
+        this.info.showSuccess('Si existe una cuenta asociada, recibirás un correo con instrucciones.');
+        this.form.reset();
       },
       error: (err) => {
         this.isLoading = false;
-        if (err?.status === 404) {
-          this.info.showError('No se encontró una cuenta con ese correo.');
-        } else if (err?.status === 429) {
+        if (err?.status === 429) {
           this.info.showError('Demasiadas solicitudes. Intenta más tarde.');
+          return;
+        }
+
+        // Mostrar mensaje proporcionado por el backend cuando exista
+        const serverMsg = err?.error?.message || err?.message;
+        if (serverMsg) {
+          this.info.showError(serverMsg);
         } else {
-          this.info.showError('Error al enviar correo de restablecimiento.');
+          this.info.showError('Error al enviar correo de restablecimiento. Intenta más tarde.');
         }
       }
     });

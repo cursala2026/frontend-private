@@ -10,6 +10,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { ViewModeService } from '../../../../core/services/view-mode.service';
 import { UserRole } from '../../../../core/models/user-role.enum';
 import { VideoUploadProgressService } from '../../../../core/services/video-upload-progress.service';
+import { VideoUploadManagerService } from '../../../../core/services/video-upload-manager.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -28,6 +29,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   private authService = inject(AuthService);
   private viewModeService = inject(ViewModeService);
   private videoUploadProgressService = inject(VideoUploadProgressService);
+  private uploadManager = inject(VideoUploadManagerService);
   private sanitizer = inject(DomSanitizer);
 
   classForm!: FormGroup;
@@ -65,6 +67,9 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   
   // Cache para URLs de video embebido de Bunny Stream
   private videoEmbedUrlCache = new Map<string, SafeResourceUrl>();
+
+  // Nombre del video (cuando es Bunny Stream)
+  videoName = signal<string | null>(null);
   
   // ViewChild para el iframe de Bunny Stream
   @ViewChild('bunnyStreamIframe') bunnyStreamIframeRef!: ElementRef<HTMLIFrameElement>;
@@ -72,40 +77,53 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   // Player.js instance para Bunny Stream
   private bunnyStreamPlayer: any = null;
 
+  private cleanFileName(name: string): string {
+    return name.replace(/\s*\[.*?\]/g, '').trim();
+  }
+
   ngOnInit(): void {
-    this.classId = this.route.snapshot.paramMap.get('id');
-    // Si el id es 'new' o no existe, estamos en modo creación
-    this.isEditMode = !!this.classId && this.classId !== 'new' && this.classId !== 'edit';
+    try {
+      this.classId = this.route.snapshot.paramMap.get('id');
+      // Si el id es 'new' o no existe, estamos en modo creación
+      this.isEditMode = !!this.classId && this.classId !== 'new' && this.classId !== 'edit';
 
-    // Capturar courseId de query params si estamos creando
-    const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
-    if (courseIdFromQuery) {
-      this.courseId = courseIdFromQuery;
-    }
-
-    this.initializeForm();
-    this.loadCourses();
-    
-    // Resetear flags
-    this.deleteCurrentVideo = false;
-    this.deleteCurrentImage = false;
-    this.originalVideoUrl = null;
-    this.originalImageUrl = null;
-    
-    // Limpiar estado de video
-    this.videoStatus.set(null);
-    this.videoUploadProgress.set(0);
-    this.isUploadingVideo.set(false);
-    this.cleanupProgressSubscription();
-
-    if (this.isEditMode && this.classId) {
-      this.loadClass();
-    } else {
-      // En modo creación, si hay courseId en query params, precargarlo
+      // Capturar courseId de query params si estamos creando
+      const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
       if (courseIdFromQuery) {
-        this.loadCourse();
-        this.classForm.patchValue({ courseId: courseIdFromQuery });
+        this.courseId = courseIdFromQuery;
       }
+
+      this.initializeForm();
+      this.loadCourses();
+      
+      // Resetear flags
+      this.deleteCurrentVideo = false;
+      this.deleteCurrentImage = false;
+      this.originalVideoUrl = null;
+      this.originalImageUrl = null;
+      
+      // Limpiar estado de video
+      this.videoStatus.set(null);
+      this.videoUploadProgress.set(0);
+      this.isUploadingVideo.set(false);
+      this.cleanupProgressSubscription();
+
+      if (this.isEditMode && this.classId) {
+        this.loadClass();
+      } else {
+        // En modo creación, si hay courseId en query params, precargarlo
+        if (courseIdFromQuery) {
+          this.loadCourse();
+          this.classForm.patchValue({ courseId: courseIdFromQuery });
+        }
+        this.loading.set(false);
+      }
+    } catch (err) {
+      console.error('Error en ngOnInit de TeacherClassEditComponent:', err);
+      // Evitar bloqueo total del módulo en dev; mostrar mensaje al usuario
+      try {
+        this.info.showError('Error inicializando el editor de clase. Revisa la consola.');
+      } catch {}
       this.loading.set(false);
     }
   }
@@ -117,6 +135,17 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
         this.initBunnyStreamPlayer();
       }
     }, 500);
+  }
+
+  private extractBunnyIds(url: string | null | undefined): { libraryId: string; videoId: string } | null {
+    if (!url) return null;
+    const re1 = /vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)(?:\/|$)/i;
+    const re2 = /vz-(\d+)\.b-cdn\.net\/([a-f0-9-]+)/i;
+    let match = url.match(re1) || url.match(re2);
+    if (!match || match.length < 3) return null;
+    const libraryId = match[1];
+    const videoId = match[2].split('/')[0];
+    return { libraryId, videoId };
   }
 
   initializeForm(): void {
@@ -206,6 +235,31 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
           // Solo mostrar el video original si no hay un video local seleccionado
           if (!this.selectedVideoFile) {
             this.videoPreview = this.originalVideoUrl;
+            // Preferir el nombre original guardado en la clase
+            const existingOriginal = (classData as any).videoOriginalName as string | undefined;
+            if (existingOriginal) {
+              this.videoName.set(existingOriginal);
+            } else {
+              // Extraer nombre/ID del video de Bunny Stream para mostrarlo o usar basename
+              if (this.isBunnyStreamUrl(this.videoPreview)) {
+                const ids = this.extractBunnyIds(this.videoPreview);
+                if (ids) {
+                  this.classesService.getBunnyVideoMetadata(ids.libraryId, ids.videoId).subscribe({
+                    next: (res: any) => {
+                      const title = res?.title || res?.name || this.getSupportMaterialName(this.videoPreview || '') || ids.videoId;
+                      this.videoName.set(title);
+                    },
+                    error: () => {
+                      this.videoName.set(this.getSupportMaterialName(this.videoPreview || '') || ids.videoId);
+                    }
+                  });
+                } else {
+                  this.videoName.set(this.getSupportMaterialName(this.videoPreview || ''));
+                }
+              } else {
+                this.videoName.set(this.getSupportMaterialName(this.videoPreview || ''));
+              }
+            }
           }
           
           // Verificar estado del video (solo si hay videoUrl)
@@ -228,8 +282,18 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
         }
 
         // Cargar materiales de apoyo existentes
+        // Cargar materiales de apoyo existentes (deduplicar por nombre de archivo)
         if (classData.supportMaterials && classData.supportMaterials.length > 0) {
-          this.existingSupportMaterials = [...classData.supportMaterials];
+          const seen = new Set<string>();
+          const unique: string[] = [];
+          for (const m of classData.supportMaterials) {
+            const name = this.getSupportMaterialName(m);
+            if (!seen.has(name)) {
+              seen.add(name);
+              unique.push(m);
+            }
+          }
+          this.existingSupportMaterials = unique;
         }
 
         this.classForm.patchValue({
@@ -304,6 +368,8 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
       // Esto evita cargar todo el video en memoria como base64
       // Mostrar el video local seleccionado (tiene prioridad sobre el video original)
       this.videoPreview = URL.createObjectURL(this.selectedVideoFile);
+      // Al usar un archivo local, usar el nombre original del archivo (limpiado de sufijos entre corchetes)
+      this.videoName.set(this.cleanFileName(this.selectedVideoFile.name));
       
       // Limpiar Player.js anterior si existe (ya que cambiamos a un video local)
       this.destroyBunnyStreamPlayer();
@@ -324,14 +390,41 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     // Si había un video original y no está marcado para eliminar, restaurarlo
     if (this.originalVideoUrl && !this.deleteCurrentVideo) {
       this.videoPreview = this.originalVideoUrl;
-      // Inicializar Player.js si es Bunny Stream
+      // Inicializar Player.js y resolver nombre para mostrar
       setTimeout(() => {
         if (this.isBunnyStreamUrl(this.videoPreview)) {
           this.initBunnyStreamPlayer();
+          const existingOriginal = (this.classData()?.videoOriginalName) as string | undefined;
+          if (existingOriginal) {
+            this.videoName.set(existingOriginal);
+          } else {
+            const ids = this.extractBunnyIds(this.videoPreview);
+            if (ids) {
+              this.classesService.getBunnyVideoMetadata(ids.libraryId, ids.videoId).subscribe({
+                next: (res: any) => {
+                  const title = res?.title || res?.name || ids.videoId || null;
+                  this.videoName.set(title);
+                },
+                error: () => {
+                  this.videoName.set(ids.videoId);
+                }
+              });
+            } else {
+              this.videoName.set(this.getSupportMaterialName(this.videoPreview || ''));
+            }
+          }
+        } else {
+          const existingOriginal = (this.classData()?.videoOriginalName) as string | undefined;
+          if (existingOriginal) {
+            this.videoName.set(existingOriginal);
+          } else {
+            this.videoName.set(this.getSupportMaterialName(this.videoPreview || ''));
+          }
         }
       }, 500);
     } else {
       this.videoPreview = null;
+      this.videoName.set(null);
     }
   }
 
@@ -510,7 +603,6 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     }
     return true;
   }
-
   onSubmit(): void {
     if (this.classForm.invalid) {
       this.classForm.markAllAsTouched();
@@ -519,31 +611,32 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     }
 
     this.saving.set(true);
-    
+
     const formValue = this.classForm.value;
+
+    // Guardar referencia a los archivos seleccionados; no incluir el video en la petición inicial
+    const selectedVideo = this.selectedVideoFile;
+    const selectedImage = this.selectedImageFile;
 
     const classData: any = {
       name: formValue.name,
       description: formValue.description,
       courseId: formValue.courseId,
-      linkLive: formValue.linkLive || undefined
+      // Enviar explícitamente el valor de linkLive (puede ser cadena vacía para borrar)
+      linkLive: formValue.linkLive
     };
 
-    if (this.selectedImageFile) {
-      classData.imageFile = this.selectedImageFile;
+    if (selectedImage) {
+      classData.imageFile = selectedImage;
     }
-    
+
     // Si se debe eliminar la imagen y no hay nueva imagen
-    if (this.isEditMode && this.deleteCurrentImage && !this.selectedImageFile) {
+    if (this.isEditMode && this.deleteCurrentImage && !selectedImage) {
       classData.deleteCurrentImage = 'true';
     }
 
-    if (this.selectedVideoFile) {
-      classData.videoFile = this.selectedVideoFile;
-    }
-
-    // Si se marca para eliminar el video original (solo en modo edición)
-    if (this.isEditMode && this.deleteCurrentVideo && !this.selectedVideoFile) {
+    // Si se marca para eliminar el video original (solo en modo edición) y no hay video nuevo
+    if (this.isEditMode && this.deleteCurrentVideo && !selectedVideo) {
       classData.deleteCurrentVideo = 'true';
     }
 
@@ -554,29 +647,38 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
 
     // En modo edición, mantener los materiales existentes que no se eliminaron
     if (this.isEditMode && this.supportMaterialsToDelete.length > 0) {
-      // Filtrar los materiales eliminados
       const remainingMaterials = this.existingSupportMaterials.filter(
         m => !this.supportMaterialsToDelete.includes(m)
       );
       classData.supportMaterialIds = remainingMaterials;
+      classData.supportMaterialsToDelete = this.supportMaterialsToDelete.map(m => this.getSupportMaterialName(m));
     } else if (this.isEditMode && this.existingSupportMaterials.length > 0) {
       classData.supportMaterialIds = this.existingSupportMaterials;
     }
 
+    // Helper para iniciar la subida del video en background (no bloquea la navegación)
+    const startBackgroundVideoUpload = (classId: string | undefined) => {
+      if (!classId || !selectedVideo) return;
+      const originalName = this.cleanFileName(selectedVideo.name);
+      // Delegar al servicio central para que mantenga la suscripción SSE aunque naveguemos
+      this.uploadManager.startUpload(classId, selectedVideo, originalName);
+    };
+
     if (this.isEditMode && this.classId) {
-      // Actualizar clase existente
+      // Actualizar clase sin incluir el archivo de video (upload separado)
       this.classesService.updateClass(this.classId, classData).subscribe({
         next: (response) => {
           const classResponse = response?.data || response;
-          const hasVideo = !!this.selectedVideoFile;
-          
-          if (hasVideo && classResponse?._id) {
-            // Si hay video, mostrar mensaje y navegar a la lista donde se verá el progreso
-            this.info.showSuccess('Clase actualizada. El video se está procesando en segundo plano...');
+          const id = classResponse?._id || this.classId;
+
+          if (selectedVideo && id) {
+            // iniciar upload en background y navegar inmediatamente
+            startBackgroundVideoUpload(id);
+            this.info.showSuccess('Clase actualizada. El video se subirá y procesará en segundo plano.');
           } else {
             this.info.showSuccess('Clase actualizada exitosamente');
           }
-          // Siempre navegar a la lista de clases
+
           this.router.navigate(['/profesor/classes'], {
             queryParams: { courseId: this.courseId }
           });
@@ -588,19 +690,20 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
         }
       });
     } else {
-      // Crear nueva clase
+      // Crear nueva clase sin enviar el video; si hay video, subirlo después
       this.classesService.createClass(classData).subscribe({
         next: (response) => {
           const classResponse = response?.data || response;
-          const hasVideo = !!this.selectedVideoFile;
-          
-          if (hasVideo && classResponse?._id) {
-            // Si hay video, mostrar mensaje y navegar a la lista donde se verá el progreso
-            this.info.showSuccess('Clase creada. El video se está procesando en segundo plano...');
+          const id = classResponse?._id;
+
+          if (selectedVideo && id) {
+            // iniciar upload en background y navegar inmediatamente
+            startBackgroundVideoUpload(id);
+            this.info.showSuccess('Clase creada. El video se subirá y procesará en segundo plano.');
           } else {
             this.info.showSuccess('Clase creada exitosamente');
           }
-          // Siempre navegar a la lista de clases
+
           this.router.navigate(['/profesor/classes'], {
             queryParams: { courseId: classData.courseId }
           });
@@ -656,37 +759,65 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     this.videoUploadProgress.set(0);
     this.isUploadingVideo.set(true);
 
-    this.progressSubscription = this.videoUploadProgressService.getUploadProgress(classId).subscribe({
-      next: (event) => {
-        if (event.error) {
-          this.videoStatus.set('error');
-          this.isUploadingVideo.set(false);
-          this.info.showError('Error al procesar el video: ' + event.error);
-          this.cleanupProgressSubscription();
-        } else {
-          this.videoUploadProgress.set(event.percent);
-          if (event.percent >= 100) {
-            this.videoStatus.set('ready');
+    // Subscribirse al progreso expuesto por el manager central
+    const obs = this.uploadManager.getProgressFor(classId);
+    if (!obs) {
+      // Fallback a SSE directo si no hay observable (por compatibilidad)
+      this.progressSubscription = this.videoUploadProgressService.getUploadProgress(classId).subscribe({
+        next: (event) => {
+          if (event.error) {
+            this.videoStatus.set('error');
             this.isUploadingVideo.set(false);
-            this.info.showSuccess('Video procesado exitosamente');
-            // Recargar datos de la clase para obtener el videoUrl actualizado
-            if (classId) {
-              this.loadClass();
-            }
+            this.info.showError('Error al procesar el video: ' + event.error);
             this.cleanupProgressSubscription();
+          } else {
+            this.videoUploadProgress.set(event.percent);
+            if (event.percent >= 100) {
+              this.videoStatus.set('ready');
+              this.isUploadingVideo.set(false);
+              this.info.showSuccess('Video procesado exitosamente');
+              // Recargar datos de la clase para obtener el videoUrl actualizado
+              if (classId) {
+                this.loadClass();
+              }
+              this.cleanupProgressSubscription();
+            }
           }
+        },
+        error: (error) => {
+          if (this.originalVideoUrl || this.selectedVideoFile) {
+            console.error('Error en stream de progreso:', error);
+            this.videoStatus.set('error');
+            this.isUploadingVideo.set(false);
+            this.info.showError('Error al conectar con el servidor para el progreso del video');
+          } else {
+            this.videoStatus.set(null);
+            this.isUploadingVideo.set(false);
+          }
+          this.cleanupProgressSubscription();
+        }
+      });
+      return;
+    }
+
+    this.progressSubscription = obs.subscribe({
+      next: (percent) => {
+        this.videoUploadProgress.set(percent);
+        if (percent >= 100) {
+          this.videoStatus.set('ready');
+          this.isUploadingVideo.set(false);
+          this.info.showSuccess('Video procesado exitosamente');
+          if (classId) this.loadClass();
+          this.cleanupProgressSubscription();
         }
       },
-      error: (error) => {
-        // Solo mostrar error si realmente hay un video que se está procesando
-        // Si el video fue eliminado, silenciar el error
+      error: (err) => {
         if (this.originalVideoUrl || this.selectedVideoFile) {
-          console.error('Error en stream de progreso:', error);
+          console.error('Error en stream de progreso (manager):', err);
           this.videoStatus.set('error');
           this.isUploadingVideo.set(false);
           this.info.showError('Error al conectar con el servidor para el progreso del video');
         } else {
-          // Si no hay video, simplemente limpiar el estado
           this.videoStatus.set(null);
           this.isUploadingVideo.set(false);
         }

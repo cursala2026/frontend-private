@@ -1,10 +1,11 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from './shared/components/toast/toast.component';
+import { VideoUploadProgressComponent } from './shared/components/video-upload-progress/video-upload-progress.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastComponent],
+  imports: [RouterOutlet, ToastComponent, VideoUploadProgressComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

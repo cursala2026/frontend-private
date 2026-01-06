@@ -181,17 +181,18 @@ export class ProfileComponent {
     formDataToSend.append('email', formData.email);
     formDataToSend.append('username', formData.username);
     
-    if (formData.phone && formData.phone.trim()) {
-      formDataToSend.append('phone', formData.phone);
+    // Enviar valores aunque sean cadenas vacías para permitir limpiar campos en el backend
+    if (formData.phone !== undefined) {
+      formDataToSend.append('phone', formData.phone ?? '');
     }
-    if (formData.dni && formData.dni.trim()) {
-      formDataToSend.append('dni', formData.dni);
+    if (formData.dni !== undefined) {
+      formDataToSend.append('dni', formData.dni ?? '');
     }
-    if (formData.birthDate && formData.birthDate.trim()) {
-      formDataToSend.append('birthDate', formData.birthDate);
+    if (formData.birthDate !== undefined) {
+      formDataToSend.append('birthDate', formData.birthDate ?? '');
     }
-    if (formData.professionalDescription && formData.professionalDescription.trim()) {
-      formDataToSend.append('professionalDescription', formData.professionalDescription);
+    if (formData.professionalDescription !== undefined) {
+      formDataToSend.append('professionalDescription', formData.professionalDescription ?? '');
     }
     
     // Agregar la foto si existe
@@ -204,8 +205,6 @@ export class ProfileComponent {
     if (hasSignaturePhoto && this.selectedSignatureImage) {
       formDataToSend.append('signatureFile', this.selectedSignatureImage);
     }
-    
-    console.log('Actualizando perfil para usuario ID:', currentUser._id);
     
     // Usar siempre updateUserData que tiene requireAdminOrSelf
     this.usersService.updateUserData(currentUser._id, formDataToSend).subscribe({

@@ -432,17 +432,13 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       const iframe = this.bunnyStreamIframeRef.nativeElement;
       this.bunnyStreamPlayer = new playerjs.Player(iframe);
 
-      // Esperar a que el reproductor esté listo
       this.bunnyStreamPlayer.on('ready', () => {
         this.bunnyStreamPlayerReady = true;
-        console.log('Bunny Stream Player.js listo');
 
-        // Obtener duración del video
         this.bunnyStreamPlayer.getDuration((duration: number) => {
           if (duration && duration > 0) {
             this.videoDuration.set(duration);
             
-            // Restaurar posición si hay progreso guardado
             const progress = this.classProgress();
             if (progress && progress.watchTime > 0 && progress.watchTime < duration) {
               this.bunnyStreamPlayer.setCurrentTime(progress.watchTime);
@@ -450,18 +446,15 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
 
-        // Escuchar cuando el video termina
         this.bunnyStreamPlayer.on('ended', () => {
           console.log('Video terminado');
           this.markAsCompleted();
         });
 
-        // Escuchar actualizaciones de tiempo (progreso)
         this.bunnyStreamPlayer.on('timeupdate', (data: any) => {
           if (data && typeof data.seconds === 'number') {
             this.currentWatchTime.set(data.seconds);
             
-            // Guardar progreso cada 10 segundos
             if (Math.abs(data.seconds - this.lastSavedTime) >= this.saveInterval) {
               this.saveProgress();
             }

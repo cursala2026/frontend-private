@@ -427,6 +427,13 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   openEnrollModal(): void {
+    // Verificar que el perfil esté completo antes de permitir la inscripción
+    if (!this.isProfileComplete()) {
+      this.enrollError.set('Para inscribirte al curso, debes completar tu perfil (nombre, apellido y DNI). Por favor, actualiza tu información en la sección de perfil.');
+      this.info.showError('Perfil incompleto. Debes completar tu nombre, apellido y DNI antes de inscribirte.');
+      return;
+    }
+
     const courseData = this.course();
     if (courseData && (!courseData.price || courseData.price === 0)) {
       this.showEnrollModal.set(true);
@@ -434,7 +441,30 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Verifica si el perfil del usuario está completo
+   * Se requiere: firstName, lastName y dni
+   */
+  isProfileComplete(): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+
+    // Verificar que todos los campos requeridos estén presentes y no estén vacíos
+    const hasFirstName = !!(user.firstName && user.firstName.trim().length > 0);
+    const hasLastName = !!(user.lastName && user.lastName.trim().length > 0);
+    const hasDni = !!(user.dni && user.dni.trim().length > 0);
+
+    return hasFirstName && hasLastName && hasDni;
+  }
+
   openPurchaseModal(): void {
+    // Verificar que el perfil esté completo antes de permitir la compra
+    if (!this.isProfileComplete()) {
+      this.enrollError.set('Para comprar el curso, debes completar tu perfil (nombre, apellido y DNI). Por favor, actualiza tu información en la sección de perfil.');
+      this.info.showError('Perfil incompleto. Debes completar tu nombre, apellido y DNI antes de comprar el curso.');
+      return;
+    }
+
     const courseData = this.course();
     if (courseData && courseData.price && courseData.price > 0) {
       this.showPurchaseModal.set(true);

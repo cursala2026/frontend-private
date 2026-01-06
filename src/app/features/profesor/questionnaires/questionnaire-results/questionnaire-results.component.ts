@@ -311,15 +311,36 @@ export class QuestionnaireResultsComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  resetStudentAttempts(studentId: string): void {
-    this.studentIdToReset = studentId;
+  resetStudentAttempts(studentId: any): void {
+    // Normalize studentId: accept string or object containing _id
+    let id: string | null = null;
+    if (studentId == null) {
+      id = null;
+    } else if (typeof studentId === 'string') {
+      id = studentId;
+    } else if (typeof studentId === 'object') {
+      // Common case: Mongo ObjectId wrapper or object with _id
+      if ((studentId as any)._id) {
+        id = (studentId as any)._id?.toString() || null;
+      } else if ((studentId as any).toString && typeof (studentId as any).toString === 'function') {
+        id = (studentId as any).toString();
+      } else {
+        id = null;
+      }
+    } else {
+      id = String(studentId);
+    }
+
+    this.studentIdToReset = id;
     this.showResetConfirmModal.set(true);
   }
 
   onConfirmReset(): void {
     if (!this.studentIdToReset) return;
 
-    this.questionnairesService.resetStudentAttempts(this.questionnaireId, this.studentIdToReset).subscribe({
+    const studentId = this.studentIdToReset;
+
+    this.questionnairesService.resetStudentAttempts(this.questionnaireId, studentId).subscribe({
       next: (response) => {
         this.infoService.showSuccess('Intentos del estudiante reseteados exitosamente');
         // Recargar los datos

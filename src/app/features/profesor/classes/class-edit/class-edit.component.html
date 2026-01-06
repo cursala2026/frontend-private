@@ -162,6 +162,9 @@
                 </svg>
               </button>
             </div>
+            @if (videoName()) {
+              <p class="mt-2 text-sm text-brand-tertiary-light">Nombre del video: {{ videoName() }}</p>
+            }
           }
           
           <!-- Estado del procesamiento de video (solo mostrar si hay video) -->
@@ -234,7 +237,7 @@
           @if (isEditMode && existingSupportMaterials.length > 0) {
             <div class="space-y-2">
               <p class="text-xs text-brand-tertiary-light">Archivos actuales:</p>
-              @for (material of existingSupportMaterials; track material) {
+              @for (material of existingSupportMaterials; track $index) {
                 <div class="flex items-center justify-between p-3 bg-brand-tertiary-lighten/20 rounded-md border border-brand-tertiary-lighten/40">
                   <div class="flex items-center gap-2 flex-1 min-w-0">
                     <svg class="w-5 h-5 text-brand-tertiary-light shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

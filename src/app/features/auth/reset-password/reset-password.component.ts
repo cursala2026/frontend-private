@@ -14,6 +14,7 @@ import { InfoService } from '../../../core/services/info.service';
 export class ResetPasswordComponent {
   form: any;
   isLoading = false;
+  hasToken = false;
 
   constructor(
     private fb: FormBuilder,
@@ -34,6 +35,9 @@ export class ResetPasswordComponent {
     const token = this.route.snapshot.queryParams['token'];
     if (token) {
       this.form.patchValue({ token });
+      this.hasToken = true;
+    } else {
+      this.hasToken = false;
     }
   }
 
@@ -43,6 +47,10 @@ export class ResetPasswordComponent {
   }
 
   submit() {
+    if (!this.hasToken) {
+      this.info.showError('Token ausente. Usa el enlace enviado a tu correo para restablecer la contraseña.');
+      return;
+    }
     if (this.form.invalid) {
       this.info.showError('Por favor completa los campos correctamente.');
       return;
