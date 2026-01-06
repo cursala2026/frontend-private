@@ -229,6 +229,43 @@
                     </div>
                   }
 
+                  <!-- Multiple Select Answer -->
+                  @if (question.type === 'MULTIPLE_SELECT' && answer) {
+                    <div class="space-y-2">
+                      @for (option of question.options; track option._id) {
+                        @let isCorrect = isCorrectMultipleSelectOption(question._id!, option._id!.toString());
+                        @let wasSelected = isMultipleSelectOptionSelectedInAnswer(answer, option._id!.toString());
+                        <div
+                          class="flex items-center gap-2 px-3 py-2 rounded"
+                          [class.bg-green-100]="isCorrect && wasSelected"
+                          [class.bg-red-100]="!isCorrect && wasSelected"
+                          [class.bg-yellow-50]="isCorrect && !wasSelected"
+                          [class.bg-gray-50]="!isCorrect && !wasSelected"
+                        >
+                          <span class="flex-1">{{ option.text }}</span>
+                          @if (wasSelected) {
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                          }
+                          @if (isCorrect) {
+                            <span class="text-xs font-medium text-green-700">Correcta</span>
+                          }
+                          @if (!isCorrect && wasSelected) {
+                            <span class="text-xs font-medium text-red-700">Incorrecta</span>
+                          }
+                        </div>
+                      }
+                      <div class="mt-2 text-sm">
+                        @if (answer.isCorrect) {
+                          <span class="text-green-600 font-medium">✓ Todas las respuestas correctas (+{{ question.points }} pts)</span>
+                        } @else {
+                          <span class="text-orange-600 font-medium">○ Respuesta parcial o incorrecta (0 pts)</span>
+                        }
+                      </div>
+                    </div>
+                  }
+
                   <!-- Text Answer -->
                   @if (question.type === 'TEXT' && answer) {
                     <div class="space-y-3">
@@ -369,6 +406,24 @@
                         [checked]="answers[question._id!]?.selectedOptionId === option._id?.toString()"
                         (change)="onMultipleChoiceChange(question._id!, option._id!.toString())"
                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span class="flex-1">{{ option.text }}</span>
+                    </label>
+                  }
+                </div>
+              }
+
+              <!-- Multiple Select -->
+              @if (question.type === 'MULTIPLE_SELECT') {
+                <div class="space-y-2">
+                  <p class="text-sm text-gray-600 mb-3 italic">Selecciona todas las opciones correctas</p>
+                  @for (option of question.options; track option._id) {
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        [checked]="isMultipleSelectOptionSelected(question._id!, option._id!.toString())"
+                        (change)="onMultipleSelectChange(question._id!, option._id!.toString(), $any($event.target).checked)"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <span class="flex-1">{{ option.text }}</span>
                     </label>

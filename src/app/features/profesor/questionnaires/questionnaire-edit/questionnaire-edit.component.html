@@ -301,7 +301,8 @@
                     (change)="onQuestionTypeChange(i)"
                     class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
                   >
-                    <option value="MULTIPLE_CHOICE">Opción Múltiple</option>
+                    <option value="MULTIPLE_CHOICE">Opción Múltiple (una correcta)</option>
+                    <option value="MULTIPLE_SELECT">Selección Múltiple (varias correctas)</option>
                     <option value="TEXT">Texto Libre</option>
                   </select>
                 </div>
@@ -429,8 +430,8 @@
                   </label>
                 </div>
 
-                <!-- Multiple Choice Options -->
-                @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
+                <!-- Multiple Choice/Select Options -->
+                @if (question.get('type')?.value === 'MULTIPLE_CHOICE' || question.get('type')?.value === 'MULTIPLE_SELECT') {
                   <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200 mb-4">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="block text-base font-bold text-brand-tertiary mb-2">Opciones de Respuesta</h4>
@@ -446,16 +447,29 @@
                     <div formArrayName="options" class="space-y-2">
                       @for (option of getQuestionOptions(i).controls; track $index; let j = $index) {
                         <div [formGroupName]="j" class="flex items-center gap-2">
-                          <!-- Radio button for correct answer -->
-                          <input
-                            type="radio"
-                            [name]="'correctOption' + i"
-                            [value]="j.toString()"
-                            [formControl]="$any(question.get('correctOptionId'))"
-                            [checked]="question.get('correctOptionId')?.value === j.toString()"
-                            class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-                            title="Marcar como respuesta correcta"
-                          />
+                          <!-- Radio button for single correct answer (MULTIPLE_CHOICE) -->
+                          @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
+                            <input
+                              type="radio"
+                              [name]="'correctOption' + i"
+                              [value]="j.toString()"
+                              [formControl]="$any(question.get('correctOptionId'))"
+                              [checked]="question.get('correctOptionId')?.value === j.toString()"
+                              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                              title="Marcar como respuesta correcta"
+                            />
+                          }
+                          
+                          <!-- Checkbox for multiple correct answers (MULTIPLE_SELECT) -->
+                          @if (question.get('type')?.value === 'MULTIPLE_SELECT') {
+                            <input
+                              type="checkbox"
+                              [checked]="isOptionCorrect(i, j)"
+                              (change)="toggleCorrectOption(i, j)"
+                              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                              title="Marcar como respuesta correcta"
+                            />
+                          }
 
                           <!-- Option text -->
                           <input
@@ -483,7 +497,11 @@
                     </div>
 
                     <p class="text-sm text-brand-tertiary bg-brand-secondary/30 mt-4 mb-2 p-3 ">
-                      💡 Selecciona el círculo junto a la opción correcta
+                      @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
+                        💡 Selecciona el círculo junto a la opción correcta
+                      } @else {
+                        💡 Selecciona las casillas junto a todas las opciones correctas
+                      }
                     </p>
                   </div>
                 }

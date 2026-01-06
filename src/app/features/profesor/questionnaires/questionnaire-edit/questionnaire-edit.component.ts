@@ -339,23 +339,24 @@ export class QuestionnaireEditComponent implements OnInit {
       points: [question?.points || 10, [Validators.required, Validators.min(1)]],
       required: [question?.required ?? true],
       options: this.fb.array([]),
-      correctOptionId: [''], // This will store the index as string for the radio button
+      correctOptionId: [''], // This will store the index as string for the radio button (MULTIPLE_CHOICE)
+      correctOptionIds: this.fb.control<string[]>([]), // This will store array of indices for checkboxes (MULTIPLE_SELECT)
       originalCorrectOptionId: [question?.correctOptionId || null], // Store original ObjectId from backend
+      originalCorrectOptionIds: this.fb.control<string[]>(question?.correctOptionIds || []), // Store original ObjectIds for MULTIPLE_SELECT
       promptType: [question?.promptType || 'TEXT'],
       promptMediaUrl: [question?.promptMediaUrl || ''],
       promptMediaProvider: [question?.promptMediaProvider || 'BUNNY']
     });
 
-    // If multiple choice, add options
-    if (question && question.type === 'MULTIPLE_CHOICE' && question.options) {
+    // If multiple choice or multiple select, add options
+    if (question && (question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') && question.options) {
       const optionsArray = group.get('options') as FormArray;
       question.options.forEach(opt => {
         optionsArray.push(this.createOptionGroup(opt));
       });
       
-      // Set correctOptionId after options are added
-      // If correctOptionId is an ObjectId, find its index
-      if (question.correctOptionId) {
+      // Set correctOptionId after options are added (for MULTIPLE_CHOICE)
+      if (question.type === 'MULTIPLE_CHOICE' && question.correctOptionId) {
         const correctOptionIdStr = question.correctOptionId.toString();
         
         // Check if it's an ObjectId (24 hex characters)
@@ -400,8 +401,37 @@ export class QuestionnaireEditComponent implements OnInit {
           }
         }
       }
-    } else if (!question || question.type === 'MULTIPLE_CHOICE') {
-      // Add default 4 options for new MC questions
+      
+      // Set correctOptionIds after options are added (for MULTIPLE_SELECT)
+      if (question.type === 'MULTIPLE_SELECT' && question.correctOptionIds) {
+        const correctOptionIds = question.correctOptionIds;
+        const indices: string[] = [];
+        
+        correctOptionIds.forEach((optionId: any) => {
+          const optionIdStr = optionId.toString();
+          
+          // Check if it's an ObjectId
+          if (optionIdStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(optionIdStr)) {
+            // Find the index of the option with this _id
+            const idx = question.options?.findIndex(
+              (opt: any) => opt._id?.toString() === optionIdStr
+            );
+            if (idx !== undefined && idx >= 0) {
+              indices.push(idx.toString());
+            }
+          } else {
+            // It's already an index
+            indices.push(optionIdStr);
+          }
+        });
+        
+        group.patchValue({ 
+          originalCorrectOptionIds: correctOptionIds,
+          correctOptionIds: indices 
+        }, { emitEvent: false });
+      }
+    } else if (!question || question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') {
+      // Add default 4 options for new MC/MS questions
       const optionsArray = group.get('options') as FormArray;
       for (let i = 0; i < 4; i++) {
         optionsArray.push(this.createOptionGroup());
@@ -463,15 +493,18 @@ export class QuestionnaireEditComponent implements OnInit {
       optionsArray.removeAt(0);
     }
 
-    // If MC, add default options
-    if (type === 'MULTIPLE_CHOICE') {
+    // If MC or MS, add default options
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
       for (let i = 0; i < 4; i++) {
         optionsArray.push(this.createOptionGroup());
       }
     }
 
-    // Clear correct option
-    question.patchValue({ correctOptionId: '' });
+    // Clear correct option/options
+    question.patchValue({ 
+      correctOptionId: '',
+      correctOptionIds: []
+    });
   }
 
   onSubmit(): void {
@@ -481,12 +514,22 @@ export class QuestionnaireEditComponent implements OnInit {
       return;
     }
 
-    // Validate that MC questions have correct answer selected
+    // Validate that MC/MS questions have correct answer(s) selected
     for (let i = 0; i < this.questions.length; i++) {
       const question = this.questions.at(i);
-      if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
+      const type = question.get('type')?.value;
+      
+      if (type === 'MULTIPLE_CHOICE') {
         if (!question.get('correctOptionId')?.value) {
           this.infoService.showError(`Debes seleccionar la respuesta correcta para la pregunta ${i + 1}`);
+          return;
+        }
+      }
+      
+      if (type === 'MULTIPLE_SELECT') {
+        const correctOptionIds = question.get('correctOptionIds')?.value || [];
+        if (correctOptionIds.length === 0) {
+          this.infoService.showError(`Debes seleccionar al menos una respuesta correcta para la pregunta ${i + 1}`);
           return;
         }
       }
@@ -498,7 +541,7 @@ export class QuestionnaireEditComponent implements OnInit {
 
     // Process questions
     const questions: Question[] = formValue.questions.map((q: any, index: number) => {
-      const question: Question = {
+      const question: any = {
         type: q.type,
         questionText: q.questionText,
         order: index,
@@ -593,6 +636,34 @@ export class QuestionnaireEditComponent implements OnInit {
         }
       }
 
+      if (q.type === 'MULTIPLE_SELECT') {
+        question.options = q.options.map((opt: any, optIndex: number) => ({
+          _id: opt._id || undefined,
+          text: opt.text,
+          order: optIndex
+        }));
+
+        // Map correctOptionIds (array of indices) to array of ObjectIds or indices
+        const selectedIndices = q.correctOptionIds || [];
+        const correctOptionIds: any[] = [];
+        
+        selectedIndices.forEach((indexStr: string) => {
+          const idx = parseInt(indexStr);
+          if (!isNaN(idx) && idx >= 0 && question.options && question.options[idx]) {
+            const selectedOption = question.options[idx];
+            if (selectedOption._id) {
+              // Use the existing ObjectId
+              correctOptionIds.push(selectedOption._id.toString());
+            } else {
+              // New option, use index (backend will convert)
+              correctOptionIds.push(idx);
+            }
+          }
+        });
+
+        question.correctOptionIds = correctOptionIds;
+      }
+
       return question;
     });
 
@@ -612,6 +683,8 @@ export class QuestionnaireEditComponent implements OnInit {
       showCorrectAnswers: formValue.showCorrectAnswers,
       timeLimitMinutes: formValue.timeLimitMinutes || undefined
     };
+
+    console.log('Sending questionnaire data:', JSON.stringify(questionnaireData, null, 2));
 
     const request = this.isEditMode
       ? this.questionnairesService.updateQuestionnaire(this.questionnaireId, questionnaireData)
@@ -637,7 +710,8 @@ export class QuestionnaireEditComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error saving questionnaire:', error);
-        const errorMsg = error?.error?.message || 'Error al guardar el cuestionario';
+        console.error('Error details:', error?.error);
+        const errorMsg = error?.error?.message || error?.message || 'Error al guardar el cuestionario';
         this.infoService.showError(errorMsg);
         this.saving.set(false);
       }
@@ -972,5 +1046,30 @@ export class QuestionnaireEditComponent implements OnInit {
     this.router.navigate(['/profesor/questionnaires'], {
       queryParams: { courseId }
     });
+  }
+
+  // ==================== MULTIPLE SELECT HELPERS ====================
+
+  isOptionCorrect(questionIndex: number, optionIndex: number): boolean {
+    const question = this.questions.at(questionIndex);
+    const correctOptionIds = question.get('correctOptionIds')?.value || [];
+    return correctOptionIds.includes(optionIndex.toString());
+  }
+
+  toggleCorrectOption(questionIndex: number, optionIndex: number): void {
+    const question = this.questions.at(questionIndex);
+    const correctOptionIds = question.get('correctOptionIds')?.value || [];
+    const optionIndexStr = optionIndex.toString();
+    
+    const index = correctOptionIds.indexOf(optionIndexStr);
+    if (index > -1) {
+      // Remove from array
+      correctOptionIds.splice(index, 1);
+    } else {
+      // Add to array
+      correctOptionIds.push(optionIndexStr);
+    }
+    
+    question.patchValue({ correctOptionIds: [...correctOptionIds] });
   }
 }

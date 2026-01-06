@@ -37,6 +37,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
   // Answer tracking
   answers: { [questionId: string]: Answer } = {};
+  // For MULTIPLE_SELECT, track selected option IDs as arrays
+  multipleSelectAnswers: { [questionId: string]: string[] } = {};
 
   // State
   loading = signal<boolean>(true);
@@ -139,6 +141,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
     const answersArray: Answer[] = Object.values(this.answers).filter(a =>
       (a.questionType === 'MULTIPLE_CHOICE' && a.selectedOptionId) ||
+      (a.questionType === 'MULTIPLE_SELECT' && a.selectedOptionIds && a.selectedOptionIds.length > 0) ||
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
@@ -385,12 +388,22 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         questionId: question._id!,
         questionType: question.type
       };
+      
+      // Initialize empty array for MULTIPLE_SELECT
+      if (question.type === 'MULTIPLE_SELECT') {
+        this.multipleSelectAnswers[question._id!] = [];
+      }
     });
   }
 
   loadAnswersFromSubmission(submission: QuestionnaireSubmission): void {
     submission.answers.forEach(answer => {
       this.answers[answer.questionId] = answer;
+      
+      // Load selected options for MULTIPLE_SELECT
+      if (answer.questionType === 'MULTIPLE_SELECT' && answer.selectedOptionIds) {
+        this.multipleSelectAnswers[answer.questionId] = answer.selectedOptionIds;
+      }
     });
   }
 
@@ -405,6 +418,36 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       questionType: 'MULTIPLE_CHOICE',
       selectedOptionId: optionId
     };
+  }
+
+  onMultipleSelectChange(questionId: string, optionId: string, checked: boolean): void {
+    if (!this.multipleSelectAnswers[questionId]) {
+      this.multipleSelectAnswers[questionId] = [];
+    }
+    
+    if (checked) {
+      // Add option if not already selected
+      if (!this.multipleSelectAnswers[questionId].includes(optionId)) {
+        this.multipleSelectAnswers[questionId].push(optionId);
+      }
+    } else {
+      // Remove option
+      const index = this.multipleSelectAnswers[questionId].indexOf(optionId);
+      if (index > -1) {
+        this.multipleSelectAnswers[questionId].splice(index, 1);
+      }
+    }
+    
+    // Update answer object
+    this.answers[questionId] = {
+      questionId,
+      questionType: 'MULTIPLE_SELECT',
+      selectedOptionIds: this.multipleSelectAnswers[questionId]
+    };
+  }
+
+  isMultipleSelectOptionSelected(questionId: string, optionId: string): boolean {
+    return this.multipleSelectAnswers[questionId]?.includes(optionId) || false;
   }
 
   onTextAnswerChange(questionId: string, text: string): void {
@@ -431,6 +474,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         const answer = this.answers[question._id!];
         if (!answer ||
             (question.type === 'MULTIPLE_CHOICE' && !answer.selectedOptionId) ||
+            (question.type === 'MULTIPLE_SELECT' && (!this.multipleSelectAnswers[question._id!] || this.multipleSelectAnswers[question._id!].length === 0)) ||
             (question.type === 'TEXT' && !answer.textAnswer?.trim())) {
           this.infoService.showError(`La pregunta "${question.questionText}" es obligatoria`);
           return;
@@ -442,6 +486,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
     const answersArray: Answer[] = Object.values(this.answers).filter(a =>
       (a.questionType === 'MULTIPLE_CHOICE' && a.selectedOptionId) ||
+      (a.questionType === 'MULTIPLE_SELECT' && a.selectedOptionIds && a.selectedOptionIds.length > 0) ||
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
@@ -589,6 +634,20 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
     const question = questionnaire.questions.find(q => q._id === questionId);
     return question?.correctOptionId?.toString() === optionId.toString();
+  }
+
+  isCorrectMultipleSelectOption(questionId: string, optionId: string): boolean {
+    const questionnaire = this.questionnaire();
+    if (!questionnaire) return false;
+
+    const question = questionnaire.questions.find(q => q._id === questionId);
+    const correctOptionIds = question?.correctOptionIds || [];
+    return correctOptionIds.some((id: any) => id.toString() === optionId.toString());
+  }
+
+  isMultipleSelectOptionSelectedInAnswer(answer: Answer, optionId: string): boolean {
+    const selectedIds = answer.selectedOptionIds || [];
+    return selectedIds.some((id: any) => id.toString() === optionId.toString());
   }
 
   /**

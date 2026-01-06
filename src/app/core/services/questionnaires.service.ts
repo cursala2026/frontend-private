@@ -11,13 +11,14 @@ export interface QuestionOption {
 
 export interface Question {
   _id?: string;
-  type: 'MULTIPLE_CHOICE' | 'TEXT';
+  type: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT';
   questionText: string;
   order: number;
   points: number;
   required: boolean;
   options?: QuestionOption[];
-  correctOptionId?: string;
+  correctOptionId?: string; // For MULTIPLE_CHOICE
+  correctOptionIds?: string[]; // For MULTIPLE_SELECT
   promptType?: 'TEXT' | 'IMAGE' | 'VIDEO';
   promptMediaUrl?: string;
   promptMediaProvider?: 'BUNNY';
@@ -48,8 +49,9 @@ export interface Questionnaire {
 
 export interface Answer {
   questionId: string;
-  questionType: 'MULTIPLE_CHOICE' | 'TEXT';
-  selectedOptionId?: string;
+  questionType: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT';
+  selectedOptionId?: string; // For MULTIPLE_CHOICE
+  selectedOptionIds?: string[]; // For MULTIPLE_SELECT
   textAnswer?: string;
   isCorrect?: boolean;
   pointsAwarded?: number;
