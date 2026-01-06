@@ -6,6 +6,7 @@ import { ModalDataTableComponent, ModalConfig } from '../../../shared/components
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { CategoriesService } from '../../../core/services/categories.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
 import { TeacherAssignmentModalComponent } from './teacher-assignment-modal/teacher-assignment-modal.component';
@@ -24,6 +25,7 @@ export class CoursesComponent implements OnInit {
   courses = signal<any[]>([]);
   loading = signal<boolean>(false);
   pagination = signal<PaginationData | undefined>(undefined);
+  categories = signal<any[]>([]);
 
   isModalOpen = signal<boolean>(false);
   isTeacherAssignmentModalOpen = signal<boolean>(false);
@@ -70,6 +72,14 @@ export class CoursesComponent implements OnInit {
         sortable: true,
         type: 'text',
         width: '30%'
+      },
+      {
+        key: 'categoryId',
+        label: 'Categoría',
+        type: 'select',
+        selectOptions: [],
+        width: '20%',
+        onChange: (row: any, newValue: string) => this.updateCourseCategory(row, newValue)
       },
       {
         key: 'modality',
@@ -172,11 +182,32 @@ export class CoursesComponent implements OnInit {
     private coursesService: CoursesService,
     private infoService: InfoService,
     private usersService: UsersService
+    , private categoriesService: CategoriesService
   ) {}
 
   ngOnInit(): void {
     this.loadCourses();
     this.loadTeachers();
+    this.loadCategories();
+  }
+
+  loadCategories(): void {
+    this.categoriesService.getCoursesCategories().subscribe({
+      next: (res: any) => {
+        const data = res?.data || res || [];
+        const cats = Array.isArray(data) ? data : [];
+        this.categories.set(cats);
+        // populate select options in tableConfig
+        const col = this.tableConfig.columns.find(c => c.key === 'categoryId');
+        if (col) {
+          (col as any).selectOptions = cats.map((x: any) => ({ value: x._id || x.id, label: x.name }));
+        }
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+        this.categories.set([]);
+      }
+    });
   }
 
   loadTeachers(): void {
@@ -244,7 +275,13 @@ export class CoursesComponent implements OnInit {
         // Paginación cliente
         const startIndex = (this.currentPage - 1) * this.pageSize;
         const endIndex = startIndex + this.pageSize;
-        const paginatedData = data.slice(startIndex, endIndex);
+        let paginatedData = data.slice(startIndex, endIndex);
+
+        // Normalize categoryId field for table select binding
+        paginatedData = paginatedData.map((c: any) => ({
+          ...c,
+          categoryId: c.category?._id || c.categoryId || c.category || ''
+        }));
 
         const pagination = {
           page: this.currentPage,
@@ -261,6 +298,28 @@ export class CoursesComponent implements OnInit {
         console.error('Error loading courses:', error);
         this.courses.set([]);
         this.loading.set(false);
+      }
+    });
+  }
+
+  updateCourseCategory(row: any, newCategoryId: string): void {
+    const old = row.categoryId;
+    row.categoryId = newCategoryId;
+
+    // Optimistic UI update
+    const payload = { category: newCategoryId };
+
+    this.coursesService.updateCoursePartial(row._id, payload).subscribe({
+      next: () => {
+        this.infoService.showSuccess('Categoría actualizada');
+        // Recargar lista para asegurar que la representación del curso sea consistente
+        this.loadCourses();
+      },
+      error: (err) => {
+        console.error('Error updating category:', err);
+        row.categoryId = old;
+        this.infoService.showError(err?.error?.message || 'Error al actualizar categoría');
+        this.loadCourses();
       }
     });
   }

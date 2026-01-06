@@ -234,9 +234,9 @@
           <div class="p-4">
             <div class="space-y-2">
               @for (user of stats()!.recentUsers; track user._id) {
-                <div class="group flex items-center justify-between p-2.5 bg-gradient-to-r from-gray-50 to-transparent rounded-lg hover:from-brand-primary/5 hover:shadow-md transition-all duration-200">
+                <div class="group flex items-center justify-between p-2.5 bg-linear-to-r from-gray-50 to-transparent rounded-lg hover:from-brand-primary/5 hover:shadow-md transition-all duration-200">
                   <div class="flex items-center min-w-0 flex-1 gap-3">
-                    <div class="flex-shrink-0 relative">
+                    <div class="shrink-0 relative">
                       @if (getUserPhotoUrl(user)) {
                         <img 
                           [src]="getUserPhotoUrl(user)!" 
@@ -264,7 +264,7 @@
                       <p class="text-[10px] text-gray-500 truncate">{{ user.email }}</p>
                     </div>
                   </div>
-                  <div class="ml-3 flex items-center gap-2 flex-shrink-0">
+                  <div class="ml-3 flex items-center gap-2 shrink-0">
                     <span class="px-2 py-1 text-[10px] font-semibold rounded-md {{ getRoleBadgeClass(user.roles) }}">
                       {{ getRoleLabel(user.roles) }}
                     </span>

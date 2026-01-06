@@ -188,8 +188,9 @@
                       <select
                         [value]="selectValue"
                         (change)="handleSelectChange(row, column, $event)"
-                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm ' + getSelectClass(selectValue)"
+                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm max-w-[180px] truncate ' + getSelectClass(selectValue)"
                         (click)="$event.stopPropagation()"
+                        style="min-width:80px"
                       >
                         @for (option of column.selectOptions; track option.value) {
                           <option [value]="option.value" [selected]="selectValue === option.value">{{ option.label }}</option>

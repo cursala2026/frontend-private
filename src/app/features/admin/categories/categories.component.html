@@ -1,0 +1,40 @@
+<div class="h-full flex flex-col">
+  <div class="flex-1 flex flex-col max-w-full pt-4">
+    <!-- Header -->
+    <div class="bg-linear-to-r from-brand-primary to-brand-primary-dark px-5 py-4 sm:px-6 sm:py-5 rounded-xl shadow-lg mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">Gestión de Categorías 🏷️</h1>
+          <p class="text-white/90 text-sm">Crear, editar y eliminar categorías del sistema</p>
+        </div>
+        <button
+          (click)="openCreate()"
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-secondary text-brand-secondary-text text-sm font-medium rounded-lg hover:bg-brand-secondary/90 focus:ring-4 focus:ring-white/20 transition-all shadow-md hover:shadow-lg whitespace-nowrap"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 5v14m7-7H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Nueva Categoría
+        </button>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="flex-1 min-h-0 bg-gray-50 rounded-xl p-4">
+      <app-data-table
+        [data]="filteredCategories()"
+        [config]="tableConfig"
+        [loading]="loading()"
+        (searchChange)="onSearchChange($event)"
+      ></app-data-table>
+    </div>
+  </div>
+
+  <app-modal-data-table
+    [isOpen]="isModalOpen"
+    [config]="modalConfig"
+    [data]="selectedCategory"
+    (close)="onModalClose()"
+    (save)="onModalSave($event)"
+  ></app-modal-data-table>
+</div>

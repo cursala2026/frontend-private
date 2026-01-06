@@ -249,6 +249,11 @@ export class CoursesService {
     return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }
 
+  // Patch with a plain JSON payload (useful for updating single fields)
+  updateCoursePartial(id: string, payload: Record<string, any>): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}`, payload);
+  }
+
   toggleCourseStatus(id: string, status: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${id}/status`, { status });
   }
