@@ -323,6 +323,13 @@
                     <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/20 px-2 py-1 font-bold  whitespace-nowrap ml-4">{{ question.points }} puntos</span>
                   </div>
 
+                  <!-- Prompt media (video/image) -->
+                  @if (question.promptType === 'VIDEO' && question.promptMediaUrl) {
+                    <div class="mb-4 px-3">
+                      <video controls class="w-full max-h-72 rounded bg-black" [src]="question.promptMediaUrl"></video>
+                    </div>
+                  }
+
                   <!-- Multiple Choice Answer -->
                   @if (question.type === 'MULTIPLE_CHOICE') {
                     <div class="space-y-2">
@@ -350,6 +357,46 @@
                         </div>
                         }
                       }
+                      @if (answer) {
+                        <div class="mt-4 text-sm">
+                          @if (answer.isCorrect) {
+                            <span class="text-green-600 font-medium">✓ Correcta (+{{ question.points }} puntos)</span>
+                          } @else {
+                            <span class="text-red-600 font-medium">✗ Incorrecta (0 puntos)</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Multiple Select Answer -->
+                  @if (question.type === 'MULTIPLE_SELECT') {
+                    <div class="space-y-2">
+                      @if (!answer) {
+                        <p class="text-sm text-gray-500 italic">El estudiante no respondió esta pregunta</p>
+                      } @else if (!question.options || question.options.length === 0) {
+                        <p class="text-sm text-red-500">Error: No se encontraron opciones para esta pregunta</p>
+                      } @else {
+                        @for (option of question.options; track option._id) {
+                        <div
+                          class="flex items-center gap-2 px-3 py-2 rounded"
+                          [class.bg-green-200]="question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
+                          [class.bg-yellow-100]="question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && !(answer.selectedOptionIds?.includes(option._id ? option._id.toString() : ''))"
+                          [class.bg-red-100]="!question.correctOptionIds?.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
+                        >
+                          <span class="flex-1">{{ option.text }}</span>
+                          @if (answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')) {
+                            <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                          }
+                          @if (question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '')) {
+                            <span class="text-xs font-medium text-green-700">Correcta</span>
+                          }
+                        </div>
+                        }
+                      }
+
                       @if (answer) {
                         <div class="mt-4 text-sm">
                           @if (answer.isCorrect) {

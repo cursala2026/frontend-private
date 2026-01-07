@@ -242,7 +242,10 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const user = this.authService.currentUser();
     if (!user) return;
 
-    this.questionnairesService.getStudentSubmissions(this.questionnaireId(), user._id).subscribe({
+    const userId = user._id?.toString() || user._id;
+    console.log('Loading submissions for user:', userId);
+
+    this.questionnairesService.getStudentSubmissions(this.questionnaireId(), userId).subscribe({
       next: (response) => {
         const submissions = response?.data || [];
         this.previousSubmissions.set(submissions);
@@ -398,12 +401,21 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
   loadAnswersFromSubmission(submission: QuestionnaireSubmission): void {
     submission.answers.forEach(answer => {
-      this.answers[answer.questionId] = answer;
+      // Ensure IDs are strings
+      if (answer.questionType === 'MULTIPLE_CHOICE' && answer.selectedOptionId) {
+        answer.selectedOptionId = typeof answer.selectedOptionId === 'object' 
+          ? (answer.selectedOptionId as any)._id?.toString() || String(answer.selectedOptionId)
+          : String(answer.selectedOptionId);
+      }
       
-      // Load selected options for MULTIPLE_SELECT
       if (answer.questionType === 'MULTIPLE_SELECT' && answer.selectedOptionIds) {
+        answer.selectedOptionIds = answer.selectedOptionIds.map(id => 
+          typeof id === 'object' ? (id as any)._id?.toString() || String(id) : String(id)
+        );
         this.multipleSelectAnswers[answer.questionId] = answer.selectedOptionIds;
       }
+      
+      this.answers[answer.questionId] = answer;
     });
   }
 
@@ -413,26 +425,32 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   }
 
   onMultipleChoiceChange(questionId: string, optionId: string): void {
+    // Ensure optionId is a string
+    const optionIdStr = typeof optionId === 'object' ? (optionId as any)._id?.toString() || String(optionId) : String(optionId);
+    
     this.answers[questionId] = {
       questionId,
       questionType: 'MULTIPLE_CHOICE',
-      selectedOptionId: optionId
+      selectedOptionId: optionIdStr
     };
   }
 
   onMultipleSelectChange(questionId: string, optionId: string, checked: boolean): void {
+    // Ensure optionId is a string
+    const optionIdStr = typeof optionId === 'object' ? (optionId as any)._id?.toString() || String(optionId) : String(optionId);
+    
     if (!this.multipleSelectAnswers[questionId]) {
       this.multipleSelectAnswers[questionId] = [];
     }
     
     if (checked) {
       // Add option if not already selected
-      if (!this.multipleSelectAnswers[questionId].includes(optionId)) {
-        this.multipleSelectAnswers[questionId].push(optionId);
+      if (!this.multipleSelectAnswers[questionId].includes(optionIdStr)) {
+        this.multipleSelectAnswers[questionId].push(optionIdStr);
       }
     } else {
       // Remove option
-      const index = this.multipleSelectAnswers[questionId].indexOf(optionId);
+      const index = this.multipleSelectAnswers[questionId].indexOf(optionIdStr);
       if (index > -1) {
         this.multipleSelectAnswers[questionId].splice(index, 1);
       }
@@ -490,7 +508,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
-    console.log('Submitting answers:', answersArray); // For debugging
+    console.log('Submitting answers:', JSON.stringify(answersArray, null, 2)); // For debugging
 
     this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
       next: (response) => {
