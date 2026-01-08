@@ -48,7 +48,8 @@
   [isOpen]="isTeacherAssignmentModalOpen()"
   [courseId]="selectedCourseForAssignment?._id || ''"
   [courseName]="selectedCourseForAssignment?.name || ''"
-  [currentTeachers]="selectedCourseForAssignment?.teachersInfo || selectedCourseForAssignment?.mainTeacherInfo || null"
+  [currentTeachers]="selectedCourseForAssignment?.teachersInfo || null"
+  [courseData]="selectedCourseForAssignment || null"
   (close)="onTeacherAssignmentModalClose()"
   (refreshCourses)="onTeacherAssignmentRefresh()"
 />

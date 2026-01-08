@@ -16,7 +16,8 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() courseId = '';
   @Input() courseName = '';
-  @Input() currentTeachers: any = null; // Puede ser teachersInfo array o mainTeacherInfo
+  @Input() currentTeachers: any = null; // Puede ser teachersInfo array
+  @Input() courseData: any = null; // Datos completos del curso (para preservar fechas/days/time)
   @Output() close = new EventEmitter<void>();
   @Output() refreshCourses = new EventEmitter<void>();
 
@@ -64,7 +65,7 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
       }).filter((id: string) => id !== '');
     }
 
-    // Si es un objeto único (mainTeacherInfo para compatibilidad)
+    // Si es un objeto único (compatibilidad)
     if (typeof teachers === 'object') {
       const id = teachers._id || teachers.teacherId || teachers.id || '';
       return id ? [id] : [];
@@ -110,26 +111,44 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
       return;
     }
 
+    // Calcular cambios: add = selected - initial, remove = initial - selected
+    const initial = this.initialTeacherIds();
+    const add = selectedIds.filter((id: string) => !initial.includes(id));
+    const remove = initial.filter((id: string) => !selectedIds.includes(id));
+
+    if (add.length === 0 && remove.length === 0) {
+      this.infoService.showError('No hay cambios en la asignación de profesores');
+      return;
+    }
+
     this.isSubmitting.set(true);
-    
-    // Usar updateCourse para actualizar los profesores
-    const formData = new FormData();
-    formData.append('teachers', selectedIds.join(','));
-    
-    this.coursesService.updateCourse(this.courseId, { teachers: selectedIds }).subscribe({
+
+    const payload: { add?: string[]; remove?: string[] } = {};
+    if (add.length > 0) payload.add = add;
+    if (remove.length > 0) payload.remove = remove;
+
+    // Usar el nuevo endpoint PATCH /courses/:courseId/teachers
+    this.coursesService.updateCourseTeachers(this.courseId, payload).subscribe({
       next: () => {
-        const count = selectedIds.length;
-        const message = count === 1 
-          ? 'Profesor asignado exitosamente'
-          : `${count} profesores asignados exitosamente`;
+        const addedCount = add.length;
+        const removedCount = remove.length;
+        let message = '';
+        if (addedCount > 0 && removedCount > 0) {
+          message = `Asignados ${addedCount}, removidos ${removedCount}`;
+        } else if (addedCount > 0) {
+          message = addedCount === 1 ? 'Profesor asignado exitosamente' : `${addedCount} profesores asignados exitosamente`;
+        } else {
+          message = removedCount === 1 ? 'Profesor desasignado exitosamente' : `${removedCount} profesores desasignados exitosamente`;
+        }
+
         this.infoService.showSuccess(message);
         this.isSubmitting.set(false);
         this.refreshCourses.emit();
         this.onClose();
       },
       error: (error: any) => {
-        console.error('Error assigning teachers:', error);
-        const errorMsg = error?.error?.message || 'Error al asignar los profesores';
+        console.error('Error assigning/removing teachers:', error);
+        const errorMsg = error?.error?.message || 'Error al actualizar la asignación de profesores';
         this.infoService.showError(errorMsg);
         this.isSubmitting.set(false);
       }

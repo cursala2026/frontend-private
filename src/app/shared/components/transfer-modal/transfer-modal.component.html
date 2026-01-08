@@ -1,9 +1,6 @@
 @if (isOpen()) {
-  <div
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start h-screen justify-center transition-opacity duration-300"
-    (click)="close()">
-    <div class="bg-white rounded-lg shadow-2xl overflow-y-auto mt-10 max-w-[90vh] max-h-[90vh] w-full mx-4 transform transition-all duration-300 scale-100"
-         (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start h-screen justify-center transition-opacity duration-300" (click)="close()">
+    <div class="bg-white rounded-lg shadow-2xl overflow-y-auto mt-10 max-w-[90vh] max-h-[90vh] w-full mx-4 transform transition-all duration-300 scale-100" (click)="$event.stopPropagation()">
       <!-- Header -->
       <div class="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-lg">
         <h2 class="text-xl font-bold text-white">Pago por Transferencia</h2>
@@ -11,9 +8,14 @@
 
       <!-- Body -->
       <div class="px-6 py-6">
-        <p class="text-gray-700 mb-4">
-          Realiza una transferencia bancaria a la siguiente cuenta. Una vez realizado el pago, envía el comprobante a nuestro soporte.
-        </p>
+        <p class="text-gray-700 mb-4">Realiza una transferencia bancaria a la siguiente cuenta. Una vez realizado el pago, envía el comprobante a nuestro soporte.</p>
+
+        @if (promoValid() && promoData()) {
+          <div class="mb-4 p-3 rounded-lg bg-green-100 border border-green-200 text-green-800 flex items-center justify-between">
+            <div class="text-sm"> <strong>Código aplicado:</strong> {{ promoCode() }} — Ahorro: <strong>-{{ formatPrice(promoData()!.discountAmount) }}</strong></div>
+            <div class="text-right font-bold text-green-700">A pagar: {{ formatPrice(finalAmount()) }}</div>
+          </div>
+        }
 
         <!-- Datos bancarios -->
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
@@ -22,15 +24,8 @@
             <p class="text-sm text-gray-600">Cargando datos bancarios...</p>
           } @else if (bankAccount()) {
             <div class="space-y-2 text-sm">
-
-              <div class="flex justify-between">
-                <span class="font-medium text-gray-600">CBU:</span>
-                <span class="text-gray-800 font-mono">{{ bankAccount()!.cbu }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-medium text-gray-600">Alias:</span>
-                <span class="text-gray-800 font-mono">{{ bankAccount()!.alias }}</span>
-              </div>
+              <div class="flex justify-between"><span class="font-medium text-gray-600">CBU:</span><span class="text-gray-800 font-mono">{{ bankAccount()!.cbu }}</span></div>
+              <div class="flex justify-between"><span class="font-medium text-gray-600">Alias:</span><span class="text-gray-800 font-mono">{{ bankAccount()!.alias }}</span></div>
             </div>
           } @else {
             <p class="text-sm text-red-600">Error al cargar datos bancarios. Intente nuevamente.</p>
@@ -40,37 +35,47 @@
         <!-- Monto a transferir -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div class="flex justify-between items-center">
-            <span class="text-gray-700 font-medium">Monto a transferir:</span>
-            <span class="text-2xl font-bold text-blue-600">{{ formatPrice(amount()) }}</span>
+            <span class="text-gray-700 font-medium">Monto:</span>
+            @if (promoValid() && promoData()) {
+              <div class="text-right"><div class="text-sm text-gray-500 line-through">{{ formatPrice(amount()) }}</div><div class="text-2xl font-bold text-green-600">{{ formatPrice(finalAmount()) }}</div></div>
+            } @else {
+              <span class="text-2xl font-bold text-blue-600">{{ formatPrice(amount()) }}</span>
+            }
           </div>
         </div>
 
-        <!-- Instrucciones -->
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <h4 class="font-semibold text-yellow-800 mb-2">Instrucciones:</h4>
-          <ol class="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
-            <li>Realiza la transferencia desde tu cuenta bancaria</li>
-            <li>Toma captura del comprobante de pago</li>
-            <li>Envía el comprobante a <a href="mailto:soporte@cursala.com.ar" class="underline">soporte@cursala.com.ar</a></li>
-            <li>Tu acceso será activado en 24-48 horas hábiles</li>
-          </ol>
+        <!-- Código Promocional -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">¿Tienes un código promocional?</h3>
+          <div class="flex gap-2 items-center">
+            <input type="text" [(ngModel)]="promoCode" [disabled]="promoValid() || promoValidating()" placeholder="Ingresa el código" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm uppercase" />
+            @if (!promoValid()) {
+              <button (click)="validatePromoCode()" [disabled]="promoValidating() || !promoCode().trim()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2">
+                @if (promoValidating()) {<span>Validando...</span>} @else {<span>Aplicar</span>}
+              </button>
+            } @else {
+              <button (click)="resetPromoCode()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm whitespace-nowrap flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Aplicado</button>
+            }
+          </div>
+          @if (promoError()) {
+            <p class="text-red-600 text-xs mt-2">{{ promoError() }}</p>
+          } @else if (promoValid() && promoData()) {
+            <div class="mt-2 flex items-center gap-3 text-sm text-green-700">
+              <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">✓ Código aplicado</span>
+              <span class="">Ahorro: <strong>-{{ formatPrice(promoData()!.discountAmount) }}</strong></span>
+            </div>
+          }
         </div>
 
+        <!-- Instrucciones -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"><h4 class="font-semibold text-yellow-800 mb-2">Instrucciones:</h4><ol class="text-sm text-yellow-700 space-y-1 list-decimal list-inside"><li>Realiza la transferencia desde tu cuenta bancaria</li><li>Toma captura del comprobante de pago</li><li>Envía el comprobante a <a href="mailto:soporte@cursala.com.ar" class="underline">soporte@cursala.com.ar</a></li><li>Tu acceso será activado en 24-48 horas hábiles</li></ol></div>
+
         <!-- Información de contacto -->
-        <p class="text-xs text-gray-500 text-center">
-          ¿Necesitas ayuda? Contactanos a soporte@cursala.com.ar
-        </p>
+        <p class="text-xs text-gray-500 text-center">¿Necesitas ayuda? Contactanos a soporte@cursala.com.ar</p>
       </div>
 
       <!-- Footer -->
-      <div class="border-t border-gray-200 px-6 py-4 flex justify-end bg-gray-50 rounded-b-lg">
-        <button
-          (click)="close()"
-          class="cursor-pointer px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium"
-        >
-          Cerrar
-        </button>
-      </div>
+      <div class="border-t border-gray-200 px-6 py-4 flex justify-end bg-gray-50 rounded-b-lg"><button (click)="close()" class="cursor-pointer px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors font-medium">Cerrar</button></div>
     </div>
   </div>
 }

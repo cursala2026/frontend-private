@@ -138,8 +138,39 @@ export class QuestionnaireResultsComponent implements OnInit {
     });
   }
 
-  viewSubmission(studentId: string): void {
-    this.questionnairesService.getStudentSubmissions(this.questionnaireId, studentId).subscribe({
+  viewSubmission(studentId: string | any): void {
+    let studentIdStr: string | null = null;
+
+    if (studentId == null) {
+      studentIdStr = null;
+    } else if (typeof studentId === 'string') {
+      studentIdStr = studentId;
+    } else if (typeof studentId === 'object') {
+      // Prefer an embedded _id property (common case)
+      if ((studentId as any)._id) {
+        studentIdStr = (studentId as any)._id?.toString() || null;
+      } else if ((studentId as any).id) {
+        studentIdStr = (studentId as any).id?.toString() || null;
+      } else if ((studentId as any).toString && typeof (studentId as any).toString === 'function') {
+        const s = (studentId as any).toString();
+        // Avoid the generic [object Object]
+        studentIdStr = s !== '[object Object]' ? s : null;
+      } else {
+        studentIdStr = null;
+      }
+    } else {
+      studentIdStr = String(studentId);
+    }
+
+    console.log('Viewing submission for student:', studentIdStr);
+
+    if (!studentIdStr) {
+      console.error('Invalid student id for viewing submission:', studentId);
+      this.infoService.showError('ID de estudiante inválido');
+      return;
+    }
+
+    this.questionnairesService.getStudentSubmissions(this.questionnaireId, studentIdStr).subscribe({
       next: (response) => {
         const submissions = response?.data || [];
         if (submissions.length > 0) {

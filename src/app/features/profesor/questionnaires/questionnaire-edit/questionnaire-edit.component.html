@@ -153,6 +153,9 @@
                     <option [value]="classItem._id">Clase {{ classItem.order }}: {{ classItem.name }}</option>
                   }
                 </select>
+                @if (questionnaireForm.get('afterClassId')?.invalid && questionnaireForm.get('afterClassId')?.touched) {
+                  <p class="mt-1 text-sm text-red-600">La clase es requerida</p>
+                }
                 <p class="mt-2 text-sm text-gray-600">
                   El cuestionario se mostrará al alumno después de completar todos los videos de la clase seleccionada.
                 </p>
@@ -272,241 +275,16 @@
 
         <div formArrayName="questions" class="space-y-6">
           @for (question of questions.controls; track $index; let i = $index) {
-            <div [formGroupName]="i" class="border border-gray-200 rounded-lg p-6 bg-gray-50">
-              <!-- Question Header -->
-              <div class="flex items-center gap-8 justify-between mb-4">
-                <h3 class="text-lg w-full text-brand-primary font-bold bg-brand-primary/10 px-4 py-2">Pregunta {{ i + 1 }}</h3>
-                @if (questions.length > 1) {
-                  <button
-                    type="button"
-                    (click)="removeQuestion(i)"
-                    class="cursor-pointer text-red-600 hover:text-red-700"
-                    title="Eliminar pregunta"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                }
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Question Type -->
-                <div class="mb-2">
-                  <label class="block text-base font-bold text-brand-tertiary mb-2">
-                    Tipo de Pregunta <span class="text-red-500">*</span>
-                  </label>
-                  <select
-                    formControlName="type"
-                    (change)="onQuestionTypeChange(i)"
-                    class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
-                  >
-                    <option value="MULTIPLE_CHOICE">Opción Múltiple (una correcta)</option>
-                    <option value="MULTIPLE_SELECT">Selección Múltiple (varias correctas)</option>
-                    <option value="TEXT">Texto Libre</option>
-                  </select>
-                </div>
-
-                <!-- Points -->
-                <div class="mb-2">
-                  <label class="block text-base font-bold text-brand-tertiary mb-2">
-                    Puntos <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    formControlName="points"
-                    min="1"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 bg-white"
-                  />
-                </div>
-
-                <!-- Question Text -->
-                <div class="md:col-span-2 mb-2">
-                  <label class="block text-base font-bold text-brand-tertiary mb-2">
-                    Enunciado de la Pregunta <span class="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    formControlName="questionText"
-                    rows="3"
-                    placeholder="Escribe aquí la pregunta..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic bg-white"
-                  ></textarea>
-                </div>
-
-                <!-- Media Upload Section -->
-                <div class="md:col-span-2 mb-4">
-                  <label class="block text-base font-bold text-brand-tertiary mb-2">
-                    Agregar Imagen o Video (es opcional)
-                  </label>
-                  
-                  <!-- Preview Section -->
-                  @if (getMediaPreview(i)) {
-                    <div class="mb-3 relative border border-gray-300 rounded-lg p-3 bg-white">
-                      <!-- Image Preview -->
-                      @if (question.get('promptType')?.value === 'IMAGE') {
-                        <img 
-                          [src]="getMediaPreview(i)" 
-                          alt="Preview" 
-                          class="max-w-full max-h-64 rounded mx-auto"
-                        />
-                      }
-                      
-                      <!-- Video Preview -->
-                      @if (question.get('promptType')?.value === 'VIDEO') {
-                        <video 
-                          [src]="getMediaPreview(i)" 
-                          controls 
-                          class="max-w-full max-h-64 rounded mx-auto"
-                        >
-                          Tu navegador no soporta el elemento de video.
-                        </video>
-                      }
-                      
-                      <!-- Remove Button -->
-                      @if (!isMediaUploading(i)) {
-                        <button
-                          type="button"
-                          (click)="removeMedia(i)"
-                          class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition-colors"
-                          title="Eliminar archivo"
-                        >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      }
-
-                      <!-- Upload Progress -->
-                      @if (isMediaUploading(i)) {
-                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                          <div class="text-white text-center">
-                            <svg class="animate-spin h-8 w-8 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <p class="font-semibold">Subiendo... {{ getUploadProgress(i) }}%</p>
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  }
-
-                  <!-- File Input -->
-                  <div class="flex items-center gap-3">
-                    <label 
-                      [for]="'mediaFile' + i" 
-                      class="cursor-pointer text-sm text-brand-primary font-bold inline-flex items-center border border-brand-primary transition-all group-hover:bg-brand-primary/10 py-2 rounded-full px-4 mt-2 ring-1 ring-brand-primary hover:ring-[4px] active:bg-brand-tertiary active:text-white active:ring-brand-primary active:border-brand-primary"
-                      [class.opacity-50]="isMediaUploading(i)"
-                      [class.cursor-not-allowed]="isMediaUploading(i)"
-                    >
-                      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Seleccionar Archivo
-                    </label>
-                    <input
-                      [id]="'mediaFile' + i"
-                      type="file"
-                      accept="image/jpeg,image/png,image/gif,video/mp4,video/webm,video/ogg,video/avi,video/mov"
-                      (change)="onMediaFileSelected($event, i)"
-                      [disabled]="isMediaUploading(i)"
-                      class="hidden"
-                    />
-                    <span class="text-sm text-gray-500">
-                      JPG, PNG, GIF, MP4, WEBM, OGG, AVI, MOV (Máx. 1GB)
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Required Checkbox -->
-                <div class="md:col-span-2 flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    formControlName="required"
-                    class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label class="block text-base font-bold text-brand-tertiary ml-2">
-                    ¿Es una pregunta obligatoria?
-                  </label>
-                </div>
-
-                <!-- Multiple Choice/Select Options -->
-                @if (question.get('type')?.value === 'MULTIPLE_CHOICE' || question.get('type')?.value === 'MULTIPLE_SELECT') {
-                  <div class="md:col-span-2 mb-4">
-                    <div class="flex items-center justify-between mb-4">
-                      <h4 class="block text-base font-bold text-brand-tertiary ">Escriba las opciones de respuesta</h4>
-                      <button
-                        type="button"
-                        (click)="addOption(i)"
-                        class="cursor-pointer group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary hover:bg-brand-primary/10 active:bg-brand-tertiary active:text-white"
-                      >
-                        + Agregar Opción
-                      </button>
-                    </div>
-
-                    <div formArrayName="options" class="space-y-2 py-6 bg-white rounded-lg p-4 border border-gray-200 ">
-                      @for (option of getQuestionOptions(i).controls; track $index; let j = $index) {
-                        <div [formGroupName]="j" class="flex items-center gap-2">
-                          <!-- Radio button for single correct answer (MULTIPLE_CHOICE) -->
-                          @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
-                            <input
-                              type="radio"
-                              [name]="'correctOption' + i"
-                              [value]="j.toString()"
-                              [formControl]="$any(question.get('correctOptionId'))"
-                              [checked]="question.get('correctOptionId')?.value === j.toString()"
-                              class="cursor-pointer h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-                              title="Marcar como respuesta correcta"
-                            />
-                          }
-                          
-                          <!-- Checkbox for multiple correct answers (MULTIPLE_SELECT) -->
-                          @if (question.get('type')?.value === 'MULTIPLE_SELECT') {
-                            <input
-                              type="checkbox"
-                              [checked]="isOptionCorrect(i, j)"
-                              (change)="toggleCorrectOption(i, j)"
-                              class="cursor-pointer h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                              title="Marcar como respuesta correcta"
-                            />
-                          }
-
-                          <!-- Option text -->
-                          <input
-                            type="text"
-                            formControlName="text"
-                            placeholder="Escriba la opción {{ j + 1 }} o elimínela haciendo clic en la X..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
-                          />
-
-                          <!-- Remove button -->
-                          @if (getQuestionOptions(i).length > 2) {
-                            <button
-                              type="button"
-                              (click)="removeOption(i, j)"
-                              class="cursor-pointer text-red-600 p-2 transition-all rounded-xs hover:bg-red-600 hover:text-white"
-                              title="Eliminar opción"
-                            >
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-
-                    <p class="text-sm text-brand-tertiary bg-brand-secondary/30 mt-4 mb-2 p-3 ">
-                      @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
-                        💡 Selecciona el círculo junto a la opción correcta
-                      } @else {
-                        💡 Selecciona las casillas junto a todas las opciones correctas
-                      }
-                    </p>
-                  </div>
-                }
-              </div>
-            </div>
+            <app-question-item
+              [question]="question"
+              [index]="i"
+              [questionsLength]="questions.length"
+              [questionnaireId]="questionnaireId"
+              [isEditMode]="isEditMode"
+              [mediaPreview]="getMediaPreview(i)"
+              (remove)="removeQuestion($event)"
+              (removeMedia)="removeMedia($event)"
+            ></app-question-item>
           }
         </div>
         <div class="mt-4 text-right w-full flex justify-end">
@@ -550,6 +328,7 @@
           }
         </button>
       </div>
+   
     </form>
   }
 </div>

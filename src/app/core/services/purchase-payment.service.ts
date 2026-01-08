@@ -2,12 +2,19 @@ import { Injectable, inject, signal } from '@angular/core';
 import { MercadoPagoPaymentService } from './mercadopago-payment.service';
 import { AuthService } from './auth.service';
 import { InfoService } from './info.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../config/environment';
 
 export interface PaymentRequest {
   courseId: string;
   courseName: string;
   coursePrice: number;
   maxInstallments: number;
+  promotionalCode?: string;
+  discountAmount?: number;
+  discountType?: string;
+  finalPrice?: number;
+  paymentRequestId?: string;
 }
 
 export interface PaymentResult {
@@ -23,6 +30,8 @@ export class PurchasePaymentService {
   private mercadoPagoService = inject(MercadoPagoPaymentService);
   private authService = inject(AuthService);
   private infoService = inject(InfoService);
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/payment`;
 
   isProcessing = signal<boolean>(false);
   processingError = signal<string | null>(null);
@@ -60,7 +69,7 @@ export class PurchasePaymentService {
     const lastName = user.lastName || 'Cursala';
 
     try {
-      // Crear preferencia de pago
+      // Crear preferencia de pago (con código promocional si existe)
       const response = await this.mercadoPagoService.createCoursePaymentPreference(
         request.courseId,
         request.courseName,
@@ -68,7 +77,12 @@ export class PurchasePaymentService {
         request.maxInstallments,
         firstName,
         lastName,
-        user.email
+        user.email,
+        request.promotionalCode,
+        request.discountAmount,
+        request.discountType,
+        request.paymentRequestId,
+        request.finalPrice
       ).toPromise();
 
       console.log('Respuesta del backend:', response);
@@ -103,6 +117,50 @@ export class PurchasePaymentService {
       this.isProcessing.set(false);
       this.infoService.showError(errorMessage);
       return { success: false, error: errorMessage };
+    }
+  }
+
+  /**
+   * Valida y crea un payment request en el backend
+   * Endpoint backend: POST /payment/requests/validate-create
+   * Retorna: { paymentRequestId, finalPrice }
+   */
+  async validateAndCreatePaymentRequest(request: PaymentRequest): Promise<{ paymentRequestId: string; finalPrice: number } | null> {
+    const user = this.authService.currentUser();
+    if (!user) {
+      this.processingError.set('Debes iniciar sesión para continuar');
+      return null;
+    }
+
+    const payload: any = {
+      courseId: request.courseId,
+      courseName: request.courseName,
+      coursePrice: request.coursePrice,
+      studentName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || request.courseName,
+      studentEmail: user.email || undefined,
+      promotionalCode: request.promotionalCode
+    };
+
+    try {
+      const resp: any = await this.http.post(`${this.apiUrl}/requests/validate-create`, payload).toPromise();
+      // El backend debería devolver { status: 201, data: { paymentRequestId, finalPrice } }
+      if (resp && (resp.status === 201 || resp.status === 200) && resp.data) {
+        const data = resp.data;
+        return { paymentRequestId: data.paymentRequestId, finalPrice: data.finalPrice };
+      }
+
+      // Manejo alternativo: si la respuesta es directa
+      if (resp && resp.paymentRequestId && typeof resp.finalPrice === 'number') {
+        return { paymentRequestId: resp.paymentRequestId, finalPrice: resp.finalPrice };
+      }
+
+      this.processingError.set('Respuesta inválida del servidor al validar el pago');
+      return null;
+    } catch (err: any) {
+      const msg = err?.error?.message || 'Error al validar la solicitud de pago';
+      this.processingError.set(msg);
+      this.infoService.showError(msg);
+      return null;
     }
   }
 

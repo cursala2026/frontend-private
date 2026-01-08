@@ -388,6 +388,60 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }).format(dateObj);
   }
 
+  hasDays(days: any): boolean {
+    if (!days) return false;
+    if (Array.isArray(days)) return days.length > 0;
+    if (typeof days === 'string') return days.trim().length > 0;
+    return false;
+  }
+
+  formatDays(days: any): string {
+    if (!days) return '';
+    if (Array.isArray(days)) return days.join(', ');
+    if (typeof days === 'string') return days;
+    return '';
+  }
+
+  /**
+   * Devuelve true si existe al menos un campo de fecha/hora/días para mostrar
+   */
+  hasAnyDateFields(courseData: any): boolean {
+    if (!courseData) return false;
+    return !!(
+      courseData.startDate ||
+      this.hasDays(courseData.days) ||
+      courseData.time ||
+      courseData.registrationOpenDate
+    );
+  }
+
+  /**
+   * Devuelve un array ordenado con los campos de fecha/hora/días presentes
+   * Cada elemento: { key, label, value }
+   */
+  getDateFields(courseData: any): Array<{ key: string; label: string; value: string }> {
+    if (!courseData) return [];
+    const fields: Array<{ key: string; label: string; value: string }> = [];
+
+    if (courseData.startDate) {
+      fields.push({ key: 'startDate', label: 'Fecha de inicio', value: this.formatDate(courseData.startDate) });
+    }
+
+    if (this.hasDays(courseData.days)) {
+      fields.push({ key: 'days', label: 'Días', value: this.formatDays(courseData.days) });
+    }
+
+    if (courseData.time) {
+      fields.push({ key: 'time', label: 'Horario', value: String(courseData.time) });
+    }
+
+    if (courseData.registrationOpenDate) {
+      fields.push({ key: 'registrationOpenDate', label: 'Inscripciones abiertas desde', value: this.formatDate(courseData.registrationOpenDate) });
+    }
+
+    return fields;
+  }
+
   /**
    * Verifica si el usuario puede inscribirse al curso según la fecha de apertura de inscripciones
    */

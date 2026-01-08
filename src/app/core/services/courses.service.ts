@@ -47,9 +47,7 @@ export interface Course {
   maxInstallments: number;
   interestFree: boolean;
   showOnHome?: boolean;
-  mainTeacher?: string;
-  mainTeacherInfo?: TeacherInfo;
-  teacherInfo?: TeacherInfo[];
+  
   teachers?: string[]; // Array de IDs de profesores
   teachersInfo?: TeacherInfo[]; // Array de información de profesores
   numberOfClasses?: number;
@@ -251,7 +249,26 @@ export class CoursesService {
 
   // Patch with a plain JSON payload (useful for updating single fields)
   updateCoursePartial(id: string, payload: Record<string, any>): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}`, payload);
+    // Enviar como FormData para mantener coherencia con el endpoint PATCH que
+    // generalmente espera multipart/form-data (igual que `updateCourse`).
+    const formData = new FormData();
+    Object.keys(payload || {}).forEach((key) => {
+      const value = payload[key];
+      if (value === undefined || value === null) {
+        // Para indicar borrado explícito, enviar cadena vacía
+        formData.append(key, '');
+      } else if (value instanceof File) {
+        formData.append(key, value);
+      } else if (Array.isArray(value)) {
+        formData.append(key, value.join(','));
+      } else if (value instanceof Date) {
+        formData.append(key, value.toISOString());
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    return this.http.patch(`${this.apiUrl}/${id}`, formData);
   }
 
   toggleCourseStatus(id: string, status: string): Observable<any> {
@@ -275,6 +292,12 @@ export class CoursesService {
   assignMainTeacher(courseId: string, teacherId: string): Observable<any> {
     // Backend expects PATCH /courses/:courseId/main-teacher with mainTeacherId in body
     return this.http.patch(`${this.apiUrl}/${courseId}/main-teacher`, { mainTeacherId: teacherId });
+  }
+
+  // Actualizar asignación de profesores de forma atómica
+  // Endpoint: PATCH /courses/:courseId/teachers
+  updateCourseTeachers(courseId: string, payload: { add?: string[]; remove?: string[] } ): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${courseId}/teachers`, payload);
   }
 
   enrollInCourse(courseId: string): Observable<any> {

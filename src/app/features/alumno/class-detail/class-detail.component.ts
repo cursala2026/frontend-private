@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -55,6 +55,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Modal de materiales
   showMaterialsModal = signal<boolean>(false);
+  materials = computed(() => {
+    const materials = this.classData()?.supportMaterials || [];
+    // Eliminar duplicados usando Set
+    return [...new Set(materials)] as string[];
+  });
 
   // Tracking para videos de Bunny Stream (iframe) usando Player.js API
   private bunnyStreamPlayer: any = null;
@@ -501,8 +506,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getMaterials(): string[] {
-    if (!this.classData()?.supportMaterials) return [];
-    return this.classData().supportMaterials;
+    return this.materials();
   }
 
   getMaterialFileName(url: string): string {
@@ -665,9 +669,6 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     const questionnaires = this.questionnaires();
     const currentClassId = this.classId();
     
-    console.log('[class-detail] getQuestionnaireAfterClass - currentClassId:', currentClassId);
-    console.log('[class-detail] Available questionnaires:', questionnaires.map(q => ({ id: q._id, title: q.title, position: q.position })));
-    
     if (!questionnaires || questionnaires.length === 0) {
       return null;
     }
@@ -679,16 +680,13 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     );
 
     if (questionnaireAfter) {
-      console.log('[class-detail] Found questionnaire BETWEEN_CLASSES:', questionnaireAfter.title);
       return questionnaireAfter;
     }
 
     // Si no hay cuestionario entre clases y es la última clase, buscar cuestionarios finales u otros
     const isLastClass = !this.hasNextClass();
-    console.log('[class-detail] Is last class?', isLastClass);
     if (isLastClass) {
       const finalOrRemaining = questionnaires.find(q => q.position.type !== 'BETWEEN_CLASSES');
-      console.log('[class-detail] Found final/remaining questionnaire:', finalOrRemaining?.title || 'none');
       return finalOrRemaining || null;
     }
 
