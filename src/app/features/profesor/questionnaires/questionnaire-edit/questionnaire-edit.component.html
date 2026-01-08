@@ -119,7 +119,7 @@
                 >
                   <option value="">Selecciona una clase</option>
                   @for (classItem of getAvailableClassesForQuestionnaire(); track classItem._id) {
-                    <option [value]="classItem._id">Clase {{ classItem.order }}: {{ classItem.name }}</option>
+                    <option [value]="classItem._id">{{ classItem.name }}</option>
                   }
                 </select>
                 @if (questionnaireForm.get('afterClassId')?.invalid && questionnaireForm.get('afterClassId')?.touched) {

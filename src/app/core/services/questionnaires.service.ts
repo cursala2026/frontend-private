@@ -214,12 +214,12 @@ export class QuestionnairesService {
   }
 
   /**
-   * Subir imagen o video para una pregunta
+   * Subir imagen o video para una pregunta (async - retorna 202 inmediatamente)
    */
   uploadQuestionMedia(
-    questionnaireId: string, 
-    questionId: string, 
-    file: File, 
+    questionnaireId: string,
+    questionId: string,
+    file: File,
     promptType?: 'IMAGE' | 'VIDEO'
   ): Observable<any> {
     const formData = new FormData();
@@ -227,13 +227,10 @@ export class QuestionnairesService {
     if (promptType) {
       formData.append('promptType', promptType);
     }
+    // Ya no necesitamos reportProgress ni observe events, el backend procesa en segundo plano
     return this.http.post(
       `${this.apiUrl}/${questionnaireId}/questions/${questionId}/media`,
-      formData,
-      {
-        reportProgress: true,
-        observe: 'events'
-      }
+      formData
     );
   }
 }

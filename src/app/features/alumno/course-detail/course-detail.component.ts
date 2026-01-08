@@ -84,12 +84,12 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        // Check if we navigated back to this course detail page
+        // Si volvimos al detalle del curso (sin estar dentro de una clase/cuestionario), recargar todo el curso
         if (event.url.includes('/alumno/course-detail/') && !event.url.includes('/class/') && !event.url.includes('/questionnaire/')) {
           const currentCourseId = this.route.snapshot.paramMap.get('courseId');
           if (currentCourseId) {
-            // Reload course progress to reflect any changes from completing classes/questionnaires
-            this.loadCourseProgress(currentCourseId);
+            // Recargar todo el curso (incluye orderedContent) para reflejar cambios en el backend
+            this.loadCourse(currentCourseId);
           }
         }
       });
@@ -138,8 +138,13 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }
 
     // Usar orderedContent si está disponible (nuevo formato del backend)
-    if (course.orderedContent && Array.isArray(course.orderedContent)) {
-      const items: CourseItem[] = course.orderedContent
+    // orderedContent puede venir como array o como objeto { items: [...] }
+    const ordered = Array.isArray(course.orderedContent)
+      ? course.orderedContent
+      : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+
+    if (ordered && Array.isArray(ordered)) {
+      const items: CourseItem[] = ordered
         .filter((item: any) => {
           // Filtrar solo elementos activos
           if (item.type === 'CLASS') {

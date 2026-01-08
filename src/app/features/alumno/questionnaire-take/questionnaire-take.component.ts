@@ -46,6 +46,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   showResults = signal<boolean>(false);
   canRetry = signal<boolean>(false);
   started = signal<boolean>(false);
+  // Cached next navigation target to avoid repeated computation from template
+  nextItem = signal<{ type: 'CLASS'|'QUESTIONNAIRE'; id: string } | null>(null);
 
   // Timer
   timeRemaining = signal<number | null>(null); // Tiempo restante en segundos
@@ -559,15 +561,118 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   }
 
   updateCourseProgress(submission: QuestionnaireSubmission): void {
-    // Update progress if the submission is graded (auto-graded for MC)
+    // After submitting a questionnaire, refresh course progress and navigate to next item
     const questionnaire = this.questionnaire();
     if (!questionnaire) return;
 
     const score = submission.finalScore || submission.autoGradedScore || 0;
     const passed = questionnaire.passingScore ? score >= questionnaire.passingScore : true;
 
-    // The backend should handle updating courseProgress, but we can trigger a reload
-    // of the course detail when user goes back
+    console.debug('[questionnaire-take] updateCourseProgress submission=', submission._id, 'score=', score, 'passed=', passed);
+
+    const courseId = this.courseId();
+
+    // Refresh server-side progress (best-effort) and then decide navigation
+    this.progressService.getProgress(courseId).subscribe({
+      next: (progress) => {
+        console.debug('[questionnaire-take] refreshed course progress', progress?.overallProgress);
+        // Build ordered items from course data (support orderedContent)
+        const course = this.courseData();
+        if (!course) {
+          this.goBack();
+          return;
+        }
+
+        const ordered = Array.isArray(course.orderedContent)
+          ? course.orderedContent
+          : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+
+        let items: Array<{ type: 'CLASS'|'QUESTIONNAIRE'; data: any }> = [];
+        if (ordered && Array.isArray(ordered)) {
+          items = ordered.filter((it: any) => it.data && (it.type === 'CLASS' || it.type === 'QUESTIONNAIRE'));
+        } else {
+          // fallback: interleave classes and questionnaires
+          const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
+          items = [];
+          classes.forEach((c: any) => {
+            items.push({ type: 'CLASS', data: c });
+            // Insert questionnaires positioned BETWEEN_CLASSES after this class (if present in course.questionnaires)
+            if (course.questionnaires && Array.isArray(course.questionnaires)) {
+              const afterQs = course.questionnaires.filter((q: any) => q.position?.type === 'BETWEEN_CLASSES' && q.position?.afterClassId === c._id);
+              afterQs.forEach((q: any) => items.push({ type: 'QUESTIONNAIRE', data: q }));
+            }
+          });
+          // remaining questionnaires
+          if (course.questionnaires && Array.isArray(course.questionnaires)) {
+            const added = new Set(items.filter(i => i.type === 'QUESTIONNAIRE').map(i => i.data._id));
+            course.questionnaires.forEach((q: any) => { if (!added.has(q._id)) items.push({ type: 'QUESTIONNAIRE', data: q }); });
+          }
+        }
+
+        // Find current questionnaire index
+        const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
+        console.debug('[questionnaire-take] ordered items count=', items.length, 'currentIndex=', currentIndex);
+
+        if (currentIndex === -1) {
+          // couldn't find in ordered items - go back to course detail
+          this.goBack();
+          return;
+        }
+
+        // If didn't pass and can retry, stay on results to allow retry
+        if (!passed && this.canRetry()) {
+          console.debug('[questionnaire-take] not passed and can retry, staying on page');
+          this.nextItem.set(null);
+          return;
+        }
+
+        // Determine next item (class or questionnaire). Cache it in `nextItem` to avoid
+        // repeated recomputation from the template and prevent cyclic behavior.
+        for (let i = currentIndex + 1; i < items.length; i++) {
+          const next = items[i];
+          if (next.type === 'CLASS') {
+            this.nextItem.set({ type: 'CLASS', id: String(next.data._id) });
+            console.debug('[questionnaire-take] cached nextItem -> CLASS id=', next.data._id);
+            return;
+          }
+          if (next.type === 'QUESTIONNAIRE') {
+            this.nextItem.set({ type: 'QUESTIONNAIRE', id: String(next.data._id) });
+            console.debug('[questionnaire-take] cached nextItem -> QUESTIONNAIRE id=', next.data._id);
+            return;
+          }
+        }
+
+        // No next item, clear cache and go back to course
+        this.nextItem.set(null);
+        this.goBack();
+      },
+      error: (err) => {
+        console.error('[questionnaire-take] error refreshing progress', err);
+        // On error, still attempt to navigate using local course data
+        const course = this.courseData();
+        if (!course) { this.goBack(); return; }
+        const ordered = Array.isArray(course.orderedContent)
+          ? course.orderedContent
+          : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+        let items: Array<{ type: 'CLASS'|'QUESTIONNAIRE'; data: any }> = [];
+        if (ordered && Array.isArray(ordered)) items = ordered.filter((it: any) => it.data && (it.type === 'CLASS' || it.type === 'QUESTIONNAIRE'));
+        if (items.length === 0 && course.classes) {
+          const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
+          classes.forEach((c: any) => { items.push({ type: 'CLASS', data: c }); });
+          if (course.questionnaires && Array.isArray(course.questionnaires)) {
+            course.questionnaires.forEach((q: any) => items.push({ type: 'QUESTIONNAIRE', data: q }));
+          }
+        }
+        const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
+        for (let i = currentIndex + 1; i < items.length; i++) {
+          const next = items[i];
+          if (next.type === 'CLASS') { this.nextItem.set({ type: 'CLASS', id: String(next.data._id) }); console.debug('[questionnaire-take] cached nextItem (error path) -> CLASS id=', next.data._id); return; }
+          if (next.type === 'QUESTIONNAIRE') { this.nextItem.set({ type: 'QUESTIONNAIRE', id: String(next.data._id) }); console.debug('[questionnaire-take] cached nextItem (error path) -> QUESTIONNAIRE id=', next.data._id); return; }
+        }
+        this.nextItem.set(null);
+        this.goBack();
+      }
+    });
   }
 
   retry(): void {
@@ -615,6 +720,73 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     } else {
       this.goBack();
     }
+  }
+
+  /**
+   * Devuelve el siguiente ítem (clase o cuestionario) después del cuestionario actual, según orderedContent o fallback
+   */
+  getNextItem(): { type: 'CLASS'|'QUESTIONNAIRE'; id: string } | null {
+    const questionnaire = this.questionnaire();
+    const course = this.courseData();
+    if (!questionnaire || !course) return null;
+
+    const ordered = Array.isArray(course.orderedContent)
+      ? course.orderedContent
+      : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+
+    let items: Array<{ type: string; data: any }> = [];
+    if (ordered && Array.isArray(ordered)) {
+      items = ordered.filter((it: any) => it.data && (it.type === 'CLASS' || it.type === 'QUESTIONNAIRE'));
+    } else {
+      const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
+      classes.forEach((c: any) => {
+        items.push({ type: 'CLASS', data: c });
+        if (course.questionnaires && Array.isArray(course.questionnaires)) {
+          const afterQs = course.questionnaires.filter((q: any) => q.position?.type === 'BETWEEN_CLASSES' && q.position?.afterClassId === c._id);
+          afterQs.forEach((q: any) => items.push({ type: 'QUESTIONNAIRE', data: q }));
+        }
+      });
+      if (course.questionnaires && Array.isArray(course.questionnaires)) {
+        const added = new Set(items.filter(i => i.type === 'QUESTIONNAIRE').map(i => i.data._id));
+        course.questionnaires.forEach((q: any) => { if (!added.has(q._id)) items.push({ type: 'QUESTIONNAIRE', data: q }); });
+      }
+    }
+
+    const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
+    console.debug('[questionnaire-take] getNextItem currentIndex=', currentIndex, 'itemsCount=', items.length);
+    if (currentIndex === -1) return null;
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      const next = items[i];
+      if (next.type === 'CLASS') {
+        console.debug('[questionnaire-take] getNextItem -> CLASS id=', next.data._id);
+        return { type: 'CLASS', id: next.data._id };
+      }
+      if (next.type === 'QUESTIONNAIRE') {
+        console.debug('[questionnaire-take] getNextItem -> QUESTIONNAIRE id=', next.data._id);
+        return { type: 'QUESTIONNAIRE', id: next.data._id };
+      }
+    }
+    console.debug('[questionnaire-take] getNextItem -> no next item');
+    return null;
+  }
+
+  goToNextItem(): void {
+    const cached = this.nextItem();
+    const next = cached || this.getNextItem();
+    console.debug('[questionnaire-take] goToNextItem next=', next, 'cached=', cached);
+    if (!next) { this.nextItem.set(null); this.goBack(); return; }
+    const target = next.type === 'CLASS'
+      ? ['/alumno/course-detail', this.courseId(), 'class', next.id]
+      : ['/alumno/course-detail', this.courseId(), 'questionnaire', next.id];
+
+    // Clear cache to avoid duplicate navigation
+    this.nextItem.set(null);
+
+    this.router.navigate(target).then(result => {
+      console.debug('[questionnaire-take] router.navigate result=', result, 'target=', target);
+    }).catch(err => {
+      console.error('[questionnaire-take] router.navigate error=', err, 'target=', target);
+    });
   }
 
   getQuestionNumber(questionId: string): number {

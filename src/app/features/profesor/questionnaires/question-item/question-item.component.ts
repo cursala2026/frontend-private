@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { inject } from '@angular/core';
-import { QuestionnairesService } from '../../../../core/services/questionnaires.service';
 import { InfoService } from '../../../../core/services/info.service';
-import { HttpEventType } from '@angular/common/http';
+import { QuestionMediaUploadManagerService } from '../../../../core/services/question-media-upload-manager.service';
+import { QuestionnairesService } from '../../../../core/services/questionnaires.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-question-item',
@@ -12,7 +13,7 @@ import { HttpEventType } from '@angular/common/http';
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './question-item.component.html'
 })
-export class QuestionItemComponent {
+export class QuestionItemComponent implements OnDestroy {
   @Input() question!: AbstractControl;
   @Input() index = 0;
   @Input() questionsLength = 1;
@@ -26,13 +27,18 @@ export class QuestionItemComponent {
   @Input() questionnaireId?: string;
   @Input() isEditMode = false;
 
-  private questionnairesService = inject(QuestionnairesService);
   private infoService = inject(InfoService);
+  private uploadManager = inject(QuestionMediaUploadManagerService);
+  private questionnairesService = inject(QuestionnairesService);
 
   // Local upload state
   pendingFile?: { file: File; promptType: 'IMAGE' | 'VIDEO' };
-  uploading = false;
-  progress = 0;
+  currentUploadId?: string;
+  private uploadCompletedSub?: Subscription;
+
+  ngOnDestroy(): void {
+    this.uploadCompletedSub?.unsubscribe();
+  }
 
   get options(): FormArray {
     return (this.question as FormGroup).get('options') as FormArray;
@@ -92,25 +98,38 @@ export class QuestionItemComponent {
       return;
     }
 
-    const maxSize = 1073741824;
+    const maxSize = 524288000; // 500MB
     if (file.size > maxSize) {
-      this.infoService.showError('El archivo es demasiado grande. Tamaño máximo: 1GB');
+      this.infoService.showError('El archivo es demasiado grande. Tamaño máximo: 500MB');
       input.value = '';
       return;
     }
 
     const promptType: 'IMAGE' | 'VIDEO' = allowedImageTypes.includes(file.type) ? 'IMAGE' : 'VIDEO';
-
-    // Create preview
-    const previewUrl = URL.createObjectURL(file);
     const current = this.question as FormGroup;
     current.patchValue({ promptType });
-    // store local preview in a control so template can use it
-    current.patchValue({ promptMediaUrl: previewUrl });
 
-    if (this.isEditMode && (this.question as any).value._id && this.questionnaireId) {
-      this.startUpload(file, promptType, (this.question as any).value._id, this.questionnaireId);
+    const questionId = (this.question as any).value._id;
+    console.log('DEBUG onMediaSelected:', {
+      isEditMode: this.isEditMode,
+      questionId: questionId,
+      questionnaireId: this.questionnaireId,
+      fileName: file.name,
+      fileSize: file.size,
+      promptType
+    });
+
+    if (this.isEditMode && questionId && this.questionnaireId) {
+      // En modo edición, iniciar subida inmediatamente en segundo plano
+      // NO crear preview local, esperar a que la subida complete
+      this.infoService.showInfo('Subiendo archivo en segundo plano...');
+      console.log('DEBUG: Iniciando subida inmediata con:', { questionId, questionnaireId: this.questionnaireId });
+      this.startUpload(file, promptType, questionId, this.questionnaireId);
     } else {
+      // En modo creación, crear preview local y guardar archivo pendiente
+      console.log('DEBUG: Creando preview local (modo creación o faltan IDs)');
+      const previewUrl = URL.createObjectURL(file);
+      current.patchValue({ promptMediaUrl: previewUrl });
       this.pendingFile = { file, promptType };
       this.infoService.showInfo('El archivo se subirá automáticamente una vez que el cuestionario sea creado');
     }
@@ -129,40 +148,51 @@ export class QuestionItemComponent {
 
   private startUpload(file: File, promptType: 'IMAGE' | 'VIDEO', questionId: string, questionnaireId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.uploading = true;
-      this.progress = 0;
-
-      this.questionnairesService.uploadQuestionMedia(questionnaireId, questionId, file, promptType).subscribe({
-        next: (event: any) => {
-          if (event.type === HttpEventType.UploadProgress) {
-            this.progress = event.total ? Math.round(100 * event.loaded / event.total) : 0;
-          } else if (event.type === HttpEventType.Response) {
-            const updatedQuestionnaire = event.body?.data;
-            if (updatedQuestionnaire) {
-              const updatedQuestion = updatedQuestionnaire.questions.find((q: any) => q._id === questionId);
-              if (updatedQuestion) {
-                  (this.question as FormGroup).patchValue({ promptMediaUrl: updatedQuestion.promptMediaUrl, promptMediaProvider: updatedQuestion.promptMediaProvider });
-                }
-            }
-            this.uploading = false;
-            this.progress = 0;
-            this.infoService.showSuccess('Archivo multimedia subido exitosamente');
-            resolve();
-          }
-        },
-        error: (err) => {
-          console.error('Error uploading media in child:', err);
-          this.uploading = false;
-          this.progress = 0;
-          const url = (this.question as any).value.promptMediaUrl;
-          if (url && url.startsWith('blob:')) {
-            URL.revokeObjectURL(url);
-            (this.question as FormGroup).patchValue({ promptMediaUrl: '' });
-          }
-          this.infoService.showError(err?.error?.message || 'Error al subir el archivo multimedia');
-          reject(err);
-        }
+      const questionText = (this.question as any).value.questionText || 'Pregunta sin texto';
+      console.log('DEBUG startUpload llamando a uploadManager.startUpload con:', {
+        questionnaireId,
+        questionId,
+        fileName: file.name,
+        promptType,
+        questionText
       });
+      const result = this.uploadManager.startUpload(questionnaireId, questionId, file, promptType, questionText);
+      console.log('DEBUG resultado de uploadManager.startUpload:', result);
+
+      if (result.started || result.uploadId) {
+        this.currentUploadId = result.uploadId;
+
+        // Suscribirse al evento de completado para actualizar la URL
+        this.uploadCompletedSub = this.uploadManager.uploadCompleted$.subscribe(event => {
+          if (event.uploadId === this.currentUploadId) {
+            // Recargar el cuestionario para obtener la URL actualizada
+            this.questionnairesService.getQuestionnaireById(questionnaireId).subscribe({
+              next: (response: any) => {
+                const questionnaire = response?.data || response;
+                const updatedQuestion = questionnaire.questions?.find((q: any) => q._id === questionId);
+                if (updatedQuestion && updatedQuestion.promptMediaUrl) {
+                  // Actualizar el formulario con la URL real de Bunny
+                  (this.question as FormGroup).patchValue({
+                    promptMediaUrl: updatedQuestion.promptMediaUrl,
+                    promptMediaProvider: updatedQuestion.promptMediaProvider
+                  });
+                }
+              },
+              error: (err) => {
+                console.error('Error recargando cuestionario:', err);
+              }
+            });
+            this.uploadCompletedSub?.unsubscribe();
+          }
+        });
+
+        if (result.started) {
+          this.infoService.showInfo('El archivo se está subiendo en segundo plano. Puedes continuar trabajando.');
+        }
+        resolve();
+      } else {
+        reject(new Error('No se pudo iniciar la subida'));
+      }
     });
   }
 

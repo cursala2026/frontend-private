@@ -142,13 +142,15 @@
               }
 
               <!-- Only show continue button if GRADED and passed -->
-              @if (currentSubmission()?.status === 'GRADED' && isPassed() && getNextClassId()) {
-                <button
-                  (click)="goToNextClass()"
-                  class="cursor-pointer px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-                >
-                  Continuar a la Siguiente Clase
-                </button>
+              @if (currentSubmission()?.status === 'GRADED' && isPassed()) {
+                @if (nextItem()) {
+                  <button
+                    (click)="goToNextItem()"
+                    class="cursor-pointer px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+                  >
+                    Continuar a la Siguiente {{ nextItem()?.type === 'CLASS' ? 'Clase' : 'Actividad' }}
+                  </button>
+                }
               }
             </div>
           </div>

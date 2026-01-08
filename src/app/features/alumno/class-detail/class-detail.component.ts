@@ -33,6 +33,8 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   classData = signal<any>(null);
   courseData = signal<any>(null);
   questionnaires = signal<Questionnaire[]>([]);
+  // Items ordenados del curso (clases + cuestionarios) si el backend provee `orderedContent`
+  courseItems = signal<Array<{ type: 'class'|'questionnaire'; data: any; index: number }>>([]);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
   errorReason = signal<string | null>(null);
@@ -91,6 +93,17 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         this.loading.set(false);
       }
     });
+  }
+
+  /**
+   * Normaliza un ID a string (puede ser ObjectId, string, o objeto con _id)
+   */
+  private normalizeId(id: any): string {
+    if (!id) return '';
+    if (typeof id === 'string') return id;
+    if (id._id) return String(id._id);
+    if (id.toString) return id.toString();
+    return String(id);
   }
 
   ngAfterViewInit(): void {
@@ -179,7 +192,10 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
         const course = response?.data || response;
+        console.debug('[class-detail] loadClassData: course received', course?._id || course);
         this.courseData.set(course);
+        // Construir courseItems a partir de orderedContent si está disponible
+        this.buildCourseItemsFromCourse(course);
         
         // Encontrar la clase en el curso
         if (course.classes && course.classes.length > 0) {
@@ -231,6 +247,8 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         const questionnaires = response?.data || [];
         // Solo cuestionarios activos
         this.questionnaires.set(questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE'));
+        // Reconstruir courseItems ahora que tenemos cuestionarios
+        this.buildCourseItemsFromCourse(this.courseData());
       },
       error: (err) => {
         console.error('Error loading questionnaires:', err);
@@ -239,28 +257,97 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  /**
+   * Construye `courseItems` a partir del objeto `course` soportando `orderedContent`
+   */
+  private buildCourseItemsFromCourse(course: any): void {
+    if (!course) {
+      this.courseItems.set([]);
+      return;
+    }
+
+    // orderedContent puede venir como array o como { items: [...] }
+    const ordered = Array.isArray(course.orderedContent)
+      ? course.orderedContent
+      : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+
+    if (ordered && Array.isArray(ordered)) {
+      const mapped = ordered
+        .filter((it: any) => {
+          if (it.type === 'CLASS') return it.data?.status === 'ACTIVE';
+          if (it.type === 'QUESTIONNAIRE') return it.data?.status === 'ACTIVE';
+          return false;
+        })
+        .map((it: any, idx: number) => ({ type: (it.type === 'CLASS' ? 'class' : 'questionnaire'), data: it.data, index: idx }));
+
+      const items: Array<{ type: 'class'|'questionnaire'; data: any; index: number }> = mapped as Array<{ type: 'class'|'questionnaire'; data: any; index: number }>; 
+
+      console.debug('[class-detail] buildCourseItemsFromCourse: using orderedContent, items=', items.length);
+      this.courseItems.set(items);
+      return;
+    }
+
+    // Fallback: usar course.classes y cuestionarios entre clases
+    const classes = (course.classes || []).filter((c: any) => c.status === 'ACTIVE');
+    const items: Array<{ type: 'class'|'questionnaire'; data: any; index: number }> = [];
+
+    classes.forEach((c: any) => {
+      items.push({ type: 'class', data: c, index: items.length });
+
+      // insertar cuestionarios BETWEEN_CLASSES después de la clase correspondiente
+      const qAfter = this.questionnaires().filter(q => q.position?.type === 'BETWEEN_CLASSES' && q.position?.afterClassId === c._id);
+      qAfter.forEach(q => items.push({ type: 'questionnaire', data: q, index: items.length }));
+    });
+
+    // añadir cuestionarios restantes
+    const addedQIds = new Set(items.filter(i => i.type === 'questionnaire').map(i => i.data._id));
+    this.questionnaires().forEach(q => {
+      if (!addedQIds.has(q._id)) items.push({ type: 'questionnaire', data: q, index: items.length });
+    });
+
+    this.courseItems.set(items);
+    console.debug('[class-detail] buildCourseItemsFromCourse: fallback items=', items.length);
+  }
+
+  /**
+   * Helpers para navegar usando `courseItems` en vez de `course.classes`
+   */
+  private getOrderedClassIndexes(): number[] {
+    return this.courseItems().map((it, idx) => (it.type === 'class' ? idx : -1)).filter(i => i !== -1);
+  }
+
+  private findCurrentItemIndex(): number {
+    const items = this.courseItems();
+    const currentClassId = this.classId();
+    return items.findIndex(it => it.type === 'class' && this.normalizeId(it.data._id) === this.normalizeId(currentClassId));
+  }
+
   goBack(): void {
     this.router.navigate(['/alumno/course-detail', this.courseId()]);
   }
 
   goToNextClass(): void {
-    const classes = this.courseData()?.classes;
-    if (!classes) return;
+    const items = this.courseItems();
+    if (!items || items.length === 0) return;
 
-    const currentIndex = classes.findIndex((c: any) => c._id === this.classId());
-    if (currentIndex < classes.length - 1) {
-      const nextClass = classes[currentIndex + 1];
-      this.router.navigate(['/alumno/course-detail', this.courseId(), 'class', nextClass._id]);
+    const currentIndex = this.findCurrentItemIndex();
+    // buscar siguiente item que sea clase
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      if (items[i].type === 'class') {
+        this.router.navigate(['/alumno/course-detail', this.courseId(), 'class', items[i].data._id]);
+        return;
+      }
     }
   }
 
   getPreviousClassId(): string | null {
-    const classes = this.courseData()?.classes;
-    if (!classes) return null;
+    const items = this.courseItems();
+    const currentIndex = this.findCurrentItemIndex();
+    if (currentIndex <= 0) return null;
 
-    const currentIndex = classes.findIndex((c: any) => c._id === this.classId());
-    if (currentIndex > 0) {
-      return classes[currentIndex - 1]._id;
+    // buscar anterior que sea clase
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (items[i].type === 'class') return items[i].data._id;
     }
     return null;
   }
@@ -275,21 +362,22 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getPendingQuestionnaireId(): string | null {
-    const course = this.courseData();
-    const currentClassId = this.classId();
-    if (!course || !course.classes) return null;
-
-    const currentIndex = course.classes.findIndex((c: any) => c._id === currentClassId);
+    // Buscar cuestionario que está entre la clase anterior y la actual, usando courseItems
+    const currentIndex = this.findCurrentItemIndex();
     if (currentIndex <= 0) return null;
 
-    const prevClassId = course.classes[currentIndex - 1]._id;
-    const questionnaires = this.questionnaires();
-    
-    const pendingQuestionnaire = questionnaires.find((q: Questionnaire) => 
-      q.position?.type === 'BETWEEN_CLASSES' && 
-      q.position?.afterClassId === prevClassId
-    );
+    // Buscar hacia atrás por la clase anterior
+    let prevClassId: string | null = null;
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (this.courseItems()[i].type === 'class') {
+        prevClassId = this.courseItems()[i].data._id;
+        break;
+      }
+    }
+    if (!prevClassId) return null;
 
+    const questionnaires = this.questionnaires();
+    const pendingQuestionnaire = questionnaires.find((q: Questionnaire) => q.position?.type === 'BETWEEN_CLASSES' && q.position?.afterClassId === prevClassId);
     return pendingQuestionnaire?._id || null;
   }
 
@@ -303,13 +391,21 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getCurrentClassNumber(): number {
-    const classes = this.courseData()?.classes;
-    if (!classes) return 0;
-    return classes.findIndex((c: any) => c._id === this.classId()) + 1;
+    const items = this.courseItems();
+    if (!items || items.length === 0) return 0;
+    // contar cuántas clases aparecen hasta la actual
+    let count = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type === 'class') {
+        if (this.normalizeId(items[i].data._id) === this.normalizeId(this.classId())) return count + 1;
+        count++;
+      }
+    }
+    return 0;
   }
 
   getTotalClasses(): number {
-    return this.courseData()?.classes?.length || 0;
+    return this.courseItems().filter(i => i.type === 'class').length || 0;
   }
 
   getCompletedClassesCount(): number {
@@ -317,17 +413,23 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   hasNextClass(): boolean {
-    const classes = this.courseData()?.classes;
-    if (!classes) return false;
-    const currentIndex = classes.findIndex((c: any) => c._id === this.classId());
-    return currentIndex < classes.length - 1;
+    const items = this.courseItems();
+    if (!items || items.length === 0) return false;
+    const currentIndex = this.findCurrentItemIndex();
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      if (items[i].type === 'class') return true;
+    }
+    return false;
   }
 
   hasPreviousClass(): boolean {
-    const classes = this.courseData()?.classes;
-    if (!classes) return false;
-    const currentIndex = classes.findIndex((c: any) => c._id === this.classId());
-    return currentIndex > 0;
+    const items = this.courseItems();
+    const currentIndex = this.findCurrentItemIndex();
+    if (currentIndex <= 0) return false;
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (items[i].type === 'class') return true;
+    }
+    return false;
   }
 
   getCourseImageUrl(imageUrl: string | null | undefined): string {
@@ -452,17 +554,18 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         });
 
         this.bunnyStreamPlayer.on('ended', () => {
-          console.log('Video terminado');
-          this.markAsCompleted();
+            console.debug('[class-detail] bunnyStreamPlayer ended event');
+            this.markAsCompleted();
         });
 
         this.bunnyStreamPlayer.on('timeupdate', (data: any) => {
           if (data && typeof data.seconds === 'number') {
             this.currentWatchTime.set(data.seconds);
-            
-            if (Math.abs(data.seconds - this.lastSavedTime) >= this.saveInterval) {
-              this.saveProgress();
-            }
+              // Log timeupdate for debugging
+              if (Math.abs(data.seconds - this.lastSavedTime) >= this.saveInterval) {
+                console.debug('[class-detail] bunnyStreamPlayer timeupdate, seconds=', data.seconds, 'lastSaved=', this.lastSavedTime);
+                this.saveProgress();
+              }
           }
         });
       });
@@ -558,9 +661,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const video = event.target as HTMLVideoElement;
     this.currentWatchTime.set(video.currentTime);
+    console.debug('[class-detail] onVideoTimeUpdate currentTime=', video.currentTime);
 
     // Guardar progreso cada N segundos de cambio
     if (Math.abs(video.currentTime - this.lastSavedTime) >= this.saveInterval) {
+      console.debug('[class-detail] onVideoTimeUpdate triggering saveProgress, current=', video.currentTime, 'lastSaved=', this.lastSavedTime);
       this.saveProgress();
     }
   }
@@ -570,6 +675,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   onVideoPause(): void {
     // Guardar progreso inmediatamente cuando se pausa
+    console.debug('[class-detail] onVideoPause, currentTime=', this.currentWatchTime());
     this.saveProgress(true);
   }
 
@@ -577,6 +683,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    * Se ejecuta cuando el video termina
    */
   onVideoEnded(): void {
+    console.debug('[class-detail] onVideoEnded HTML5');
     this.markAsCompleted();
   }
 
@@ -604,23 +711,27 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     const completed = percentWatched >= 90;
 
     // Guardar en silencio sin mostrar el cartel
-    this.progressService.updateProgress(this.courseId(), {
+    const payload = {
       classId: this.classId(),
       watchTime: currentTime,
       duration: duration,
       completed: completed
-    }).subscribe({
+    };
+    console.debug('[class-detail] saveProgress payload=', payload, 'force=', force);
+    this.progressService.updateProgress(this.courseId(), payload).subscribe({
       next: (courseProgress) => {
+        console.debug('[class-detail] saveProgress response overall=', courseProgress?.overallProgress);
         this.overallProgress.set(courseProgress.overallProgress);
         // Actualizar conteo de clases completadas
         const completedCount = courseProgress.classesProgress?.filter(cp => cp.completed).length || 0;
         this.completedClassesCount.set(completedCount);
         if (completed && !this.isClassCompleted()) {
+          console.debug('[class-detail] saveProgress marking local isClassCompleted=true');
           this.isClassCompleted.set(true);
         }
       },
       error: (err) => {
-        console.error('Error saving progress:', err);
+        console.error('[class-detail] Error saving progress:', err);
       }
     });
   }
@@ -630,9 +741,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   markAsCompleted(): void {
     if (this.isClassCompleted()) return;
+    console.debug('[class-detail] markAsCompleted called for classId=', this.classId());
 
     this.progressService.markCompleted(this.courseId(), this.classId()).subscribe({
       next: (courseProgress) => {
+        console.debug('[class-detail] markAsCompleted response overall=', courseProgress?.overallProgress);
         this.isClassCompleted.set(true);
         this.overallProgress.set(courseProgress.overallProgress);
         // Actualizar conteo de clases completadas
@@ -640,7 +753,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         this.completedClassesCount.set(completedCount);
       },
       error: (err) => {
-        console.error('Error marking as completed:', err);
+        console.error('[class-detail] Error marking as completed:', err);
       }
     });
   }

@@ -9,6 +9,7 @@ import {
   QuestionOption
 } from '../../../../core/services/questionnaires.service';
 import { ClassesService } from '../../../../core/services/classes.service';
+import { CourseEventsService } from '../../../../core/services/course-events.service';
 import { InfoService } from '../../../../core/services/info.service';
 import { QuestionItemComponent } from '../question-item/question-item.component';
 
@@ -32,6 +33,7 @@ export class QuestionnaireEditComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private courseEvents = inject(CourseEventsService);
 
   @ViewChildren(QuestionItemComponent) questionItems!: QueryList<QuestionItemComponent>;
 
@@ -681,6 +683,16 @@ export class QuestionnaireEditComponent implements OnInit {
       return question;
     });
 
+    // Limpiar blob URLs antes de enviar al backend
+    // Los archivos se subirán después de que el cuestionario sea guardado
+    const cleanedQuestions = questions.map(q => {
+      if (q.promptMediaUrl && q.promptMediaUrl.startsWith('blob:')) {
+        const { promptMediaUrl, promptMediaProvider, ...rest } = q;
+        return rest;
+      }
+      return q;
+    });
+
     const questionnaireData: Partial<Questionnaire> = {
       courseId: formValue.courseId,
       title: formValue.title,
@@ -690,15 +702,13 @@ export class QuestionnaireEditComponent implements OnInit {
         type: formValue.positionType,
         afterClassId: formValue.positionType === 'BETWEEN_CLASSES' ? formValue.afterClassId : undefined
       },
-      questions,
+      questions: cleanedQuestions,
       passingScore: formValue.passingScore,
       allowRetries: formValue.allowRetries,
       maxRetries: formValue.allowRetries ? formValue.maxRetries : undefined,
       showCorrectAnswers: formValue.showCorrectAnswers,
       timeLimitMinutes: formValue.timeLimitMinutes || undefined
     };
-
-    console.log('Sending questionnaire data:', JSON.stringify(questionnaireData, null, 2));
 
     const request = this.isEditMode
       ? this.questionnairesService.updateQuestionnaire(this.questionnaireId, questionnaireData)
@@ -707,16 +717,25 @@ export class QuestionnaireEditComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         const savedQuestionnaire = response?.data;
-        
-        // Si es modo creación: pasar a modo edición y pedir a los hijos que suban archivos pendientes
-        if (!this.isEditMode && savedQuestionnaire) {
-          this.questionnaireId = savedQuestionnaire._id;
-          this.isEditMode = true; // Cambiar a modo edición para los uploads
+
+        // Verificar si hay archivos pendientes para subir
+        const hasPendingUploads = this.questionItems?.some((qc: QuestionItemComponent) => !!qc.pendingFile);
+
+        if (savedQuestionnaire && hasPendingUploads) {
+          // Hay archivos pendientes, iniciar uploads en segundo plano
+          if (!this.isEditMode) {
+            // Modo creación: cambiar a modo edición primero
+            this.questionnaireId = savedQuestionnaire._id;
+            this.isEditMode = true;
+          }
           this.startChildrenPendingUploads(savedQuestionnaire, formValue.courseId);
         } else {
+          // No hay uploads pendientes, mostrar success y navegar
           this.infoService.showSuccess(
             this.isEditMode ? 'Cuestionario actualizado exitosamente' : 'Cuestionario creado exitosamente'
           );
+          // Emitir evento para que `course.orderedContent` sea recargado por cualquier vista interesada
+          try { this.courseEvents.emitCourseReload(formValue.courseId); } catch (e) { /* ignore */ }
           this.router.navigate(['/profesor/questionnaires'], {
             queryParams: { courseId: formValue.courseId }
           });
