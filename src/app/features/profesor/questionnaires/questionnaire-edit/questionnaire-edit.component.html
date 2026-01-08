@@ -50,7 +50,7 @@
               id="title"
               formControlName="title"
               placeholder="Ej: Examen del Módulo 1..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
               [class.border-red-500]="questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched"
             />
             @if (questionnaireForm.get('title')?.invalid && questionnaireForm.get('title')?.touched) {
@@ -68,7 +68,7 @@
               formControlName="description"
               rows="3"
               placeholder="Descripción opcional del cuestionario..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             ></textarea>
           </div>
 
@@ -162,7 +162,7 @@
               min="0"
               max="100"
               placeholder="Ej: 70..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
           </div>
 
@@ -176,8 +176,8 @@
               id="maxRetries"
               formControlName="maxRetries"
               min="1"
-              placeholder="Dejar vacío para ilimitado..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              placeholder="Dejar vacío para intentos ilimitados..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
           </div>
 
@@ -202,7 +202,7 @@
               formControlName="showCorrectAnswers"
               class="cursor-pointer h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label for="showCorrectAnswers" class="cursor-pointer ml-2 block text-sm text-gray-700">
+            <label for="showCorrectAnswers" class="cursor-pointer ml-2 block font-bold text-sm text-gray-700">
               Mostrar Respuestas Correctas
             </label>
           </div>
@@ -219,10 +219,10 @@
               min="1"
               max="1440"
               placeholder="Dejar vacío para tiempo ilimitado (ej: 60 para 1 hora)..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             />
             <p class="mt-1 text-sm text-gray-600">
-              Establece un tiempo límite en minutos para resolver el cuestionario. Deja vacío para tiempo ilimitado.
+              Establece un tiempo límite en minutos para resolver el cuestionario. <br>Deja vacío para tiempo ilimitado.
             </p>
           </div>
         </div>
