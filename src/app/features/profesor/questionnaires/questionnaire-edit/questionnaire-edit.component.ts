@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -8,16 +8,9 @@ import {
   Question,
   QuestionOption
 } from '../../../../core/services/questionnaires.service';
-import { CoursesService } from '../../../../core/services/courses.service';
 import { ClassesService } from '../../../../core/services/classes.service';
 import { InfoService } from '../../../../core/services/info.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { QuestionItemComponent } from '../question-item/question-item.component';
-
-interface Course {
-  _id: string;
-  name: string;
-}
 
 interface ClassData {
   _id: string;
@@ -34,10 +27,8 @@ interface ClassData {
 export class QuestionnaireEditComponent implements OnInit {
   private fb = inject(FormBuilder);
   private questionnairesService = inject(QuestionnairesService);
-  private coursesService = inject(CoursesService);
   private classesService = inject(ClassesService);
   private infoService = inject(InfoService);
-  private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -48,7 +39,6 @@ export class QuestionnaireEditComponent implements OnInit {
   isEditMode = false;
   questionnaireId = '';
 
-  courses = signal<Course[]>([]);
   classes = signal<ClassData[]>([]);
   questionnaires = signal<Questionnaire[]>([]); // Questionnaires of the selected course
   loading = signal<boolean>(true);
@@ -56,6 +46,10 @@ export class QuestionnaireEditComponent implements OnInit {
   loadingClasses = signal<boolean>(false);
   preselectedCourseId = signal<string | null>(null); // CourseId from query params
   preselectedCourseName = signal<string>(''); // Name of the preselected course
+
+  // Allow optional external inputs (when parent/launcher provides them instead of navigating)
+  externalCourseId = input<string | null | undefined>();
+  externalCourseName = input<string | null | undefined>();
 
   // Media upload tracking
   // Media upload tracking is handled by each QuestionItem child
@@ -66,17 +60,52 @@ export class QuestionnaireEditComponent implements OnInit {
     this.initForm();
 
     // Check for preselected courseId from query params (only in create mode)
-    const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
-    if (courseIdFromQuery) {
-      this.preselectedCourseId.set(courseIdFromQuery);
-      // Set the courseId directly in the form
-      this.questionnaireForm.patchValue({ courseId: courseIdFromQuery });
-      // Load the specific course to get its name
-      this.loadPreselectedCourse(courseIdFromQuery);
-      // Load classes for the preselected course
-      this.loadClassesByCourse(courseIdFromQuery);
-      // Load questionnaires to filter available classes
-      this.loadQuestionnairesByCourse(courseIdFromQuery);
+    // Priority: external inputs passed via `input()` from a parent component
+    const extIdRaw = this.externalCourseId?.();
+    const extNameRaw = this.externalCourseName?.();
+
+    if (typeof extIdRaw === 'string' && extIdRaw) {
+      // Parent provided an id (and maybe a name) — use id and load related data
+      const extId = extIdRaw;
+      this.preselectedCourseId.set(extId);
+      this.questionnaireForm.patchValue({ courseId: extId }, { emitEvent: false });
+      if (typeof extNameRaw === 'string' && extNameRaw) {
+        this.preselectedCourseName.set(extNameRaw);
+      }
+      this.loadClassesByCourse(extId);
+      this.loadQuestionnairesByCourse(extId);
+    } else {
+      // Fallback to query params (existing behavior)
+      const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
+      const courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
+      if (courseIdFromQuery) {
+        this.preselectedCourseId.set(courseIdFromQuery);
+        this.questionnaireForm.patchValue({ courseId: courseIdFromQuery });
+        // Use the course name from query params (should always be provided)
+        if (courseNameFromQuery) {
+          this.preselectedCourseName.set(courseNameFromQuery);
+        }
+        // Load classes for the preselected course
+        this.loadClassesByCourse(courseIdFromQuery);
+        // Load questionnaires to filter available classes
+        this.loadQuestionnairesByCourse(courseIdFromQuery);
+      }
+    }
+
+    // Also accept courseName/courseId passed via navigation state (navigationExtras.state)
+    try {
+      const navState: any = this.router.getCurrentNavigation?.()?.extras?.state;
+      if (navState) {
+        if (navState.courseId && !this.preselectedCourseId()) {
+          this.preselectedCourseId.set(navState.courseId);
+          this.questionnaireForm.patchValue({ courseId: navState.courseId });
+        }
+        if (navState.courseName && !this.preselectedCourseName()) {
+          this.preselectedCourseName.set(navState.courseName);
+        }
+      }
+    } catch (e) {
+      // ignore - getCurrentNavigation may be undefined or throw in some contexts
     }
 
     // Check if edit mode
@@ -84,36 +113,15 @@ export class QuestionnaireEditComponent implements OnInit {
       if (params['id'] && params['id'] !== 'new') {
         this.isEditMode = true;
         this.questionnaireId = params['id'];
-        this.loadCourses();
+        // In edit mode, load the questionnaire data
         this.loadQuestionnaire();
       } else {
-        // In create mode, load courses (needed for the dropdown if no preselected course)
-        this.loadCourses();
-        // Loading will be set to false after courses load
+        // In create mode, we expect courseId and courseName to be provided
+        this.loading.set(false);
       }
     });
   }
 
-  loadPreselectedCourse(courseId: string): void {
-    this.coursesService.getCourseById(courseId).subscribe({
-      next: (response) => {
-        const courseData = response?.data || response;
-        if (courseData) {
-          // Store the course name
-          this.preselectedCourseName.set(courseData.name || '');
-          // Add the preselected course to the courses list if it's not already there
-          const currentCourses = this.courses();
-          const courseExists = currentCourses.some(c => c._id === courseId);
-          if (!courseExists) {
-            this.courses.set([...currentCourses, { _id: courseData._id, name: courseData.name }]);
-          }
-        }
-      },
-      error: (error) => {
-        console.error('Error loading preselected course:', error);
-      }
-    });
-  }
 
   initForm(): void {
     this.questionnaireForm = this.fb.group({
@@ -156,70 +164,12 @@ export class QuestionnaireEditComponent implements OnInit {
     return this.questionnaireForm.get('questions') as FormArray;
   }
 
-  getPreselectedCourseName(): string {
-    if (this.preselectedCourseName()) {
-      return this.preselectedCourseName();
-    }
-    const preselectedId = this.preselectedCourseId();
-    if (preselectedId) {
-      const course = this.courses().find(c => c._id === preselectedId);
-      return course?.name || 'Cargando...';
-    }
-    return '';
-  }
 
-  loadCourses(): void {
-    const currentUser = this.authService.currentUser();
-    if (!currentUser) {
-      if (!this.isEditMode) {
-        this.loading.set(false);
-      }
+  loadQuestionnairesByCourse(courseId: string | null | undefined): void {
+    if (!courseId) {
+      this.questionnaires.set([]);
       return;
     }
-
-    // If we have a preselected courseId, we still need to load courses for the dropdown
-    // but we'll hide/disable it if courseId is preselected
-    this.coursesService.getTeacherCourses(currentUser._id).subscribe({
-      next: (response) => {
-        const coursesData = response?.data || [];
-        this.courses.set(coursesData);
-        
-        // If in create mode and we have a preselected courseId, ensure it's set in the form
-        if (!this.isEditMode && this.preselectedCourseId()) {
-          const courseIdFromQuery = this.preselectedCourseId();
-          const courseIdControl = this.questionnaireForm.get('courseId');
-          if (courseIdControl && courseIdControl.value !== courseIdFromQuery) {
-            courseIdControl.setValue(courseIdFromQuery, { emitEvent: false });
-          }
-        }
-        
-        if (!this.isEditMode) {
-          this.loading.set(false);
-        }
-      },
-      error: (error) => {
-        console.error('Error loading courses:', error);
-        this.infoService.showError('Error al cargar los cursos');
-        if (!this.isEditMode) {
-          this.loading.set(false);
-        }
-      }
-    });
-  }
-
-  onCourseChange(): void {
-    const courseId = this.questionnaireForm.get('courseId')?.value;
-    if (courseId) {
-      this.loadClassesByCourse(courseId);
-      // Load questionnaires to filter out classes that already have questionnaires after them
-      this.loadQuestionnairesByCourse(courseId);
-    } else {
-      this.classes.set([]);
-      this.questionnaires.set([]);
-    }
-  }
-
-  loadQuestionnairesByCourse(courseId: string): void {
     this.questionnairesService.getQuestionnairesByCourse(courseId).subscribe({
       next: (response) => {
         const questionnairesData = response?.data || [];
@@ -252,7 +202,12 @@ export class QuestionnaireEditComponent implements OnInit {
     return allClasses.filter(classItem => !classesWithQuestionnaires.has(classItem._id));
   }
 
-  loadClassesByCourse(courseId: string): void {
+  loadClassesByCourse(courseId: string | null | undefined): void {
+    if (!courseId) {
+      this.classes.set([]);
+      this.loadingClasses.set(false);
+      return;
+    }
     this.loadingClasses.set(true);
 
     this.classesService.getClassesByCourse(courseId).subscribe({
@@ -274,6 +229,15 @@ export class QuestionnaireEditComponent implements OnInit {
       next: (response) => {
         const questionnaire: Questionnaire = response?.data;
         this.populateForm(questionnaire);
+
+        // If we don't have the course name yet, try to get it from the response
+        if (!this.preselectedCourseName()) {
+          const maybeName = (response?.data && ((response.data as any).courseName || (response.data as any).course?.name));
+          if (maybeName) {
+            this.preselectedCourseName.set(maybeName);
+          }
+        }
+
         this.loading.set(false);
       },
       error: (error) => {

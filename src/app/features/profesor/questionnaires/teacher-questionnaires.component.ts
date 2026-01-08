@@ -139,13 +139,28 @@ export class TeacherQuestionnairesComponent implements OnInit {
 
   openQuestionnaireEdit(questionnaire?: Questionnaire): void {
     if (questionnaire) {
-      this.router.navigate(['/profesor/questionnaires', questionnaire._id, 'edit']);
+      // Include courseId + courseName as query params for the edit component
+      const courseId = (questionnaire as any).courseId || this.selectedCourseId || '';
+      const course = this.courses().find(c => c._id === courseId);
+      const courseName = course ? course.name : '';
+
+      const queryParams: any = {};
+      if (courseId) queryParams.courseId = courseId;
+      if (courseName) queryParams.courseName = courseName;
+
+      this.router.navigate(['/profesor/questionnaires', questionnaire._id, 'edit'], {
+        queryParams: Object.keys(queryParams).length ? queryParams : {}
+      });
     } else {
       // Create new questionnaire with pre-selected course
-      // Use selectedCourseId if available, otherwise try to get it from query params
       const courseId = this.selectedCourseId || this.route.snapshot.queryParamMap.get('courseId') || '';
+      const course = this.courses().find(c => c._id === courseId);
+      const courseName = course ? course.name : '';
+      const queryParams: any = {};
+      if (courseId) queryParams.courseId = courseId;
+      if (courseName) queryParams.courseName = courseName;
       this.router.navigate(['/profesor/questionnaires/new'], {
-        queryParams: courseId ? { courseId } : {}
+        queryParams: Object.keys(queryParams).length ? queryParams : {}
       });
     }
   }
@@ -222,5 +237,12 @@ export class TeacherQuestionnairesComponent implements OnInit {
       default:
         return status;
     }
+  }
+
+  // Devuelve el nombre del curso actualmente seleccionado (o cadena vacía)
+  getSelectedCourseName(): string {
+    if (!this.selectedCourseId) return '';
+    const course = this.courses().find(c => c._id === this.selectedCourseId);
+    return course?.name || '';
   }
 }

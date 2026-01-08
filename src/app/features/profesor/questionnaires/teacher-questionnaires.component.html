@@ -3,8 +3,13 @@
   <div class="relative overflow-hidden bg-linear-to-tr from-[#033e72] to-[#66afef] rounded-xl">
     <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center justify-between">
       <div>
-        <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Cuestionarios</h1>
-        <p class="text-white text-sm">Gestiona los cuestionarios y exámenes de tus cursos</p>
+        @if (selectedCourseId) {
+          <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Cuestionarios — {{ getSelectedCourseName() }}</h1>
+          <p class="text-white text-sm">Cuestionarios del curso seleccionado</p>
+        } @else {
+          <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Cuestionarios</h1>
+          <p class="text-white text-sm">Gestiona los cuestionarios y exámenes de tus cursos</p>
+        }
       </div>
     </div>
   </div>
@@ -33,6 +38,8 @@
             }
           </select>
         </div>
+
+        <!-- course name shown in header instead of as a separate field -->
 
         @if (selectedCourseId) {
           <div class="flex items-end">

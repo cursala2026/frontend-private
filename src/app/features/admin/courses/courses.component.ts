@@ -9,7 +9,7 @@ import { CoursesService, Course } from '../../../core/services/courses.service';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
-import { TeacherAssignmentModalComponent } from './teacher-assignment-modal/teacher-assignment-modal.component';
+import { TeacherAssignmentModalComponent } from '../../../shared/components/teacher-assignment-modal/teacher-assignment-modal.component';
 
 @Component({
   selector: 'app-courses',

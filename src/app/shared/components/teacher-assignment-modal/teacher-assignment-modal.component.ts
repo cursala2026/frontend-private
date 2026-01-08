@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, Output, signal, OnInit, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CoursesService } from '../../../../core/services/courses.service';
-import { UsersService } from '../../../../core/services/users.service';
-import { InfoService } from '../../../../core/services/info.service';
-import { UserRole } from '../../../../core/models/user-role.enum';
+import { CoursesService } from '../../../core/services/courses.service';
+import { UsersService } from '../../../core/services/users.service';
+import { InfoService } from '../../../core/services/info.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 
 @Component({
   selector: 'app-teacher-assignment-modal',
