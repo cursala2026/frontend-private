@@ -123,16 +123,16 @@
 
             <!-- Footer Info -->
             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-              @if (course.mainTeacherInfo) {
+              @if (course.teachersInfo && course.teachersInfo.length > 0) {
                 <div class="flex items-center space-x-2">
                   <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold uppercase">
-                    {{ course.mainTeacherInfo.firstName.charAt(0) }}{{ course.mainTeacherInfo.lastName.charAt(0) }}
+                    {{ course.teachersInfo[0].firstName.charAt(0) }}{{ course.teachersInfo[0].lastName.charAt(0) }}
                   </div>
-                  <span class="text-xs text-gray-600">{{ course.mainTeacherInfo.teacherName }}</span>
+                  <span class="text-xs text-gray-600">{{ course.teachersInfo[0].teacherName }}</span>
                 </div>
               }
               <button
-                class="cursor-pointer text-brand-primary cursor-pointer hover:text-brand-primary font-semibold text-sm flex items-center transition-colors"
+                class="cursor-pointer text-brand-primary hover:text-brand-primary font-semibold text-sm flex items-center transition-colors"
               >
                 Ver <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

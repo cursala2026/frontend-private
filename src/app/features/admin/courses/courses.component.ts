@@ -119,7 +119,7 @@ export class CoursesComponent implements OnInit {
         label: 'Profesores',
         type: 'text',
         formatter: (value: any, row: any) => {
-          // Mostrar los profesores del curso (prioridad: teachersInfo > mainTeacherInfo)
+          // Mostrar los profesores del curso (usar `teachersInfo`)
           if (row.teachersInfo && Array.isArray(row.teachersInfo) && row.teachersInfo.length > 0) {
             const firstTeacher = row.teachersInfo[0];
             const firstTeacherName = firstTeacher.firstName && firstTeacher.lastName
@@ -133,13 +133,6 @@ export class CoursesComponent implements OnInit {
             }
             
             return firstTeacherName;
-          }
-          // Fallback a mainTeacherInfo para compatibilidad
-          if (row.mainTeacherInfo) {
-            const mainTeacherName = row.mainTeacherInfo.firstName 
-              ? `${row.mainTeacherInfo.firstName} ${row.mainTeacherInfo.lastName || ''}`
-              : row.mainTeacherInfo.teacherName || row.mainTeacherInfo.email || 'Sin asignar';
-            return mainTeacherName;
           }
           return 'Sin asignar';
         },
@@ -307,7 +300,13 @@ export class CoursesComponent implements OnInit {
     row.categoryId = newCategoryId;
 
     // Optimistic UI update
-    const payload = { category: newCategoryId };
+    // Incluir campos de fechas/duración/days actuales para prevenir que el
+    // backend sobrescriba o elimine esos campos si el PATCH no hace merge.
+    const payload: any = { category: newCategoryId };
+    if (row.startDate !== undefined) payload.startDate = row.startDate;
+    if (row.registrationOpenDate !== undefined) payload.registrationOpenDate = row.registrationOpenDate;
+    if (row.days !== undefined) payload.days = row.days;
+    if (row.time !== undefined) payload.time = row.time;
 
     this.coursesService.updateCoursePartial(row._id, payload).subscribe({
       next: () => {
@@ -379,9 +378,6 @@ export class CoursesComponent implements OnInit {
       teachersIds = course.teachers.map((t: any) => typeof t === 'string' ? t : (t._id || t.teacherId || t));
     } else if (course.teachersInfo && Array.isArray(course.teachersInfo)) {
       teachersIds = course.teachersInfo.map((t: any) => t._id || t.teacherId || t);
-    } else if (course.mainTeacher) {
-      // Compatibilidad: si solo hay mainTeacher, usarlo
-      teachersIds = [typeof course.mainTeacher === 'string' ? course.mainTeacher : (course.mainTeacher._id || course.mainTeacher)];
     }
 
     this.selectedCourse = {

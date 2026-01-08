@@ -105,6 +105,11 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
       route: '/admin/public-data'
     },
+    {
+      label: 'Códigos Promocionales',
+      icon: 'M5 13c0 3.87 3.13 7 7 7s7-3.13 7-7-3.13-7-7-7S5 9.13 5 13zm7-9c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2z',
+      route: '/admin/promotional-codes'
+    },
   ];
 
   toggleSidebar(): void {

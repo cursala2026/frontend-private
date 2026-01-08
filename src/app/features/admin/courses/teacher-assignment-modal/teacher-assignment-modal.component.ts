@@ -16,7 +16,8 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() courseId = '';
   @Input() courseName = '';
-  @Input() currentTeachers: any = null; // Puede ser teachersInfo array o mainTeacherInfo
+  @Input() currentTeachers: any = null; // Puede ser teachersInfo array
+  @Input() courseData: any = null; // Datos completos del curso (para preservar fechas/days/time)
   @Output() close = new EventEmitter<void>();
   @Output() refreshCourses = new EventEmitter<void>();
 
@@ -64,7 +65,7 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
       }).filter((id: string) => id !== '');
     }
 
-    // Si es un objeto único (mainTeacherInfo para compatibilidad)
+    // Si es un objeto único (compatibilidad)
     if (typeof teachers === 'object') {
       const id = teachers._id || teachers.teacherId || teachers.id || '';
       return id ? [id] : [];
@@ -112,11 +113,17 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
 
     this.isSubmitting.set(true);
     
-    // Usar updateCourse para actualizar los profesores
-    const formData = new FormData();
-    formData.append('teachers', selectedIds.join(','));
-    
-    this.coursesService.updateCourse(this.courseId, { teachers: selectedIds }).subscribe({
+    // Usar updateCourse para actualizar los profesores. Incluir campos de
+    // fechas/days/time actuales para evitar que el backend los borre.
+    const payload: any = { teachers: selectedIds };
+    if (this.courseData) {
+      if (this.courseData.startDate !== undefined) payload.startDate = this.courseData.startDate;
+      if (this.courseData.registrationOpenDate !== undefined) payload.registrationOpenDate = this.courseData.registrationOpenDate;
+      if (this.courseData.days !== undefined) payload.days = this.courseData.days;
+      if (this.courseData.time !== undefined) payload.time = this.courseData.time;
+    }
+
+    this.coursesService.updateCourse(this.courseId, payload).subscribe({
       next: () => {
         const count = selectedIds.length;
         const message = count === 1 

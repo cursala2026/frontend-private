@@ -124,47 +124,15 @@
                                 ? teacher.firstName + ' ' + teacher.lastName 
                                 : teacher.teacherName || teacher.email }}
                             </h4>
-                            @if (teacher.professionalDescription) {
-                              <p class="text-sm text-gray-700 leading-relaxed">
-                                {{ teacher.professionalDescription }}
-                              </p>
-                            }
+                                          @if (teacher.professionalDescription) {
+                                            <p class="text-sm text-gray-700 leading-relaxed wrap-break-word whitespace-normal">
+                                              {{ teacher.professionalDescription }}
+                                            </p>
+                                          }
                           </div>
                         </div>
                       </div>
                     }
-                  </div>
-                </div>
-              } @else if (courseData.mainTeacherInfo) {
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesor del Curso</h3>
-                  <div class="bg-linear-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
-                    <div class="flex items-start gap-4">
-                      @if (courseData.mainTeacherInfo.profilePhotoUrl) {
-                        <img 
-                          [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
-                          [alt]="courseData.mainTeacherInfo.teacherName"
-                          class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
-                          (error)="handleImageError($event)"
-                        />
-                      } @else {
-                        <div class="h-16 w-16 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
-                          {{ (courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.firstName.charAt(0)) || '' }}{{ (courseData.mainTeacherInfo.lastName && courseData.mainTeacherInfo.lastName.charAt(0)) || '' }}
-                        </div>
-                      }
-                      <div class="flex-1 min-w-0">
-                        <h4 class="text-lg font-bold text-gray-900 mb-2">
-                          {{ courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.lastName 
-                            ? courseData.mainTeacherInfo.firstName + ' ' + courseData.mainTeacherInfo.lastName 
-                            : courseData.mainTeacherInfo.teacherName || courseData.mainTeacherInfo.email }}
-                        </h4>
-                        @if (courseData.mainTeacherInfo.professionalDescription) {
-                          <p class="text-sm text-gray-700 leading-relaxed">
-                            {{ courseData.mainTeacherInfo.professionalDescription }}
-                          </p>
-                        }
-                      </div>
-                    </div>
                   </div>
                 </div>
               }
@@ -201,7 +169,7 @@
                                 : teacher.teacherName || teacher.email }}
                             </h4>
                             @if (teacher.professionalDescription) {
-                              <p class="text-sm text-gray-700 leading-relaxed">
+                              <p class="text-sm text-gray-700 leading-relaxed wrap-break-word whitespace-normal">
                                 {{ teacher.professionalDescription }}
                               </p>
                             }
@@ -211,73 +179,83 @@
                     }
                   </div>
                 </div>
-              } @else if (courseData.mainTeacherInfo) {
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                  <h3 class="text-xl font-bold text-gray-900 mb-6">Profesor del Curso</h3>
-                  <div class="bg-linear-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-5">
-                    <div class="flex items-start gap-4">
-                      @if (courseData.mainTeacherInfo.profilePhotoUrl) {
-                        <img 
-                          [src]="getTeacherImageUrl(courseData.mainTeacherInfo.profilePhotoUrl)" 
-                          [alt]="courseData.mainTeacherInfo.teacherName"
-                          class="h-16 w-16 rounded-full object-cover shrink-0 border-2 border-white shadow-md"
-                          (error)="handleImageError($event)"
-                        />
-                      } @else {
-                        <div class="h-16 w-16 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 border-2 border-white shadow-md">
-                          {{ (courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.firstName.charAt(0)) || '' }}{{ (courseData.mainTeacherInfo.lastName && courseData.mainTeacherInfo.lastName.charAt(0)) || '' }}
-                        </div>
-                      }
-                      <div class="flex-1 min-w-0">
-                        <h4 class="text-lg font-bold text-gray-900 mb-2">
-                          {{ courseData.mainTeacherInfo.firstName && courseData.mainTeacherInfo.lastName 
-                            ? courseData.mainTeacherInfo.firstName + ' ' + courseData.mainTeacherInfo.lastName 
-                            : courseData.mainTeacherInfo.teacherName || courseData.mainTeacherInfo.email }}
-                        </h4>
-                        @if (courseData.mainTeacherInfo.professionalDescription) {
-                          <p class="text-sm text-gray-700 leading-relaxed">
-                            {{ courseData.mainTeacherInfo.professionalDescription }}
-                          </p>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
               }
             </div>
           }
 
           <!-- Course Details (solo mostrar si hay datos) -->
-          @if (courseData.startDate || (courseData.days && courseData.days.length > 0) || courseData.time || courseData.registrationOpenDate) {
-            <div class="bg-white rounded-lg shadow-sm p-6">
-              <h2 class="text-2xl font-bold text-gray-900 mb-6">Información del Curso</h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              @if (courseData.startDate) {
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Fecha de inicio</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ formatDate(courseData.startDate) }}</p>
-                </div>
-              }
-              @if (courseData.days && courseData.days.length > 0) {
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Días</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ courseData.days.join(', ') }}</p>
-                </div>
-              }
-              @if (courseData.time) {
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Horario</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ courseData.time }}</p>
-                </div>
-              }
-              @if (courseData.registrationOpenDate) {
-                <div>
-                  <p class="text-sm font-medium text-gray-500 mb-1">Inscripciones abiertas desde</p>
-                  <p class="text-lg font-semibold text-gray-900">{{ formatDate(courseData.registrationOpenDate) }}</p>
-                </div>
-              }
+          @if (hasAnyDateFields(courseData)) {
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+              <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <svg class="w-6 h-6 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Información del Curso
+              </h2>
+
+              <!-- Grid responsive: 2 columnas x 2 filas -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Fecha de inicio -->
+                @if (courseData.startDate) {
+                  <div class="flex items-start gap-3 p-4 bg-linear-to-br from-[#e6f4fa] to-[#cce9f5] rounded-lg border border-brand-primary/20">
+                    <div class="shrink-0 w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-medium text-brand-primary uppercase tracking-wide mb-1">Inicio</p>
+                      <p class="text-sm font-bold text-gray-900 leading-tight">{{ formatDate(courseData.startDate) }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Inscripciones desde -->
+                @if (courseData.registrationOpenDate) {
+                  <div class="flex items-start gap-3 p-4 bg-linear-to-br from-[#dcf5e7] to-[#c2ecd4] rounded-lg border border-green-200">
+                    <div class="shrink-0 w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">Inscripciones</p>
+                      <p class="text-sm font-bold text-gray-900 leading-tight">{{ formatDate(courseData.registrationOpenDate) }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Horario -->
+                @if (courseData.time) {
+                  <div class="flex items-start gap-3 p-4 bg-linear-to-br from-[#fef7e6] to-[#fdefc9] rounded-lg border border-brand-secondary/30">
+                    <div class="shrink-0 w-10 h-10 bg-brand-secondary rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-brand-secondary-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-medium text-brand-secondary-text uppercase tracking-wide mb-1">Horario</p>
+                      <p class="text-sm font-bold text-gray-900 leading-tight">{{ courseData.time }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Días (solo si hay datos) -->
+                @if (courseData.days && hasDays(courseData.days) && formatDays(courseData.days)) {
+                  <div class="flex items-start gap-3 p-4 bg-linear-to-br from-[#f5f5f5] to-[#e8e8e8] rounded-lg border border-brand-tertiary-lighten/30">
+                    <div class="shrink-0 w-10 h-10 bg-brand-tertiary-light rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-medium text-brand-tertiary-light uppercase tracking-wide mb-1">Días</p>
+                      <p class="text-sm font-bold text-gray-900 leading-tight">{{ formatDays(courseData.days) }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
           }
 
           <!-- Program Link -->
@@ -759,6 +737,7 @@
   <app-transfer-modal
     [isOpen]="showTransferModal()"
     [amount]="course()?.price || 0"
+    [courseId]="course()?._id || ''"
     (onClose)="closeTransferModal()"
   ></app-transfer-modal>
 </div>
