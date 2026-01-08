@@ -162,7 +162,7 @@ export class QuestionnaireResultsComponent implements OnInit {
       studentIdStr = String(studentId);
     }
 
-    console.log('Viewing submission for student:', studentIdStr);
+    // No logging in production: removed debug output
 
     if (!studentIdStr) {
       console.error('Invalid student id for viewing submission:', studentId);
