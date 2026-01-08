@@ -1,4 +1,4 @@
-<div [formGroup]="$any(question)" class="border border-gray-200 rounded-lg p-6 bg-gray-50">
+<div [formGroup]="$any(question)" class="border-2 mt-6 border-brand-primary rounded-lg p-6">
   <div class="flex items-center gap-8 justify-between mb-4">
     <h3 class="text-lg w-full text-brand-primary font-bold bg-brand-primary/10 px-4 py-2">Pregunta {{ index + 1 }}</h3>
     @if (questionsLength > 1) {
@@ -11,7 +11,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="mb-2">
       <label class="block text-base font-bold text-brand-tertiary mb-2">Tipo de Pregunta <span class="text-red-500">*</span></label>
-      <select formControlName="type" (change)="onQuestionTypeChange()" class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+      <select formControlName="type" (change)="onQuestionTypeChange()" class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400">
         <option value="MULTIPLE_CHOICE">Opción Múltiple (una correcta)</option>
         <option value="MULTIPLE_SELECT">Selección Múltiple (varias correctas)</option>
         <option value="TEXT">Texto Libre</option>
@@ -20,7 +20,7 @@
 
     <div class="mb-2">
       <label class="block text-base font-bold text-brand-tertiary mb-2">Puntos <span class="text-red-500">*</span></label>
-      <input type="number" formControlName="points" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+      <input type="number" formControlName="points" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic" />
       @if ($any(question).get('points')?.invalid && $any(question).get('points')?.touched) {
         <p class="mt-1 text-sm text-red-600">Los puntos deben ser un número mayor o igual a 1</p>
       }
@@ -28,7 +28,7 @@
 
     <div class="md:col-span-2 mb-2">
       <label class="block text-base font-bold text-brand-tertiary mb-2">Enunciado de la Pregunta <span class="text-red-500">*</span></label>
-      <textarea formControlName="questionText" rows="3" placeholder="Escribe aquí la pregunta" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+      <textarea formControlName="questionText" rows="3" placeholder="Escribe aquí la pregunta..." class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"></textarea>
       @if ($any(question).get('questionText')?.invalid && $any(question).get('questionText')?.touched) {
         <p class="mt-1 text-sm text-red-600">
           @if ($any(question).get('questionText')?.errors?.['required']) {
@@ -53,7 +53,7 @@
           }
 
           @if (!mediaUploading) {
-            <button type="button" (click)="onRemoveMedia()" class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2">X</button>
+            <button type="button" (click)="onRemoveMedia()" class="cursor-pointer absolute top-2 right-2 bg-red-600 text-white rounded-full p-2">X</button>
           }
 
           @if (mediaUploading) {
@@ -65,7 +65,7 @@
       }
 
       <div class="flex items-center gap-3">
-        <label [for]="'mediaFile' + index" class="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md bg-white">Seleccionar Archivo</label>
+        <label [for]="'mediaFile' + index" class="cursor-pointer text-sm text-brand-primary font-bold inline-flex items-center border border-brand-primary transition-all hover:bg-brand-primary/10 py-2 rounded-full px-4 mt-2 ring-1 ring-brand-primary active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07]">Seleccionar Archivo</label>
         <input [id]="'mediaFile' + index" type="file" (change)="onMediaSelected($event)" class="hidden" />
         <span class="text-sm text-gray-500">JPG, PNG, GIF, MP4, WEBM, OGG, AVI, MOV (Máx. 1GB)</span>
       </div>
@@ -77,38 +77,42 @@
     </div>
 
     @if (question.get('type')?.value === 'MULTIPLE_CHOICE' || question.get('type')?.value === 'MULTIPLE_SELECT') {
-      <div class="md:col-span-2 bg-white rounded-lg p-4 border border-gray-200 mb-4">
-        <div class="flex items-center justify-between mb-3">
-          <h4 class="block text-base font-bold text-brand-tertiary mb-2">Opciones de Respuesta</h4>
-          <button type="button" (click)="addOption()" class="px-4 py-2 text-sm font-bold border-2 rounded-full">+ Agregar Opción</button>
+      <div class="md:col-span-2 mb-4">
+        <div class="flex items-center justify-between mb-4 ">
+          <h4 class="block text-base font-bold text-brand-tertiary ">Opciones de Respuesta</h4>
+          <button type="button" (click)="addOption()" class="cursor-pointer px-4 py-2 text-sm font-bold border-2 rounded-full hover:bg-brand-tertiary-lighten/20 transition-all">+ Agregar Opción</button>
         </div>
+
+        <div class="rounded-lg p-4 border-2 border-brand-tertiary py-6">
+        
 
         @if ($any(question).errors && ($any(question).errors.optionsCount || $any(question).errors.noCorrect || $any(question).errors.optionTextEmpty)) {
           <div class="mb-3 p-3 bg-red-50 border border-red-100 rounded text-red-700">
             @if ($any(question).errors.optionsCount) {
-              <div>La pregunta debe tener al menos 2 opciones.</div>
+              <div class="flex items-center "><span class="text-base  mr-2">&#9679;</span>La pregunta debe tener al menos 2 opciones.</div>
             }
             @if ($any(question).errors.noCorrect) {
-              <div>{{$any(question).errors.noCorrect}}</div>
+              <div class="flex items-center "><span class="text-base  mr-2">&#9679;</span>{{$any(question).errors.noCorrect}}</div>
             }
             @if ($any(question).errors.optionTextEmpty) {
-              <div>{{$any(question).errors.optionTextEmpty}}</div>
+              <div class="flex items-center "><span class="text-base  mr-2">&#9679;</span>{{ $any(question).errors.optionTextEmpty }}</div>
             }
           </div>
         }
+
 
         <div class="space-y-2" formArrayName="options">
               @for (option of options.controls; track $index; let j = $index) {
                 <div [formGroupName]="j" class="flex items-center gap-2">
               @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
-                <input type="radio" [name]="'correctOption' + index" [checked]="question.get('correctOptionId')?.value === j.toString()" (change)="question.patchValue({ correctOptionId: j.toString() })" class="h-4 w-4" />
+                <input type="radio" [name]="'correctOption' + index" [checked]="question.get('correctOptionId')?.value === j.toString()" (change)="question.patchValue({ correctOptionId: j.toString() })" class="cursor-pointer h-4 w-4 " />
               }
 
               @if (question.get('type')?.value === 'MULTIPLE_SELECT') {
-                <input type="checkbox" [checked]="(question.get('correctOptionIds')?.value || []).includes(j.toString())" (change)="toggleCorrectOption(j)" class="h-4 w-4" />
+                <input type="checkbox" [checked]="(question.get('correctOptionIds')?.value || []).includes(j.toString())" (change)="toggleCorrectOption(j)" class="cursor-pointer h-4 w-4" />
               }
 
-              <input type="text" formControlName="text" (input)="onOptionTextChange($any($event.target).value, j)" placeholder="Opción {{ j + 1 }}" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+              <input type="text" formControlName="text" (input)="onOptionTextChange($any($event.target).value, j)" placeholder="Escribe la opción {{ j + 1 }} o elimínela" class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic w-full px-3 py-2 border border-gray-300 rounded-md" />
 
               <!-- per-option inline error removed (group-level message remains) -->
               @if (options.length > 2) {
@@ -125,6 +129,8 @@
             💡 Selecciona las casillas junto a todas las opciones correctas
           }
         </p>
+      </div>
+
       </div>
     }
   </div>
