@@ -1,8 +1,7 @@
-import { Component, OnInit, inject, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { HttpEventType } from '@angular/common/http';
 import {
   QuestionnairesService,
   Questionnaire,
@@ -13,6 +12,7 @@ import { CoursesService } from '../../../../core/services/courses.service';
 import { ClassesService } from '../../../../core/services/classes.service';
 import { InfoService } from '../../../../core/services/info.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { QuestionItemComponent } from '../question-item/question-item.component';
 
 interface Course {
   _id: string;
@@ -28,7 +28,7 @@ interface ClassData {
 @Component({
   selector: 'app-questionnaire-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, QuestionItemComponent],
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {
@@ -41,6 +41,8 @@ export class QuestionnaireEditComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+
+  @ViewChildren(QuestionItemComponent) questionItems!: QueryList<QuestionItemComponent>;
 
   questionnaireForm!: FormGroup;
   isEditMode = false;
@@ -56,10 +58,9 @@ export class QuestionnaireEditComponent implements OnInit {
   preselectedCourseName = signal<string>(''); // Name of the preselected course
 
   // Media upload tracking
-  mediaUploading = signal<{ [questionIndex: number]: boolean }>({});
-  uploadProgress = signal<{ [questionIndex: number]: number }>({});
+  // Media upload tracking is handled by each QuestionItem child
   mediaPreviews = signal<{ [questionIndex: number]: string }>({});
-  pendingMediaFiles = signal<{ [questionIndex: number]: { file: File, promptType: 'IMAGE' | 'VIDEO' } }>({});
+  // pendingMediaFiles removed: each QuestionItem handles its own pending upload
 
   ngOnInit(): void {
     this.initForm();
@@ -142,6 +143,13 @@ export class QuestionnaireEditComponent implements OnInit {
         maxRetriesControl?.disable();
       }
     });
+
+    // Subscribe to positionType changes to conditionally require afterClassId
+    this.questionnaireForm.get('positionType')?.valueChanges.subscribe((posType) => {
+      this.updateAfterClassValidators(posType);
+    });
+    // apply initial validators for afterClassId
+    this.updateAfterClassValidators(this.questionnaireForm.get('positionType')?.value);
   }
 
   get questions(): FormArray {
@@ -348,6 +356,14 @@ export class QuestionnaireEditComponent implements OnInit {
       promptMediaProvider: [question?.promptMediaProvider || 'BUNNY']
     });
 
+    // Attach a validator that enforces options count and correct answer presence
+    group.setValidators(this.questionGroupValidator.bind(this));
+
+    // Ensure group validity updates when options change
+    const optionsArray = group.get('options') as FormArray;
+    optionsArray.valueChanges.subscribe(() => {
+      group.updateValueAndValidity({ onlySelf: true });
+    });
     // If multiple choice or multiple select, add options
     if (question && (question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') && question.options) {
       const optionsArray = group.get('options') as FormArray;
@@ -441,12 +457,78 @@ export class QuestionnaireEditComponent implements OnInit {
     return group;
   }
 
+  // Validator for each question group
+  private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
+    const type = control.get('type')?.value;
+    const options = control.get('options') as FormArray | null;
+    const errors: any = {};
+
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+      if (!options || options.length < 2) {
+        errors.optionsCount = 'Debe haber al menos 2 opciones';
+      }
+
+      // Ensure every option has text
+      if (options) {
+        const emptyIndexes: number[] = [];
+        for (let i = 0; i < options.length; i++) {
+          const txtCtrl = options.at(i).get('text');
+          const txtVal = txtCtrl?.value;
+          if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
+            emptyIndexes.push(i);
+            // mark control as touched so template shows per-option error
+            try { txtCtrl?.markAsTouched(); } catch {}
+            // explicitly set required error so control.invalid becomes true
+            try { txtCtrl?.setErrors({ required: true }); } catch {}
+          }
+        }
+        if (emptyIndexes.length) {
+          errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
+        }
+      }
+
+      if (type === 'MULTIPLE_CHOICE') {
+        const correct = control.get('correctOptionId')?.value;
+        if (correct === null || correct === undefined || correct === '') {
+          errors.noCorrect = 'Selecciona una opción correcta';
+        }
+      }
+
+      if (type === 'MULTIPLE_SELECT') {
+        const corrects = control.get('correctOptionIds')?.value || [];
+        if (!Array.isArray(corrects) || corrects.length === 0) {
+          errors.noCorrect = 'Selecciona al menos una opción correcta';
+        }
+      }
+    }
+
+    return Object.keys(errors).length ? errors : null;
+  }
+
+  private updateAfterClassValidators(posType: string | null) {
+    const afterClassControl = this.questionnaireForm.get('afterClassId');
+    if (!afterClassControl) return;
+
+    if (posType === 'BETWEEN_CLASSES') {
+      afterClassControl.setValidators([Validators.required]);
+      afterClassControl.enable({ emitEvent: false });
+    } else {
+      afterClassControl.clearValidators();
+      afterClassControl.setValue('', { emitEvent: false });
+      afterClassControl.disable({ emitEvent: false });
+    }
+    afterClassControl.updateValueAndValidity({ onlySelf: true });
+  }
+
   createOptionGroup(option?: QuestionOption): FormGroup {
-    return this.fb.group({
-      _id: [option?._id || null], // Preserve existing option ID
+    const groupConfig: any = {
       text: [option?.text || '', [Validators.required, Validators.maxLength(500)]],
       order: [option?.order || 0]
-    });
+    };
+    if (option && option._id) {
+      groupConfig._id = [option._id];
+    }
+    return this.fb.group(groupConfig);
   }
 
   addQuestion(): void {
@@ -465,49 +547,13 @@ export class QuestionnaireEditComponent implements OnInit {
     }
   }
 
-  getQuestionOptions(questionIndex: number): FormArray {
-    return this.questions.at(questionIndex).get('options') as FormArray;
-  }
-
-  addOption(questionIndex: number): void {
-    const options = this.getQuestionOptions(questionIndex);
-    options.push(this.createOptionGroup());
-  }
-
-  removeOption(questionIndex: number, optionIndex: number): void {
-    const options = this.getQuestionOptions(questionIndex);
-    if (options.length > 2) {
-      options.removeAt(optionIndex);
-    } else {
-      this.infoService.showError('Debe haber al menos 2 opciones');
-    }
-  }
-
-  onQuestionTypeChange(questionIndex: number): void {
-    const question = this.questions.at(questionIndex);
-    const type = question.get('type')?.value;
-    const optionsArray = question.get('options') as FormArray;
-
-    // Clear options
-    while (optionsArray.length) {
-      optionsArray.removeAt(0);
-    }
-
-    // If MC or MS, add default options
-    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-      for (let i = 0; i < 4; i++) {
-        optionsArray.push(this.createOptionGroup());
-      }
-    }
-
-    // Clear correct option/options
-    question.patchValue({ 
-      correctOptionId: '',
-      correctOptionIds: []
-    });
-  }
+  
+ 
 
   onSubmit(): void {
+    // Auto-fill empty option texts so the form can validate (helps UX when users forget)
+    this.autoFillEmptyOptionTexts();
+
     if (this.questionnaireForm.invalid) {
       this.questionnaireForm.markAllAsTouched();
       this.infoService.showError('Por favor, completa todos los campos requeridos');
@@ -553,11 +599,13 @@ export class QuestionnaireEditComponent implements OnInit {
       };
 
       if (q.type === 'MULTIPLE_CHOICE') {
-        question.options = q.options.map((opt: any, optIndex: number) => ({
-          _id: opt._id || undefined, // Preserve existing option ID if editing
-          text: opt.text,
-          order: optIndex
-        }));
+        question.options = q.options.map((opt: any, optIndex: number) => {
+          const o: any = { text: opt.text, order: optIndex };
+          if (opt._id) {
+            o._id = opt._id;
+          }
+          return o;
+        });
 
         // Find the correct option ID
         // Priority: Use the selected option's _id (from form), not the original
@@ -637,11 +685,13 @@ export class QuestionnaireEditComponent implements OnInit {
       }
 
       if (q.type === 'MULTIPLE_SELECT') {
-        question.options = q.options.map((opt: any, optIndex: number) => ({
-          _id: opt._id || undefined,
-          text: opt.text,
-          order: optIndex
-        }));
+        question.options = q.options.map((opt: any, optIndex: number) => {
+          const o: any = { text: opt.text, order: optIndex };
+          if (opt._id) {
+            o._id = opt._id;
+          }
+          return o;
+        });
 
         // Map correctOptionIds (array of indices) to array of ObjectIds or indices
         const selectedIndices = q.correctOptionIds || [];
@@ -694,11 +744,11 @@ export class QuestionnaireEditComponent implements OnInit {
       next: (response) => {
         const savedQuestionnaire = response?.data;
         
-        // Si es modo creación y hay archivos pendientes, subirlos
-        if (!this.isEditMode && savedQuestionnaire && Object.keys(this.pendingMediaFiles()).length > 0) {
+        // Si es modo creación: pasar a modo edición y pedir a los hijos que suban archivos pendientes
+        if (!this.isEditMode && savedQuestionnaire) {
           this.questionnaireId = savedQuestionnaire._id;
           this.isEditMode = true; // Cambiar a modo edición para los uploads
-          this.uploadPendingMediaFiles(savedQuestionnaire, formValue.courseId);
+          this.startChildrenPendingUploads(savedQuestionnaire, formValue.courseId);
         } else {
           this.infoService.showSuccess(
             this.isEditMode ? 'Cuestionario actualizado exitosamente' : 'Cuestionario creado exitosamente'
@@ -718,148 +768,29 @@ export class QuestionnaireEditComponent implements OnInit {
     });
   }
 
+  private autoFillEmptyOptionTexts(): void {
+    for (let i = 0; i < this.questions.length; i++) {
+      const questionGroup = this.questions.at(i);
+      const options = questionGroup.get('options') as FormArray | null;
+      if (!options) continue;
+      for (let j = 0; j < options.length; j++) {
+        const opt = options.at(j);
+        const textCtrl = opt.get('text');
+        if (!textCtrl) continue;
+        const val = textCtrl.value;
+        if (!val || (typeof val === 'string' && val.trim() === '')) {
+          textCtrl.setValue(`Opción ${j + 1}`, { emitEvent: false });
+        }
+        textCtrl.markAsTouched();
+      }
+      questionGroup.updateValueAndValidity({ onlySelf: true });
+    }
+  }
+
   cancel(): void {
     this.router.navigate(['/profesor/questionnaires']);
   }
-
-  // ==================== MEDIA UPLOAD METHODS ====================
-
-  onMediaFileSelected(event: Event, questionIndex: number): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
-      return;
-    }
-
-    const file = input.files[0];
-    
-    // Validar tipo de archivo
-    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'];
-    const allAllowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
-
-    if (!allAllowedTypes.includes(file.type)) {
-      this.infoService.showError('Tipo de archivo no permitido. Usa: JPG, PNG, GIF, MP4, WEBM, OGG, AVI, MOV');
-      input.value = '';
-      return;
-    }
-
-    // Validar tamaño (1GB = 1073741824 bytes)
-    const maxSize = 1073741824;
-    if (file.size > maxSize) {
-      this.infoService.showError('El archivo es demasiado grande. Tamaño máximo: 1GB');
-      input.value = '';
-      return;
-    }
-
-    // Determinar el tipo de media
-    let promptType: 'IMAGE' | 'VIDEO';
-    if (allowedImageTypes.includes(file.type)) {
-      promptType = 'IMAGE';
-    } else {
-      promptType = 'VIDEO';
-    }
-
-    // Crear preview local
-    const previewUrl = URL.createObjectURL(file);
-    const currentPreviews = this.mediaPreviews();
-    this.mediaPreviews.set({ ...currentPreviews, [questionIndex]: previewUrl });
-
-    // Actualizar el formulario
-    const question = this.questions.at(questionIndex);
-    question.patchValue({ promptType });
-
-    // Si estamos editando, subir inmediatamente
-    if (this.isEditMode) {
-      this.uploadMedia(file, questionIndex, promptType);
-    } else {
-      // En modo creación, guardar el archivo para subir después de crear el cuestionario
-      const currentPending = this.pendingMediaFiles();
-      this.pendingMediaFiles.set({ ...currentPending, [questionIndex]: { file, promptType } });
-      this.infoService.showInfo('El archivo se subirá automáticamente al crear el cuestionario');
-    }
-  }
-
-  uploadMedia(file: File, questionIndex: number, promptType: 'IMAGE' | 'VIDEO'): void {
-    const question = this.questions.at(questionIndex);
-    const questionId = question.value._id;
-
-    if (!questionId) {
-      this.infoService.showError('Debes guardar el cuestionario primero antes de subir archivos multimedia');
-      return;
-    }
-
-    // Marcar como subiendo
-    const currentUploading = this.mediaUploading();
-    this.mediaUploading.set({ ...currentUploading, [questionIndex]: true });
-
-    const currentProgress = this.uploadProgress();
-    this.uploadProgress.set({ ...currentProgress, [questionIndex]: 0 });
-
-    this.questionnairesService.uploadQuestionMedia(
-      this.questionnaireId,
-      questionId,
-      file,
-      promptType
-    ).subscribe({
-      next: (event: any) => {
-        if (event.type === HttpEventType.UploadProgress) {
-          // Actualizar progreso
-          const percentDone = event.total ? Math.round(100 * event.loaded / event.total) : 0;
-          const currentProgress = this.uploadProgress();
-          this.uploadProgress.set({ ...currentProgress, [questionIndex]: percentDone });
-        } else if (event.type === HttpEventType.Response) {
-          // Upload completado
-          const updatedQuestionnaire = event.body?.data;
-          if (updatedQuestionnaire) {
-            // Actualizar la pregunta con la nueva URL
-            const updatedQuestion = updatedQuestionnaire.questions.find(
-              (q: Question) => q._id === questionId
-            );
-            if (updatedQuestion) {
-              question.patchValue({
-                promptMediaUrl: updatedQuestion.promptMediaUrl,
-                promptMediaProvider: updatedQuestion.promptMediaProvider
-              });
-            }
-          }
-          
-          // Limpiar estado de upload
-          const currentUploading = this.mediaUploading();
-          delete currentUploading[questionIndex];
-          this.mediaUploading.set({ ...currentUploading });
-
-          const currentProgress = this.uploadProgress();
-          delete currentProgress[questionIndex];
-          this.uploadProgress.set({ ...currentProgress });
-
-          this.infoService.showSuccess('Archivo multimedia subido exitosamente');
-        }
-      },
-      error: (error) => {
-        console.error('Error uploading media:', error);
-        const errorMsg = error?.error?.message || 'Error al subir el archivo multimedia';
-        this.infoService.showError(errorMsg);
-
-        // Limpiar estado de upload
-        const currentUploading = this.mediaUploading();
-        delete currentUploading[questionIndex];
-        this.mediaUploading.set({ ...currentUploading });
-
-        const currentProgress = this.uploadProgress();
-        delete currentProgress[questionIndex];
-        this.uploadProgress.set({ ...currentProgress });
-
-        // Limpiar preview
-        const currentPreviews = this.mediaPreviews();
-        if (currentPreviews[questionIndex]) {
-          URL.revokeObjectURL(currentPreviews[questionIndex]);
-          delete currentPreviews[questionIndex];
-          this.mediaPreviews.set({ ...currentPreviews });
-        }
-      }
-    });
-  }
-
+  // Media uploads are handled by each QuestionItem child component.
   removeMedia(questionIndex: number): void {
     const question = this.questions.at(questionIndex);
     question.patchValue({
@@ -867,23 +798,6 @@ export class QuestionnaireEditComponent implements OnInit {
       promptMediaUrl: '',
       promptMediaProvider: 'BUNNY'
     });
-
-    // Limpiar preview
-    const currentPreviews = this.mediaPreviews();
-    if (currentPreviews[questionIndex]) {
-      URL.revokeObjectURL(currentPreviews[questionIndex]);
-      delete currentPreviews[questionIndex];
-      this.mediaPreviews.set({ ...currentPreviews });
-    }
-
-    // Limpiar archivos pendientes
-    const currentPending = this.pendingMediaFiles();
-    if (currentPending[questionIndex]) {
-      delete currentPending[questionIndex];
-      this.pendingMediaFiles.set({ ...currentPending });
-    }
-
-    // TODO: Llamar al backend para eliminar el archivo si es necesario
     this.infoService.showSuccess('Archivo multimedia eliminado');
   }
 
@@ -895,144 +809,42 @@ export class QuestionnaireEditComponent implements OnInit {
     return localPreview || promptMediaUrl || null;
   }
 
-  isMediaUploading(questionIndex: number): boolean {
-    return this.mediaUploading()[questionIndex] || false;
-  }
+  
 
-  getUploadProgress(questionIndex: number): number {
-    return this.uploadProgress()[questionIndex] || 0;
-  }
+  // After creating the questionnaire, ask each QuestionItem child to upload its pending file.
+  private async startChildrenPendingUploads(questionnaire: Questionnaire, courseId: string) {
+    const children = this.questionItems?.toArray() || [];
+    const tasks: Promise<boolean>[] = [];
 
-  uploadPendingMediaFiles(questionnaire: Questionnaire, courseId: string): void {
-    const pendingFiles = this.pendingMediaFiles();
-    const questionIndexes = Object.keys(pendingFiles).map(k => parseInt(k));
-    
-    if (questionIndexes.length === 0) {
+    questionnaire.questions.forEach((q: any, idx: number) => {
+      const child = children[idx];
+      if (child && typeof child.startPendingUpload === 'function' && q && q._id) {
+        // ensure form has the question _id
+        const questionControl = this.questions.at(idx);
+        questionControl.patchValue({ _id: q._id });
+        tasks.push(child.startPendingUpload(q._id, this.questionnaireId));
+      }
+    });
+
+    if (tasks.length === 0) {
       this.infoService.showSuccess('Cuestionario creado exitosamente');
-      this.router.navigate(['/profesor/questionnaires'], {
-        queryParams: { courseId }
-      });
+      this.router.navigate(['/profesor/questionnaires'], { queryParams: { courseId } });
       return;
     }
 
-    this.infoService.showInfo(`Subiendo ${questionIndexes.length} archivo(s) multimedia...`);
-    
-    let uploadedCount = 0;
-    let hasErrors = false;
-
-    questionIndexes.forEach(questionIndex => {
-      const pendingFile = pendingFiles[questionIndex];
-      const question = questionnaire.questions[questionIndex];
-      
-      if (!question || !question._id) {
-        console.error(`No se encontró la pregunta en el índice ${questionIndex}`);
-        uploadedCount++;
-        if (uploadedCount === questionIndexes.length) {
-          this.finishPendingUploads(hasErrors, courseId);
-        }
-        return;
-      }
-
-      // Actualizar el cuestionario form con el _id de la pregunta
-      const questionControl = this.questions.at(questionIndex);
-      questionControl.patchValue({ _id: question._id });
-
-      this.uploadMediaWithCallback(
-        pendingFile.file,
-        questionIndex,
-        pendingFile.promptType,
-        question._id,
-        () => {
-          uploadedCount++;
-          if (uploadedCount === questionIndexes.length) {
-            this.finishPendingUploads(hasErrors, courseId);
-          }
-        },
-        () => {
-          hasErrors = true;
-          uploadedCount++;
-          if (uploadedCount === questionIndexes.length) {
-            this.finishPendingUploads(hasErrors, courseId);
-          }
-        }
-      );
-    });
+    this.infoService.showInfo(`Subiendo ${tasks.length} archivo(s) multimedia...`);
+    const results = await Promise.allSettled(tasks);
+    const hasErrors = results.some(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value === false));
+    this.saving.set(false);
+    if (hasErrors) {
+      this.infoService.showError('Cuestionario creado, pero algunos archivos multimedia no se pudieron subir');
+    } else {
+      this.infoService.showSuccess('Cuestionario creado exitosamente con todos los archivos multimedia');
+    }
+    this.router.navigate(['/profesor/questionnaires'], { queryParams: { courseId } });
   }
 
-  uploadMediaWithCallback(
-    file: File,
-    questionIndex: number,
-    promptType: 'IMAGE' | 'VIDEO',
-    questionId: string,
-    onSuccess: () => void,
-    onError: () => void
-  ): void {
-    // Marcar como subiendo
-    const currentUploading = this.mediaUploading();
-    this.mediaUploading.set({ ...currentUploading, [questionIndex]: true });
-
-    const currentProgress = this.uploadProgress();
-    this.uploadProgress.set({ ...currentProgress, [questionIndex]: 0 });
-
-    this.questionnairesService.uploadQuestionMedia(
-      this.questionnaireId,
-      questionId,
-      file,
-      promptType
-    ).subscribe({
-      next: (event: any) => {
-        if (event.type === HttpEventType.UploadProgress) {
-          const percentDone = event.total ? Math.round(100 * event.loaded / event.total) : 0;
-          const currentProgress = this.uploadProgress();
-          this.uploadProgress.set({ ...currentProgress, [questionIndex]: percentDone });
-        } else if (event.type === HttpEventType.Response) {
-          const updatedQuestionnaire = event.body?.data;
-          if (updatedQuestionnaire) {
-            const updatedQuestion = updatedQuestionnaire.questions.find(
-              (q: Question) => q._id === questionId
-            );
-            if (updatedQuestion) {
-              const question = this.questions.at(questionIndex);
-              question.patchValue({
-                promptMediaUrl: updatedQuestion.promptMediaUrl,
-                promptMediaProvider: updatedQuestion.promptMediaProvider
-              });
-            }
-          }
-          
-          // Limpiar estado
-          const currentUploading = this.mediaUploading();
-          delete currentUploading[questionIndex];
-          this.mediaUploading.set({ ...currentUploading });
-
-          const currentProgress = this.uploadProgress();
-          delete currentProgress[questionIndex];
-          this.uploadProgress.set({ ...currentProgress });
-
-          // Limpiar pending
-          const currentPending = this.pendingMediaFiles();
-          delete currentPending[questionIndex];
-          this.pendingMediaFiles.set({ ...currentPending });
-
-          onSuccess();
-        }
-      },
-      error: (error) => {
-        console.error('Error uploading media:', error);
-        
-        // Limpiar estado
-        const currentUploading = this.mediaUploading();
-        delete currentUploading[questionIndex];
-        this.mediaUploading.set({ ...currentUploading });
-
-        const currentProgress = this.uploadProgress();
-        delete currentProgress[questionIndex];
-        this.uploadProgress.set({ ...currentProgress });
-
-        onError();
-      }
-    });
-  }
+  
 
   finishPendingUploads(hasErrors: boolean, courseId: string): void {
     this.saving.set(false);
@@ -1048,28 +860,5 @@ export class QuestionnaireEditComponent implements OnInit {
     });
   }
 
-  // ==================== MULTIPLE SELECT HELPERS ====================
-
-  isOptionCorrect(questionIndex: number, optionIndex: number): boolean {
-    const question = this.questions.at(questionIndex);
-    const correctOptionIds = question.get('correctOptionIds')?.value || [];
-    return correctOptionIds.includes(optionIndex.toString());
-  }
-
-  toggleCorrectOption(questionIndex: number, optionIndex: number): void {
-    const question = this.questions.at(questionIndex);
-    const correctOptionIds = question.get('correctOptionIds')?.value || [];
-    const optionIndexStr = optionIndex.toString();
-    
-    const index = correctOptionIds.indexOf(optionIndexStr);
-    if (index > -1) {
-      // Remove from array
-      correctOptionIds.splice(index, 1);
-    } else {
-      // Add to array
-      correctOptionIds.push(optionIndexStr);
-    }
-    
-    question.patchValue({ correctOptionIds: [...correctOptionIds] });
-  }
+  
 }

@@ -294,6 +294,12 @@ export class CoursesService {
     return this.http.patch(`${this.apiUrl}/${courseId}/main-teacher`, { mainTeacherId: teacherId });
   }
 
+  // Actualizar asignación de profesores de forma atómica
+  // Endpoint: PATCH /courses/:courseId/teachers
+  updateCourseTeachers(courseId: string, payload: { add?: string[]; remove?: string[] } ): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${courseId}/teachers`, payload);
+  }
+
   enrollInCourse(courseId: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${courseId}/enroll`, {});
   }

@@ -111,32 +111,44 @@ export class TeacherAssignmentModalComponent implements OnInit, OnChanges {
       return;
     }
 
-    this.isSubmitting.set(true);
-    
-    // Usar updateCourse para actualizar los profesores. Incluir campos de
-    // fechas/days/time actuales para evitar que el backend los borre.
-    const payload: any = { teachers: selectedIds };
-    if (this.courseData) {
-      if (this.courseData.startDate !== undefined) payload.startDate = this.courseData.startDate;
-      if (this.courseData.registrationOpenDate !== undefined) payload.registrationOpenDate = this.courseData.registrationOpenDate;
-      if (this.courseData.days !== undefined) payload.days = this.courseData.days;
-      if (this.courseData.time !== undefined) payload.time = this.courseData.time;
+    // Calcular cambios: add = selected - initial, remove = initial - selected
+    const initial = this.initialTeacherIds();
+    const add = selectedIds.filter((id: string) => !initial.includes(id));
+    const remove = initial.filter((id: string) => !selectedIds.includes(id));
+
+    if (add.length === 0 && remove.length === 0) {
+      this.infoService.showError('No hay cambios en la asignación de profesores');
+      return;
     }
 
-    this.coursesService.updateCourse(this.courseId, payload).subscribe({
+    this.isSubmitting.set(true);
+
+    const payload: { add?: string[]; remove?: string[] } = {};
+    if (add.length > 0) payload.add = add;
+    if (remove.length > 0) payload.remove = remove;
+
+    // Usar el nuevo endpoint PATCH /courses/:courseId/teachers
+    this.coursesService.updateCourseTeachers(this.courseId, payload).subscribe({
       next: () => {
-        const count = selectedIds.length;
-        const message = count === 1 
-          ? 'Profesor asignado exitosamente'
-          : `${count} profesores asignados exitosamente`;
+        const addedCount = add.length;
+        const removedCount = remove.length;
+        let message = '';
+        if (addedCount > 0 && removedCount > 0) {
+          message = `Asignados ${addedCount}, removidos ${removedCount}`;
+        } else if (addedCount > 0) {
+          message = addedCount === 1 ? 'Profesor asignado exitosamente' : `${addedCount} profesores asignados exitosamente`;
+        } else {
+          message = removedCount === 1 ? 'Profesor desasignado exitosamente' : `${removedCount} profesores desasignados exitosamente`;
+        }
+
         this.infoService.showSuccess(message);
         this.isSubmitting.set(false);
         this.refreshCourses.emit();
         this.onClose();
       },
       error: (error: any) => {
-        console.error('Error assigning teachers:', error);
-        const errorMsg = error?.error?.message || 'Error al asignar los profesores';
+        console.error('Error assigning/removing teachers:', error);
+        const errorMsg = error?.error?.message || 'Error al actualizar la asignación de profesores';
         this.infoService.showError(errorMsg);
         this.isSubmitting.set(false);
       }

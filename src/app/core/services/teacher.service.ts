@@ -13,22 +13,6 @@ export class TeacherAssignmentService {
 
   constructor(private http: HttpClient) {}
 
-  // Asignar profesor a curso
-  assignCourseToTeacher(userId: string, courseId: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/assignCourseToUserEdit`, {
-      userId,
-      courseId
-    });
-  }
-
-  // Remover profesor de curso
-  removeCourseFromTeacher(userId: string, courseId: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/removeCourseFromUserEdit`, {
-      userId,
-      courseId
-    });
-  }
-
   // Obtener cursos asignados al profesor
   getAssignedCourses(userId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/getAssignedCoursesEdit/${userId}`);
