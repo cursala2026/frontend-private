@@ -39,24 +39,16 @@ export class QuestionMediaUploadManagerService {
     promptType: 'IMAGE' | 'VIDEO',
     questionText?: string
   ): { uploadId: string; started: boolean } {
-    console.log('DEBUG QuestionMediaUploadManager.startUpload llamado con:', {
-      questionnaireId,
-      questionId,
-      fileName: file?.name,
-      promptType,
-      questionText
-    });
+    // debug logs removed
 
     if (!questionnaireId || !questionId || !file) {
-      console.log('DEBUG: Faltan parámetros requeridos');
       return { uploadId: '', started: false };
     }
 
     const uploadId = `${questionnaireId}_${questionId}`;
-    console.log('DEBUG: uploadId generado:', uploadId);
+    // debug logs removed
 
     if (this.activeUploads.has(uploadId)) {
-      console.log('DEBUG: Upload ya en curso para este uploadId');
       return { uploadId, started: false }; // ya en curso
     }
 
@@ -96,10 +88,10 @@ export class QuestionMediaUploadManagerService {
     this.updateActiveList();
 
     // Conectar SSE para progreso en tiempo real
-    console.log('DEBUG: Conectando a SSE para progreso...');
+    // debug logs removed
     entry.progressSub = this.progressService.getUploadProgress(questionnaireId, questionId).subscribe({
       next: (event) => {
-        console.log('DEBUG: Evento SSE recibido:', event);
+        // debug logs removed
         if (event.error) {
           try {
             this.info.showError('Error al procesar el archivo multimedia: ' + event.error + (this.uploadNames.get(uploadId) ? ' - ' + this.uploadNames.get(uploadId) : ''));
@@ -129,14 +121,12 @@ export class QuestionMediaUploadManagerService {
     });
 
     // Iniciar subida al backend (retorna 202 Accepted inmediatamente)
-    console.log('DEBUG: Iniciando POST a backend...');
     entry.uploadSub = this.questionnairesService.uploadQuestionMedia(questionnaireId, questionId, file, promptType).subscribe({
       next: (response) => {
-        console.log('DEBUG: Respuesta del backend (202 Accepted):', response);
-        // El backend retorna 202 inmediatamente, el SSE se encarga del progreso
+        // backend response handled via SSE
       },
       error: (err) => {
-        console.error('DEBUG: Error subiendo archivo multimedia:', err);
+        console.error('Error subiendo archivo multimedia:', err);
         try {
           this.info.showError('Error subiendo el archivo multimedia' + (this.uploadNames.get(uploadId) ? ' - ' + this.uploadNames.get(uploadId) : ''));
         } catch {}

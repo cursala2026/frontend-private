@@ -110,24 +110,16 @@ export class QuestionItemComponent implements OnDestroy {
     current.patchValue({ promptType });
 
     const questionId = (this.question as any).value._id;
-    console.log('DEBUG onMediaSelected:', {
-      isEditMode: this.isEditMode,
-      questionId: questionId,
-      questionnaireId: this.questionnaireId,
-      fileName: file.name,
-      fileSize: file.size,
-      promptType
-    });
+    // debug logs removed
 
     if (this.isEditMode && questionId && this.questionnaireId) {
       // En modo edición, iniciar subida inmediatamente en segundo plano
       // NO crear preview local, esperar a que la subida complete
       this.infoService.showInfo('Subiendo archivo en segundo plano...');
-      console.log('DEBUG: Iniciando subida inmediata con:', { questionId, questionnaireId: this.questionnaireId });
       this.startUpload(file, promptType, questionId, this.questionnaireId);
     } else {
       // En modo creación, crear preview local y guardar archivo pendiente
-      console.log('DEBUG: Creando preview local (modo creación o faltan IDs)');
+      // debug logs removed
       const previewUrl = URL.createObjectURL(file);
       current.patchValue({ promptMediaUrl: previewUrl });
       this.pendingFile = { file, promptType };
@@ -149,15 +141,8 @@ export class QuestionItemComponent implements OnDestroy {
   private startUpload(file: File, promptType: 'IMAGE' | 'VIDEO', questionId: string, questionnaireId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const questionText = (this.question as any).value.questionText || 'Pregunta sin texto';
-      console.log('DEBUG startUpload llamando a uploadManager.startUpload con:', {
-        questionnaireId,
-        questionId,
-        fileName: file.name,
-        promptType,
-        questionText
-      });
+      // debug logs removed
       const result = this.uploadManager.startUpload(questionnaireId, questionId, file, promptType, questionText);
-      console.log('DEBUG resultado de uploadManager.startUpload:', result);
 
       if (result.started || result.uploadId) {
         this.currentUploadId = result.uploadId;

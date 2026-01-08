@@ -212,28 +212,46 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   loadQuestionnaire(): void {
     const qId = this.questionnaireId();
     const cId = this.courseId();
+    // Reset transient state to avoid showing stale data from previous questionnaire
+    try {
+      this.questionnaire.set(null);
+      this.currentSubmission.set(null);
+      this.previousSubmissions.set([]);
+      this.answers = {};
+      this.multipleSelectAnswers = {};
+      this.showResults.set(false);
+      this.started.set(false);
+      this.submitting.set(false);
+      this.timeExpired.set(false);
+      this.clearTimer();
+      this.nextItem.set(null);
+    } catch (e) { /* ignore */ }
 
+    // debug logs removed
     // Load course data to find next class
     this.coursesService.getCourseById(cId).subscribe({
       next: (response: any) => {
         const course = response?.data || response;
+        // debug logs removed
         this.courseData.set(course);
       },
       error: (err: any) => {
-        console.error('Error loading course:', err);
+        console.error('[q-take] Error loading course:', err);
       }
     });
 
     this.questionnairesService.getQuestionnaireById(qId).subscribe({
       next: (response) => {
         const questionnaire = response?.data;
+        // debug logs removed
         this.questionnaire.set(questionnaire);
 
         // Load previous submissions first, then check/start submission
         this.loadPreviousSubmissions();
       },
       error: (error) => {
-        console.error('Error loading questionnaire:', error);
+        console.error('[q-take] Error loading questionnaire:', error);
+        // debug logs removed
         this.infoService.showError('Error al cargar el cuestionario');
         this.goBack();
       }
@@ -245,7 +263,6 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     if (!user) return;
 
     const userId = user._id?.toString() || user._id;
-    console.log('Loading submissions for user:', userId);
 
     this.questionnairesService.getStudentSubmissions(this.questionnaireId(), userId).subscribe({
       next: (response) => {
@@ -259,6 +276,14 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         // Only if we're not already showing results (to avoid starting new submission after submit)
         if (!this.showResults()) {
           this.checkOrStartSubmission();
+        }
+
+        // If we are showing results and the current submission is graded,
+        // ensure nextItem is calculated so the "Continuar" button appears.
+        if (this.showResults() && this.currentSubmission()?.status === 'GRADED') {
+          try {
+            this.updateCourseProgress(this.currentSubmission()!);
+          } catch (e) { /* ignore */ }
         }
 
         // Set loading to false after everything is done
@@ -319,8 +344,11 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const graded = sortedSubmissions.find(s => s.status === 'GRADED');
     if (graded) {
       // Show results of the most recent graded submission
+      // debug logs removed
       this.currentSubmission.set(graded);
       this.showResults.set(true);
+      // ensure nextItem is computed for graded case
+      try { this.updateCourseProgress(graded); } catch(e) {}
       return;
     }
 
@@ -328,6 +356,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const submitted = sortedSubmissions.find(s => s.status === 'SUBMITTED');
     if (submitted) {
       // Show waiting message but don't show results/answers until graded
+      // debug logs removed
       this.currentSubmission.set(submitted);
       this.showResults.set(true); // Show waiting message, but template will hide results/answers
       return;
@@ -336,12 +365,12 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     // Check if the MOST RECENT submission is in-progress
     const mostRecent = sortedSubmissions[0];
     if (mostRecent && mostRecent.status === 'IN_PROGRESS') {
-      // Resume existing submission
+      // Existing submission in progress: load it but do NOT auto-start the timer.
+      // Require the user to click 'Comenzar' to resume, so they always see the start screen.
       this.currentSubmission.set(mostRecent);
       this.loadAnswersFromSubmission(mostRecent);
       this.showResults.set(false);
-      this.started.set(true);
-      this.startTimer(); // Iniciar el temporizador al reanudar
+      this.started.set(false);
       return;
     }
 
@@ -362,13 +391,14 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     this.questionnairesService.startSubmission(this.questionnaireId()).subscribe({
       next: (response) => {
         const submission = response?.data;
+        // debug logs removed
         this.currentSubmission.set(submission);
         this.showResults.set(false); // Ensure we show the form, not results
         this.initializeAnswers();
         this.started.set(false); // Esperar a que el usuario haga clic en comenzar
       },
       error: (error) => {
-        console.error('Error starting submission:', error);
+        console.error('[q-take] Error starting submission:', error);
 
         // Check if error is about retry limits
         const errorMsg = error?.error?.message || '';
@@ -378,6 +408,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
           this.infoService.showError(errorMsg || 'Error al iniciar el cuestionario');
         }
 
+        // debug logs removed
         // Go back after a short delay
         setTimeout(() => this.goBack(), 2000);
       }
@@ -422,8 +453,25 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   }
 
   startQuestionnaire(): void {
+    // debug logs removed
     this.started.set(true);
     this.startTimer();
+  }
+
+  printQuestions(): void {
+    const q = this.questionnaire();
+    if (!q) {
+      return;
+    }
+    try {
+      // Log a structured copy and attempt to copy to clipboard
+      const text = JSON.stringify(q.questions || [], null, 2);
+      if (navigator && (navigator as any).clipboard && (navigator as any).clipboard.writeText) {
+        (navigator as any).clipboard.writeText(text).catch(() => {});
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   onMultipleChoiceChange(questionId: string, optionId: string): void {
@@ -510,7 +558,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
-    console.log('Submitting answers:', JSON.stringify(answersArray, null, 2)); // For debugging
+    // debug logs removed
 
     this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
       next: (response) => {
@@ -568,18 +616,28 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const score = submission.finalScore || submission.autoGradedScore || 0;
     const passed = questionnaire.passingScore ? score >= questionnaire.passingScore : true;
 
-    console.debug('[questionnaire-take] updateCourseProgress submission=', submission._id, 'score=', score, 'passed=', passed);
+    // debug log removed
 
     const courseId = this.courseId();
 
     // Refresh server-side progress (best-effort) and then decide navigation
     this.progressService.getProgress(courseId).subscribe({
       next: (progress) => {
-        console.debug('[questionnaire-take] refreshed course progress', progress?.overallProgress);
+        // If the user navigated to another questionnaire while this async call was pending,
+        // avoid performing navigation from this (stale) component instance.
+        try {
+          const currentRouteQid = this.route.snapshot.paramMap.get('questionnaireId');
+          if (currentRouteQid && questionnaire._id && String(questionnaire._id) !== String(currentRouteQid)) {
+            // debug logs removed
+            return;
+          }
+        } catch (e) { /* ignore */ }
+        // debug log removed
         // Build ordered items from course data (support orderedContent)
         const course = this.courseData();
         if (!course) {
-          this.goBack();
+          // Course data missing; don't auto-navigate back from an async callback.
+          this.nextItem.set(null);
           return;
         }
 
@@ -611,17 +669,19 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
         // Find current questionnaire index
         const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
-        console.debug('[questionnaire-take] ordered items count=', items.length, 'currentIndex=', currentIndex);
+        // debug log removed
 
         if (currentIndex === -1) {
-          // couldn't find in ordered items - go back to course detail
+          // couldn't find in ordered items - log snapshot for diagnosis then go back
+          try {
+            // debug logs removed
+          } catch (e) { /* ignore */ }
           this.goBack();
           return;
         }
 
         // If didn't pass and can retry, stay on results to allow retry
         if (!passed && this.canRetry()) {
-          console.debug('[questionnaire-take] not passed and can retry, staying on page');
           this.nextItem.set(null);
           return;
         }
@@ -631,26 +691,36 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         for (let i = currentIndex + 1; i < items.length; i++) {
           const next = items[i];
           if (next.type === 'CLASS') {
-            this.nextItem.set({ type: 'CLASS', id: String(next.data._id) });
-            console.debug('[questionnaire-take] cached nextItem -> CLASS id=', next.data._id);
+            const target = { type: 'CLASS', id: String(next.data._id) } as { type: 'CLASS'|'QUESTIONNAIRE'; id: string };
+            // debug logs removed
+            this.nextItem.set(target);
             return;
           }
           if (next.type === 'QUESTIONNAIRE') {
-            this.nextItem.set({ type: 'QUESTIONNAIRE', id: String(next.data._id) });
-            console.debug('[questionnaire-take] cached nextItem -> QUESTIONNAIRE id=', next.data._id);
+            const target = { type: 'QUESTIONNAIRE', id: String(next.data._id) } as { type: 'CLASS'|'QUESTIONNAIRE'; id: string };
+            // debug logs removed
+            this.nextItem.set(target);
             return;
           }
         }
 
-        // No next item, clear cache and go back to course
+        // No next item, clear cache. Do not auto-navigate back from async callback.
         this.nextItem.set(null);
-        this.goBack();
+        return;
       },
       error: (err) => {
         console.error('[questionnaire-take] error refreshing progress', err);
         // On error, still attempt to navigate using local course data
+        try {
+          const currentRouteQid = this.route.snapshot.paramMap.get('questionnaireId');
+          if (currentRouteQid && questionnaire._id && String(questionnaire._id) !== String(currentRouteQid)) {
+            // debug logs removed
+            return;
+          }
+        } catch (e) { /* ignore */ }
+
         const course = this.courseData();
-        if (!course) { this.goBack(); return; }
+        if (!course) { this.nextItem.set(null); return; }
         const ordered = Array.isArray(course.orderedContent)
           ? course.orderedContent
           : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
@@ -666,8 +736,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
         for (let i = currentIndex + 1; i < items.length; i++) {
           const next = items[i];
-          if (next.type === 'CLASS') { this.nextItem.set({ type: 'CLASS', id: String(next.data._id) }); console.debug('[questionnaire-take] cached nextItem (error path) -> CLASS id=', next.data._id); return; }
-          if (next.type === 'QUESTIONNAIRE') { this.nextItem.set({ type: 'QUESTIONNAIRE', id: String(next.data._id) }); console.debug('[questionnaire-take] cached nextItem (error path) -> QUESTIONNAIRE id=', next.data._id); return; }
+          if (next.type === 'CLASS') { this.nextItem.set({ type: 'CLASS', id: String(next.data._id) }); return; }
+          if (next.type === 'QUESTIONNAIRE') { this.nextItem.set({ type: 'QUESTIONNAIRE', id: String(next.data._id) }); return; }
         }
         this.nextItem.set(null);
         this.goBack();
@@ -687,6 +757,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
+    // debug logs removed
     this.router.navigate(['/alumno/course-detail', this.courseId()]);
   }
 
@@ -753,40 +824,72 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     }
 
     const currentIndex = items.findIndex(it => it.type === 'QUESTIONNAIRE' && String(it.data._id) === String(questionnaire._id));
-    console.debug('[questionnaire-take] getNextItem currentIndex=', currentIndex, 'itemsCount=', items.length);
     if (currentIndex === -1) return null;
     for (let i = currentIndex + 1; i < items.length; i++) {
       const next = items[i];
       if (next.type === 'CLASS') {
-        console.debug('[questionnaire-take] getNextItem -> CLASS id=', next.data._id);
         return { type: 'CLASS', id: next.data._id };
       }
       if (next.type === 'QUESTIONNAIRE') {
-        console.debug('[questionnaire-take] getNextItem -> QUESTIONNAIRE id=', next.data._id);
         return { type: 'QUESTIONNAIRE', id: next.data._id };
       }
     }
-    console.debug('[questionnaire-take] getNextItem -> no next item');
     return null;
   }
 
   goToNextItem(): void {
     const cached = this.nextItem();
     const next = cached || this.getNextItem();
-    console.debug('[questionnaire-take] goToNextItem next=', next, 'cached=', cached);
     if (!next) { this.nextItem.set(null); this.goBack(); return; }
     const target = next.type === 'CLASS'
       ? ['/alumno/course-detail', this.courseId(), 'class', next.id]
       : ['/alumno/course-detail', this.courseId(), 'questionnaire', next.id];
 
-    // Clear cache to avoid duplicate navigation
-    this.nextItem.set(null);
+    // Log navigation attempt for diagnosis. Wait for router result and only clear cache on success.
+    try {
+      // debug logs removed
+      const course = this.courseData();
+      if (course && (course.orderedContent || course.classes)) {
+        const ordered = Array.isArray(course.orderedContent) ? course.orderedContent : (course.orderedContent && Array.isArray((course.orderedContent as any).items) ? (course.orderedContent as any).items : null);
+        // debug logs removed
+      }
+    } catch (e) { /* ignore */ }
 
-    this.router.navigate(target).then(result => {
-      console.debug('[questionnaire-take] router.navigate result=', result, 'target=', target);
-    }).catch(err => {
-      console.error('[questionnaire-take] router.navigate error=', err, 'target=', target);
-    });
+    // Attempt navigation and handle result: only clear cached nextItem if navigation succeeds.
+    this.router.navigate(target)
+      .then(success => {
+        // debug logs removed
+        if (success) {
+          this.nextItem.set(null);
+
+          // After a short delay, verify router actually updated the route params.
+          setTimeout(() => {
+            try {
+              const routeQid = this.route.snapshot.paramMap.get('questionnaireId');
+              const routeCid = this.route.snapshot.paramMap.get('courseId');
+              const expectQ = next.type === 'QUESTIONNAIRE' ? String(next.id) : null;
+              const expectC = String(this.courseId());
+              const routeMismatch = (expectQ && routeQid !== expectQ) || (routeCid !== expectC);
+              if (routeMismatch) {
+                console.warn('[q-take] navigation appears not applied by router, forcing full reload to target', { routeQid, expectQ, routeCid, expectC });
+                const url = next.type === 'CLASS'
+                  ? `/alumno/course-detail/${this.courseId()}/class/${next.id}`
+                  : `/alumno/course-detail/${this.courseId()}/questionnaire/${next.id}`;
+                window.location.href = url;
+              }
+            } catch (e) { /* ignore */ }
+          }, 400);
+        } else {
+          console.error('[q-take] navigation returned false, restoring nextItem', next);
+          try { this.nextItem.set(next); } catch (e) { /* ignore */ }
+          this.infoService.showError('No se pudo navegar a la siguiente actividad. Intenta nuevamente.');
+        }
+      })
+      .catch(err => {
+        console.error('[questionnaire-take] router.navigate error=', err, 'target=', target);
+        try { this.nextItem.set(next); } catch (e) { /* ignore */ }
+        this.infoService.showError('Error al navegar a la siguiente actividad.');
+      });
   }
 
   getQuestionNumber(questionId: string): number {

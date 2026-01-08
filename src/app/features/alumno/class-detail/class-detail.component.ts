@@ -192,7 +192,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     this.coursesService.getCourseById(courseId).subscribe({
       next: (response: any) => {
         const course = response?.data || response;
-        console.debug('[class-detail] loadClassData: course received', course?._id || course);
+        // debug log removed
         this.courseData.set(course);
         // Construir courseItems a partir de orderedContent si está disponible
         this.buildCourseItemsFromCourse(course);
@@ -282,7 +282,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
 
       const items: Array<{ type: 'class'|'questionnaire'; data: any; index: number }> = mapped as Array<{ type: 'class'|'questionnaire'; data: any; index: number }>; 
 
-      console.debug('[class-detail] buildCourseItemsFromCourse: using orderedContent, items=', items.length);
+      // debug log removed
       this.courseItems.set(items);
       return;
     }
@@ -306,7 +306,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.courseItems.set(items);
-    console.debug('[class-detail] buildCourseItemsFromCourse: fallback items=', items.length);
+    // debug log removed
   }
 
   /**
@@ -554,7 +554,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
         });
 
         this.bunnyStreamPlayer.on('ended', () => {
-            console.debug('[class-detail] bunnyStreamPlayer ended event');
+            // debug log removed
             this.markAsCompleted();
         });
 
@@ -563,7 +563,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
             this.currentWatchTime.set(data.seconds);
               // Log timeupdate for debugging
               if (Math.abs(data.seconds - this.lastSavedTime) >= this.saveInterval) {
-                console.debug('[class-detail] bunnyStreamPlayer timeupdate, seconds=', data.seconds, 'lastSaved=', this.lastSavedTime);
+                // debug log removed
                 this.saveProgress();
               }
           }
@@ -661,11 +661,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const video = event.target as HTMLVideoElement;
     this.currentWatchTime.set(video.currentTime);
-    console.debug('[class-detail] onVideoTimeUpdate currentTime=', video.currentTime);
+    // debug log removed
 
     // Guardar progreso cada N segundos de cambio
     if (Math.abs(video.currentTime - this.lastSavedTime) >= this.saveInterval) {
-      console.debug('[class-detail] onVideoTimeUpdate triggering saveProgress, current=', video.currentTime, 'lastSaved=', this.lastSavedTime);
+      // debug log removed
       this.saveProgress();
     }
   }
@@ -675,7 +675,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   onVideoPause(): void {
     // Guardar progreso inmediatamente cuando se pausa
-    console.debug('[class-detail] onVideoPause, currentTime=', this.currentWatchTime());
+    // debug log removed
     this.saveProgress(true);
   }
 
@@ -683,7 +683,7 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    * Se ejecuta cuando el video termina
    */
   onVideoEnded(): void {
-    console.debug('[class-detail] onVideoEnded HTML5');
+    // debug log removed
     this.markAsCompleted();
   }
 
@@ -717,16 +717,16 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
       duration: duration,
       completed: completed
     };
-    console.debug('[class-detail] saveProgress payload=', payload, 'force=', force);
+    // debug log removed
     this.progressService.updateProgress(this.courseId(), payload).subscribe({
       next: (courseProgress) => {
-        console.debug('[class-detail] saveProgress response overall=', courseProgress?.overallProgress);
+        // debug log removed
         this.overallProgress.set(courseProgress.overallProgress);
         // Actualizar conteo de clases completadas
         const completedCount = courseProgress.classesProgress?.filter(cp => cp.completed).length || 0;
         this.completedClassesCount.set(completedCount);
         if (completed && !this.isClassCompleted()) {
-          console.debug('[class-detail] saveProgress marking local isClassCompleted=true');
+          // debug log removed
           this.isClassCompleted.set(true);
         }
       },
@@ -741,11 +741,11 @@ export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   markAsCompleted(): void {
     if (this.isClassCompleted()) return;
-    console.debug('[class-detail] markAsCompleted called for classId=', this.classId());
+    // debug log removed
 
     this.progressService.markCompleted(this.courseId(), this.classId()).subscribe({
       next: (courseProgress) => {
-        console.debug('[class-detail] markAsCompleted response overall=', courseProgress?.overallProgress);
+        // debug log removed
         this.isClassCompleted.set(true);
         this.overallProgress.set(courseProgress.overallProgress);
         // Actualizar conteo de clases completadas
