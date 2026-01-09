@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
+import { PasswordFieldComponent } from '../../../shared/components/password-field/password-field.component';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,7 +10,7 @@ import { environment } from '../../../core/config/environment';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage, PasswordFieldComponent],
   templateUrl: './login.component.html',
   
 })
@@ -19,6 +20,8 @@ export class LoginComponent {
   isLoading = signal<boolean>(false);
   // mostrar/ocultar contraseña
   showPassword = signal<boolean>(false);
+  // forzar enmascarado manual en dispositivos problemáticos (p. ej. Xiaomi)
+  useManualMask = signal<boolean>(false);
   private returnUrl: string = '/dashboard';
 
   constructor(
@@ -45,10 +48,34 @@ export class LoginComponent {
       username: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(8)]]
     });
+
+    // Detectar dispositivos que necesitan enmascarado manual (ej: ciertos Xiaomi/MIUI)
+    try {
+      this.useManualMask.set(this.detectManualMaskNeeded());
+    } catch (e) {
+      this.useManualMask.set(false);
+    }
   }
 
   togglePassword(): void {
     this.showPassword.update(v => !v);
+  }
+
+  /**
+   * Detecta user agents conocidos por mostrar texto/controles nativos problemáticos
+   * y devuelve true si se debe aplicar enmascarado manual (usar `type=text` + CSS).
+   */
+  private detectManualMaskNeeded(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+
+    // Heurísticos: Xiaomi / Redmi / MIUI suelen contener estas marcas en el UA.
+    if (/xiaomi|redmi|miui|mi\s|mi-/i.test(ua)) return true;
+
+    // Fallback: Android + Chrome + manufacturer hints
+    if (/android/.test(ua) && /chrome/.test(ua) && /mi|xiaomi|redmi/.test(ua)) return true;
+
+    return false;
   }
 
   onSubmit(): void {

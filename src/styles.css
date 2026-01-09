@@ -33,4 +33,32 @@ body {
 	.btn-brand--white-text { @apply text-white; }
 
 	.logo { @apply text-brand-secondary-text; }
+
+/* Clase para enmascarar texto en campos que usen "type=text" y evitar el icono nativo */
+.password-hidden {
+	-webkit-text-security: disc;
+	text-security: disc;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+/* Ocultar botones nativos en navegadores que exponen estos pseudo-elementos */
+.password-hidden::-ms-reveal,
+.password-hidden::-ms-clear,
+.password-hidden::-webkit-textfield-decoration-button,
+.password-hidden::-webkit-clear-button,
+.password-hidden::-webkit-search-cancel-button,
+.password-hidden::-webkit-contacts-auto-fill-button,
+.password-hidden::-webkit-credentials-auto-fill-button {
+	display: none !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+	width: 0 !important;
+	height: 0 !important;
+}
+
+/* Algunos navegadores/skins insertan texto o botones dentro del contenedor; intentar neutralizarlos */
+.password-hidden::-webkit-textfield-decoration-button::after {
+	content: '' !important;
+}
 }
