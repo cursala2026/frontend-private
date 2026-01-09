@@ -36,6 +36,7 @@ export class QuestionItemComponent implements OnDestroy {
   currentUploadId?: string;
   private uploadCompletedSub?: Subscription;
 
+
   ngOnDestroy(): void {
     this.uploadCompletedSub?.unsubscribe();
   }

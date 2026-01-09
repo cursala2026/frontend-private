@@ -12,6 +12,7 @@ import { ClassesService } from '../../../../core/services/classes.service';
 import { CourseEventsService } from '../../../../core/services/course-events.service';
 import { InfoService } from '../../../../core/services/info.service';
 import { QuestionItemComponent } from '../question-item/question-item.component';
+import { GradingHelpModalComponent } from '../../../../shared/components/grading-help-modal/grading-help-modal.component';
 
 interface ClassData {
   _id: string;
@@ -22,7 +23,7 @@ interface ClassData {
 @Component({
   selector: 'app-questionnaire-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, QuestionItemComponent],
+  imports: [CommonModule, ReactiveFormsModule, QuestionItemComponent, GradingHelpModalComponent],
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {
@@ -56,6 +57,8 @@ export class QuestionnaireEditComponent implements OnInit {
   // Media upload tracking
   // Media upload tracking is handled by each QuestionItem child
   mediaPreviews = signal<{ [questionIndex: number]: string }>({});
+  // Grading help modal visibility
+  showGradingHelp = signal(false);
   // pendingMediaFiles removed: each QuestionItem handles its own pending upload
 
   ngOnInit(): void {
@@ -122,6 +125,14 @@ export class QuestionnaireEditComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  openGradingHelp(): void {
+    this.showGradingHelp.set(true);
+  }
+
+  closeGradingHelp(): void {
+    this.showGradingHelp.set(false);
   }
 
 

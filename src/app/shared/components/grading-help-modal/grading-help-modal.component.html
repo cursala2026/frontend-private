@@ -1,0 +1,76 @@
+@if (isOpen()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto" animate.enter="overlay-enter" animate.leave="overlay-leave">
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" (click)="onClose()"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div (click)="$event.stopPropagation()"
+          class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-2xl"
+          role="dialog" aria-modal="true" aria-label="Explicación de calificación" tabindex="-1" animate.enter="modal-enter" animate.leave="modal-leave">
+
+        <div class="px-6 py-4 rounded-t-lg bg-brand-secondary">
+          <h2 class="text-lg font-bold text-brand-secondary-text">¿Cómo califica el sistema las preguntas?</h2>
+        </div>
+
+        <div class="px-6 py-6 max-h-[70vh] overflow-auto">
+          <p class="mb-3">🧑‍🏫 <strong>¿Cómo califica el sistema las preguntas?</strong></p>
+
+          <p class="mb-3">Esta explicación describe exactamente cómo el sistema asigna puntos y calcula la nota en las preguntas que se corrigen automáticamente (opción múltiple y selección múltiple). No requiere conocimientos técnicos.</p>
+
+          <p class="mb-3"><strong>🎯 Objetivo del sistema</strong></p>
+          <p class="mb-3">El sistema busca medir cuántos puntos obtiene el alumno en las preguntas que pueden corregirse automáticamente, aplicando: crédito parcial si acierta algunas opciones, penalización parcial si marca opciones incorrectas, y normalización según la cantidad de respuestas correctas. El resultado es una nota automática entre 0 y 100.</p>
+
+          <p class="mb-3"><strong>🧩 Qué tiene en cuenta el sistema en cada pregunta</strong></p>
+          <ul class="list-disc ml-5 mb-3">
+            <li>cuántas opciones son correctas</li>
+            <li>cuáles seleccionó el alumno</li>
+            <li>cuántas selecciones fueron correctas (aciertos)</li>
+            <li>cuántas fueron incorrectas (errores)</li>
+            <li>cuántos puntos vale la pregunta</li>
+          </ul>
+
+          <p class="mb-3"><strong>⚙️ Lógica de corrección</strong></p>
+          <ol class="list-decimal ml-5 mb-3">
+            <li>Cuenta los aciertos: cuántas selecciones del alumno coinciden con opciones correctas.</li>
+            <li>Cuenta los errores: cuántas selecciones del alumno no son correctas.</li>
+            <li>Aplica penalización: cada error descuenta medio acierto (0.5).</li>
+            <li>Normaliza: divide el resultado por la cantidad de opciones correctas de la pregunta.</li>
+            <li>Evita valores negativos: si el resultado es menor que 0, se toma como 0.</li>
+            <li>Calcula puntos: multiplica esa fracción por los puntos de la pregunta.</li>
+            <li>Redondea el resultado al entero más cercano.</li>
+          </ol>
+
+          <p class="mb-3">Esto permite otorgar crédito parcial, evitar que marcar “todo” dé ventaja, y no castigar de más por un único error.</p>
+
+          <p class="mb-3"><strong>📐 Ejemplo práctico</strong></p>
+          <div class="mb-3">
+            <p>Pregunta vale 4 puntos y tiene 2 respuestas correctas.</p>
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="text-left"><th class="pr-4">Selección del alumno</th><th class="pr-4">Aciertos</th><th class="pr-4">Errores</th><th class="pr-4">Fracción</th><th>Puntos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>A y C (ambas correctas)</td><td>2</td><td>0</td><td>1</td><td>4</td></tr>
+                <tr><td>A y B (una correcta, una incorrecta)</td><td>1</td><td>1</td><td>0.25</td><td>1</td></tr>
+                <tr><td>A, C y D (una incorrecta extra)</td><td>2</td><td>1</td><td>0.75</td><td>3</td></tr>
+                <tr><td>B y D (ninguna correcta)</td><td>0</td><td>2</td><td>0</td><td>0</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="mb-3"><strong>🧮 Cómo se calcula la nota automática total</strong></p>
+          <p class="mb-3">Se suman los puntos obtenidos en todas las preguntas automáticas. Se suman los puntos posibles de esas preguntas. Se calcula el porcentaje final: (puntos obtenidos / puntos posibles) × 100. Redondeado al entero más cercano.</p>
+
+          <p class="mb-3"><strong>📝 Sobre preguntas de texto</strong></p>
+          <p class="mb-3">Si el cuestionario tiene preguntas de texto: el sistema no las califica automáticamente, el envío queda pendiente, la nota final se completa cuando el profesor las corrige manualmente.</p>
+
+          <p class="mb-3"><strong>⚠️ Casos especiales</strong></p>
+          <p class="mb-3">Si una pregunta no tiene respuestas correctas configuradas, se ignora completamente. El alumno nunca es perjudicado por errores de configuración. Las penalizaciones son parciales, no absolutas.</p>
+        </div>
+
+        <div class="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+          <button type="button" (click)="onClose()" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

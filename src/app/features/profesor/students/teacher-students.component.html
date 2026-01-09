@@ -3,14 +3,79 @@
   <div class="relative overflow-hidden bg-linear-to-tr from-[#033e72] to-[#66afef] rounded-xl">
     <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center justify-between">
       <div>
-        <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Alumnos</h1>
-        <p class="text-white text-sm">Alumnos inscritos en tus cursos</p>
+        @if (selectedCourseId) {
+          <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Alumnos — {{ getSelectedCourseName() }}</h1>
+          <p class="text-white text-sm">Alumnos inscritos en el curso seleccionado</p>
+        } @else {
+          <h1 class="text-xl sm:text-3xl font-bold text-white">Mis Alumnos</h1>
+          <p class="text-white text-sm">Alumnos inscritos en tus cursos</p>
+        }
       </div>
       <span class="text-white bg-brand-primary-dark px-2 text-sm">{{ students().length }} alumnos</span>
     </div>
   </div>
 
-  <!-- Students Section -->
+    <!-- Course selector (always visible) -->
+    <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
+      <div class="mb-6 flex flex-col sm:flex-row gap-4">
+        <div class="flex-1 relative">
+          <label for="courseCombobox" class="block text-base font-bold text-brand-tertiary mb-2">Seleccionar curso</label>
+
+          <div class="relative">
+            <input
+              id="courseCombobox"
+              type="text"
+              role="combobox"
+              aria-expanded="{{ showCourseDropdown() ? 'true' : 'false' }}"
+              aria-controls="course-list"
+              placeholder="Escribe para buscar cursos..."
+              [(ngModel)]="courseFilter"
+              (focus)="onCourseInputFocus()"
+              (input)="onCourseInputFocus()"
+              (focusout)="onCourseInputBlur($event)"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            />
+                <button
+                  *ngIf="courseFilter"
+              type="button"
+              (click)="clearCourseFilter(); $event.stopPropagation()"
+              (mousedown)="$event.preventDefault()"
+              title="Limpiar búsqueda"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div *ngIf="showCourseDropdown()" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+              <ul id="course-list" role="listbox">
+                <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (click)="selectCourse('', '')">
+                  <strong>Todos los cursos</strong>
+                </li>
+                @for (course of filteredCourses(); track course._id) {
+                  <li
+                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
+                    (click)="selectCourse(course._id, course.name)"
+                    role="option"
+                    [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+                  >
+                    <span>{{ course.name }}</span>
+                    @if (selectedCourseId === course._id) {
+                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Section -->
   <div>
     @if (loading()) {
       <div class="bg-white rounded-lg shadow-md p-12 text-center">
@@ -27,17 +92,28 @@
       </div>
     } @else {
       <div class="space-y-6">
-        @for (group of getGroupedStudentsArray(); track group.courseName) {
+        @for (group of getFilteredGroupedStudentsArray(); track group.courseId) {
           <div class="bg-white rounded-lg shadow-md overflow-hidden">
             
             
             <!-- Course Header -->
             <div class="bg-white px-6 py-4 border-b border-brand-tertiary-lighten/50">
               <div class="flex flex-col items-start md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 class="text-xl md:text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
-                  <p class="text-sm text-brand-primary/80">{{ group.students.length }} {{ group.students.length === 1 ? 'alumno' : 'alumnos' }}</p>
-                </div>
+                    <div>
+                      <h2 class="text-xl md:text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
+                      <p class="text-sm text-brand-primary/80">{{ group.students.length }} {{ group.students.length === 1 ? 'alumno' : 'alumnos' }}</p>
+                    </div>
+                    <div class="mt-3 md:mt-0 md:ml-4 w-full md:w-1/3">
+                      <label for="search-{{ group.courseId }}" class="sr-only">Buscar alumno</label>
+                      <input
+                        id="search-{{ group.courseId }}"
+                        type="text"
+                        placeholder="Buscar alumno por nombre o email"
+                        [ngModel]="searchTerms()[group.courseId] || ''"
+                        (ngModelChange)="onCourseSearchChange(group.courseId, $event)"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
                 <div class="text-right text-sm text-brand-primary px-2 py-1 mt-2 md:mt-0 bg-brand-primary/10">
                   <span class="font-medium">{{ group.students[0]?.totalClasses || 0 }} clases</span>
                 </div>
@@ -46,6 +122,15 @@
 
             <!-- Students List -->
             <div class="divide-y divide-gray-200">
+              @if (group.students.length === 0) {
+                <div class="px-6 py-8 text-center">
+                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 class="mt-2 text-sm font-medium text-gray-900">No se encontraron alumnos</h3>
+                  <p class="mt-1 text-sm text-gray-500">Prueba otra búsqueda para este curso.</p>
+                </div>
+              }
               @for (student of group.students; track student.userId) {
                 <div class="px-6 py-3 hover:bg-gray-50 transition-colors">
                   <div class="flex flex-col md:flex-row items-center justify-between">

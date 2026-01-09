@@ -506,6 +506,30 @@
             </ul>
           </div>
 
+          <!-- Student grading explanation (dismissible, improved design) -->
+          @if (showGradingExplanationStudent()) {
+            <div role="region" aria-label="Explicación de cómo se calcula la nota" class="bg-yellow-50 border border-yellow-200 rounded-lg p-5 pr-12 mb-6 shadow-sm max-w-3xl mx-auto overflow-visible">
+              <div class="relative">
+                <div class="flex gap-4 items-start">
+                  <div class="flex-shrink-0 mt-1">
+                    <div class="w-12 h-12 bg-yellow-100 text-yellow-800 rounded-full flex items-center justify-center text-xl">🧑‍🎓</div>
+                  </div>
+
+                  <div class="text-yellow-900">
+                    <h3 class="font-semibold text-lg mb-2">¿Cómo se calcula tu nota?</h3>
+                    <p class="text-sm mb-2">Las preguntas de opción múltiple se corrigen automáticamente. Si elegís algunas respuestas correctas, sumás puntos aunque no estén todas bien. Si marcás respuestas incorrectas, eso baja un poco el puntaje de esa pregunta.</p>
+                    <p class="text-sm mb-2">Cada pregunta vale una cantidad de puntos, y tu puntaje depende de cuántas acertás y cuántas errás. El sistema suma los puntos que obtenés en todas esas preguntas y los convierte en un porcentaje entre 0 y 100, que es lo que ves como “Calificación automática”.</p>
+                    <p class="text-sm">👉 Si el cuestionario tiene preguntas de texto, esas no se corrigen automáticamente y tu nota final aparece cuando el profesor las corrige.</p>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <button id="grading-explain-close-button" type="button" (click)="closeGradingExplanationStudent()" class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-300">Entendido</button>
+                </div>
+              </div>
+            </div>
+          }
+
           <button
             (click)="startQuestionnaire()"
             class="cursor-pointer px-8 py-3 bg-brand-primary text-white rounded-full hover:bg-brand-primary-dark transition-colors text-lg font-semibold"

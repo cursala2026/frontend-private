@@ -1,11 +1,12 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, NavigationEnd } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { QuestionnairesService } from '../../../core/services/questionnaires.service';
-import { CoursesService } from '../../../core/services/courses.service';
+import { CoursesService, Course } from '../../../core/services/courses.service';
 import { UserRole } from '../../../core/models/user-role.enum';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
@@ -45,7 +46,7 @@ interface PendingExam {
 @Component({
   selector: 'app-teacher-students',
   standalone: true,
-  imports: [CommonModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './teacher-students.component.html',
 })
 export class TeacherStudentsComponent implements OnInit, OnDestroy {
@@ -53,14 +54,20 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private viewModeService = inject(ViewModeService);
   private http = inject(HttpClient);
   private questionnairesService = inject(QuestionnairesService);
+  private route = inject(ActivatedRoute);
   private coursesService = inject(CoursesService);
   private router = inject(Router);
   private info = inject(InfoService);
   
   user = this.authService.currentUser;
   students = signal<Student[]>([]);
-  loading = signal<boolean>(true);
+  loading = signal<boolean>(false);
   groupedStudents = signal<Map<string, Student[]>>(new Map());
+  courses = signal<Course[]>([]);
+  selectedCourseId = '';
+  courseFilter = '';
+  showCourseDropdown = signal<boolean>(false);
+  searchTerms = signal<Record<string, string>>({});
   pendingExams = signal<PendingExam[]>([]);
   pendingExamsByStudent = signal<Map<string, PendingExam[]>>(new Map());
   private routerSubscription?: Subscription;
@@ -91,27 +98,117 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   };
   unenrollingStudent = signal<boolean>(false);
 
-  ngOnInit(): void {
-    this.viewModeService.initializeViewMode();
-    this.loadStudents();
+  private examGradedHandler = () => {
     this.loadPendingExams();
-    
+  };
+
+  ngOnInit(): void {
+    // Cargar cursos inicialmente; los estudiantes se cargan por curso cuando se selecciona
+    this.loadCourses();
+
+    // Si se pasa courseId por query params, cargar estudiantes de ese curso
+    this.route.queryParamMap.subscribe(params => {
+      const courseId = params.get('courseId');
+      if (courseId) {
+        this.selectedCourseId = courseId;
+        this.courseFilter = '';
+        this.loadStudentsByCourse(courseId);
+      }
+    });
+
     // Actualizar cuando se navega (especialmente después de calificar)
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
         this.loadPendingExams();
       });
-    
-    // También escuchar evento personalizado cuando se califica un examen
-    window.addEventListener('exam-graded', () => {
-      this.loadPendingExams();
-    });
+
+    // Escuchar evento personalizado cuando se califica un examen
+    window.addEventListener('exam-graded', this.examGradedHandler);
+  }
+
+  loadCourses(): void {
+    const currentUser = this.user();
+    if (!currentUser?._id) return;
+
+    // Admin in profesor mode: load all courses (use a large page_size)
+    if (this.authService.hasRole(UserRole.ADMIN) && this.viewModeService.isProfesorMode()) {
+      this.coursesService.getCourses({ page_size: 1000 }).subscribe({
+        next: (response: any) => {
+          this.courses.set(response?.data || []);
+        },
+        error: (error) => {
+          console.error('Error loading courses:', error);
+          this.courses.set([]);
+        }
+      });
+    } else {
+      // Regular teacher: load only their courses
+      this.coursesService.getTeacherCourses(currentUser._id).subscribe({
+        next: (response: any) => {
+          this.courses.set(response?.data || []);
+        },
+        error: (error) => {
+          console.error('Error loading teacher courses:', error);
+          this.courses.set([]);
+        }
+      });
+    }
+  }
+
+  onCourseChange(): void {
+    // no-op additional side effects currently; kept for parity with other components
+    // Filtering is applied in getters that read `selectedCourseId`
+  }
+
+  filteredCourses(): Course[] {
+    const term = this.courseFilter ? this.courseFilter.toLowerCase().trim() : '';
+    const list = this.courses();
+    if (!term) return list;
+    return list.filter(c => (c.name || '').toLowerCase().includes(term));
+  }
+
+  selectCourse(courseId: string | '', courseName?: string): void {
+    this.selectedCourseId = courseId || '';
+    // if an explicit name provided, update the visible filter to that name
+    this.courseFilter = courseName || '';
+    this.showCourseDropdown.set(false);
+    // Load students for the selected course; if empty id, load all students
+    if (this.selectedCourseId) {
+      this.loadStudentsByCourse(this.selectedCourseId);
+    } else {
+      this.loadStudents();
+    }
+  }
+
+  onCourseInputFocus(): void {
+    this.showCourseDropdown.set(true);
+  }
+
+  onCourseInputBlur(event: FocusEvent): void {
+    // Delay hiding to allow click on dropdown items
+    setTimeout(() => this.showCourseDropdown.set(false), 150);
+  }
+
+  clearCourseFilter(): void {
+    // Limpiar el texto visible en el combobox y dejar la lista vacía (sin recargar).
+    this.courseFilter = '';
+    this.selectedCourseId = '';
+    this.showCourseDropdown.set(false);
+    // Vaciar arrays/maps que muestran alumnos y exámenes pendientes
+    this.students.set([]);
+    this.groupedStudents.set(new Map());
+    this.pendingExams.set([]);
+    this.pendingExamsByStudent.set(new Map());
+  }
+
+  onCourseSearchChange(courseId: string, value: string): void {
+    this.searchTerms.update(prev => ({ ...(prev || {}), [courseId]: value }));
   }
 
   ngOnDestroy(): void {
     this.routerSubscription?.unsubscribe();
-    window.removeEventListener('exam-graded', () => {});
+    window.removeEventListener('exam-graded', this.examGradedHandler);
   }
 
   loadStudents(): void {
@@ -199,6 +296,55 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
       courseName,
       students
     }));
+  }
+
+  getFilteredGroupedStudentsArray(): Array<{ courseId: string; courseName: string; students: Student[] }> {
+    const selected = this.selectedCourseId ? String(this.selectedCourseId) : '';
+    const search = this.searchTerms();
+    let list = this.students();
+    if (selected) {
+      list = list.filter(s => {
+        let sid: any = (s as any).courseId;
+        if (sid == null) return false;
+        if (typeof sid === 'object') {
+          sid = sid._id || sid.id || JSON.stringify(sid);
+        }
+        return String(sid) === selected || String(sid) == selected;
+      });
+    }
+
+    const grouped = new Map<string, { courseName: string; students: Student[] }>();
+    list.forEach(student => {
+      const courseId = student.courseId || 'unknown';
+      const courseName = student.courseName || 'Sin nombre';
+      if (!grouped.has(courseId)) {
+        grouped.set(courseId, { courseName, students: [] });
+      }
+      grouped.get(courseId)!.students.push(student);
+    });
+
+    // Apply per-course search filtering but keep courses visible even if no students match
+    const result: Array<{ courseId: string; courseName: string; students: Student[] }> = [];
+    grouped.forEach((value, courseId) => {
+      const term = (search && search[courseId]) ? search[courseId].toLowerCase().trim() : '';
+      let students = value.students;
+      if (term) {
+        students = students.filter(s => {
+          const fullName = (s.firstName + ' ' + s.lastName).toLowerCase();
+          return fullName.includes(term) || (s.email || '').toLowerCase().includes(term);
+        });
+      }
+      // Always include the course entry; show empty students array if none match
+      result.push({ courseId, courseName: value.courseName, students });
+    });
+
+    return result;
+  }
+
+  getSelectedCourseName(): string {
+    if (!this.selectedCourseId) return '';
+    const c = this.courses().find(x => x._id === this.selectedCourseId);
+    return c ? c.name : '';
   }
 
   // Notificaciones deshabilitadas temporalmente
@@ -355,5 +501,15 @@ El alumno ya no tendrá acceso al curso y esta acción no se puede deshacer.`
     this.showUnenrollModal.set(false);
     this.studentToUnenroll = null;
   }
+
+  loadStudentsByCourse(courseId: string): void {
+    // Fallback: el backend no expone consistentemente /user/getStudentsByCourse/:id
+    // Cargamos la lista general y dejamos que el filtrado por `selectedCourseId` en el cliente
+    // muestre solo los alumnos del curso seleccionado.
+    this.selectedCourseId = courseId || '';
+    // `loadStudents` ya gestiona `loading` y llama a `processStudents`.
+    this.loadStudents();
+  }
+
 }
 

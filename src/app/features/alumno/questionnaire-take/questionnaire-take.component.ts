@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -54,6 +54,9 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   timeExpired = signal<boolean>(false);
   private timerInterval: any = null;
 
+  // Mostrar explicación de cómo se calcula la nota para el estudiante (antes de comenzar)
+  showGradingExplanationStudent = signal<boolean>(true);
+
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.courseId.set(params['courseId']);
@@ -62,8 +65,25 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     });
   }
 
+  constructor() {
+    // Focus the explanation button when the explanation becomes visible.
+    // `effect` must run in an injection context (constructor/field initializer).
+    effect(() => {
+      if (this.showGradingExplanationStudent && this.showGradingExplanationStudent()) {
+        setTimeout(() => {
+          const btn = document.getElementById('grading-explain-close-button') as HTMLElement | null;
+          btn?.focus();
+        }, 0);
+      }
+    });
+  }
+
   ngOnDestroy(): void {
     this.clearTimer();
+  }
+
+  closeGradingExplanationStudent(): void {
+    this.showGradingExplanationStudent.set(false);
   }
 
   clearTimer(): void {

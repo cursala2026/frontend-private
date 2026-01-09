@@ -12,21 +12,57 @@
   <!-- Course Selector -->
   <div class="bg-white shadow-sm rounded-lg p-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div class="flex-1">
-        <label for="courseSelect" class="block text-base font-bold text-brand-tertiary mb-2">
-          Selecciona un Curso
-        </label>
-        <select
-          id="courseSelect"
-          [(ngModel)]="selectedCourseId"
-          (change)="onCourseChange()"
-          class="max-w-2xl cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-        >
-          <option value="">-- Selecciona un curso --</option>
-          @for (course of courses(); track course._id) {
-            <option [value]="course._id">{{ course.name }}</option>
-          }
-        </select>
+      <div class="flex-1 relative">
+        <label for="courseCombobox" class="block text-base font-bold text-brand-tertiary mb-2">Selecciona un Curso</label>
+        <div class="relative">
+          <input
+            id="courseCombobox"
+            type="text"
+            role="combobox"
+            aria-expanded="{{ showCourseDropdown ? 'true' : 'false' }}"
+            aria-controls="course-list"
+            placeholder="Escribe para buscar cursos..."
+            [(ngModel)]="courseFilter"
+            (focus)="onCourseInputFocus()"
+            (input)="onCourseInputFocus()"
+            (focusout)="onCourseInputBlur($event)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+          <button
+            *ngIf="courseFilter || selectedCourseId"
+            type="button"
+            (click)="clearCourseFilter(); $event.stopPropagation()"
+            (mousedown)="$event.preventDefault()"
+            title="Limpiar búsqueda"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div *ngIf="showCourseDropdown" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+            <ul id="course-list" role="listbox">
+              <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (click)="selectCourse('', '')">
+                <strong>Todos los cursos</strong>
+              </li>
+              @for (course of filteredCourses(); track course._id) {
+                <li
+                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
+                  (click)="selectCourse(course._id, course.name)"
+                  role="option"
+                  [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+                >
+                  <span>{{ course.name }}</span>
+                  @if (selectedCourseId === course._id) {
+                    <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
       </div>
       @if (selectedCourseId) {
         <button

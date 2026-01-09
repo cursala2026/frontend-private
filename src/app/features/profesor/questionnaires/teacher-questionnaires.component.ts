@@ -34,6 +34,8 @@ export class TeacherQuestionnairesComponent implements OnInit {
   questionnaires = signal<Questionnaire[]>([]);
   courses = signal<Course[]>([]);
   selectedCourseId = '';
+  courseFilter = '';
+  showCourseDropdown = false;
 
   loading = signal<boolean>(true);
   loadingQuestionnaires = signal<boolean>(false);
@@ -119,6 +121,34 @@ export class TeacherQuestionnairesComponent implements OnInit {
       });
       this.questionnaires.set([]);
     }
+  }
+
+  filteredCourses(): Course[] {
+    const term = this.courseFilter ? this.courseFilter.toLowerCase().trim() : '';
+    const list = this.courses();
+    if (!term) return list;
+    return list.filter(c => (c.name || '').toLowerCase().includes(term));
+  }
+
+  selectCourse(courseId: string | '', courseName?: string): void {
+    this.selectedCourseId = courseId || '';
+    if (courseName) this.courseFilter = courseName;
+    this.showCourseDropdown = false;
+    this.onCourseChange();
+  }
+
+  onCourseInputFocus(): void {
+    this.showCourseDropdown = true;
+  }
+
+  onCourseInputBlur(event: FocusEvent): void {
+    setTimeout(() => this.showCourseDropdown = false, 150);
+  }
+
+  clearCourseFilter(): void {
+    this.courseFilter = '';
+    this.selectCourse('', '');
+    this.showCourseDropdown = false;
   }
 
   loadQuestionnairesByCourse(courseId: string): void {
