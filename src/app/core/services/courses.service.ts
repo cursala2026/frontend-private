@@ -53,6 +53,7 @@ export interface Course {
   numberOfClasses?: number;
   duration?: number;
   isPublished?: boolean;
+  hasActivePromotionalCode?: boolean; // Indica si el curso tiene un código promocional activo
   isMainTeacher?: boolean;
   createdAt?: Date;
   updatedAt?: Date;

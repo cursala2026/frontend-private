@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../shared/components/modal-data-table/modal-data-table.component';
 import { PromotionalCodesService } from '../../../core/services/promotional-codes.service';
+import { CoursesService } from '../../../core/services/courses.service';
+import { map } from 'rxjs/operators';
 import { InfoService } from '../../../core/services/info.service';
 
 @Component({
@@ -22,16 +24,44 @@ export class PromotionalCodesComponent {
   modalConfig!: ModalConfig;
   selectedCode: any = null;
 
+  courses = signal<any[]>([]);
+
   private service = inject(PromotionalCodesService);
   private info = inject(InfoService);
+  private coursesService = inject(CoursesService);
 
   tableConfig = {
     columns: [
       { key: 'code', label: 'Código', type: 'text', sortable: true, width: '12%' },
       { key: 'name', label: 'Nombre', type: 'text', sortable: true },
-      { key: 'discountType', label: 'Tipo', type: 'text', width: '10%' },
-      { key: 'discountValue', label: 'Descuento', type: 'text', width: '10%' },
-      { key: 'isGlobal', label: 'Activo', type: 'boolean', width: '8%' },
+      {
+        key: 'discountType',
+        label: 'Tipo',
+        type: 'text',
+        width: '10%',
+        formatter: (val: any) => {
+          if (!val) return '';
+          if (String(val).toUpperCase() === 'PERCENTAGE') return 'Porcentaje';
+          if (String(val).toUpperCase() === 'FIXED') return 'Monto fijo';
+          return String(val);
+        }
+      },
+      {
+        key: 'discountValue',
+        label: 'Descuento',
+        type: 'text',
+        width: '10%',
+        formatter: (val: any, row: any) => {
+          const v = Number(val);
+          if (row && String(row.discountType).toUpperCase() === 'PERCENTAGE') {
+            return isNaN(v) ? '' : `${v}%`;
+          }
+          // Formatear como moneda en peso chileno sin decimales
+          const nf = new Intl.NumberFormat('es-CL');
+          return isNaN(v) ? '' : `$${nf.format(v)}`;
+        }
+      },
+      { key: 'isGlobal', label: 'Código Global', type: 'boolean', width: '8%' },
       { key: 'usedCount', label: 'Usos', type: 'text', width: '8%' }
     ],
     searchable: true,
@@ -40,12 +70,14 @@ export class PromotionalCodesComponent {
       {
         label: 'Editar',
         handler: (row: any) => this.editCode(row),
-        class: 'btn-primary'
+        class: 'btn-secondary',
+        iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'
       },
       {
         label: 'Eliminar',
         handler: (row: any) => this.deleteCode(row),
         class: 'btn-danger',
+        iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
         requireConfirm: true,
         confirmTitle: (r: any) => `Eliminar código ${r.code}`,
         confirmMessage: (r: any) => `¿Seguro quieres eliminar el código "${r.code}"?`,
@@ -56,6 +88,35 @@ export class PromotionalCodesComponent {
 
   constructor() {
     this.loadCodes();
+    this.loadCourses();
+  }
+
+  loadCourses(): void {
+    // Intentar cargar un listado amplio de cursos para el combo
+    this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
+      next: (res) => {
+        const data = res?.data || res || [];
+        const arr = Array.isArray(data) ? data : [];
+        this.courses.set(arr);
+
+        // Si ya hay un modal abierto con campos, actualizar las opciones del campo courseId
+        if (this.modalConfig && this.modalConfig.fields) {
+          const field = this.modalConfig.fields.find(f => f.key === 'courseId');
+          if (field) {
+            field.options = arr.map(c => ({ value: c._id || c.id, label: c.name }));
+            // Si existe selectedCode con courseId, setear valor por defecto
+            if (this.selectedCode && (this.selectedCode.courseId || this.selectedCode.course)) {
+              const val = this.selectedCode.courseId || this.selectedCode.course?._id || this.selectedCode.course;
+              field.value = val || '';
+            }
+          }
+        }
+      },
+      error: () => {
+        // No bloquear la creación/edición si falla la carga de cursos
+        this.courses.set([]);
+      }
+    });
   }
 
   onSearchChange(term: string): void {
@@ -118,6 +179,25 @@ export class PromotionalCodesComponent {
         rows: 3,
         placeholder: 'Descripción del código promocional...'
       , value: code?.description || '' },
+      {
+        key: 'courseId',
+        label: 'Curso asociado (opcional)',
+        type: 'autocomplete-multiselect',
+        placeholder: 'Buscar curso por nombre (opcional)',
+        // Filtrado en cliente usando la lista cargada en `this.courses`.
+        options: (term: string) => {
+          const q = String(term || '').trim().toLowerCase();
+          const arr = this.courses().filter(c => !q || (c.name || '').toLowerCase().includes(q));
+          return arr.map((c: any) => ({ value: c._id || c.id, label: c.name }));
+        },
+        // Normalizar valor inicial a array de IDs (puede venir como objetos poblados desde el backend)
+        value: (() => {
+          const raw = code?.courseIds ?? code?.applicableCourses ?? (code?.courseId ? [code.courseId] : (code?.course ? [code.course._id || code.course] : []));
+          if (!raw) return [];
+          if (!Array.isArray(raw)) return [raw && (raw._id || raw.id) ? (raw._id || raw.id) : raw];
+          return raw.map((r: any) => (r && (r._id || r.id) ? (r._id || r.id) : r));
+        })()
+      },
       { 
         key: 'discountType', 
         label: 'Tipo de Descuento', 
@@ -264,6 +344,8 @@ export class PromotionalCodesComponent {
       return;
     }
 
+    console.log('Modal formData ->', JSON.stringify(formData, null, 2));
+
     // Normalizar y convertir tipos antes de enviar al backend
     const payload: any = { ...formData };
 
@@ -338,8 +420,40 @@ export class PromotionalCodesComponent {
       }
     });
 
+    // Ajustar campo de cursos: normalizar a `applicableCourses` esperado por el backend
+    if (payload.courseId !== undefined) {
+      if (Array.isArray(payload.courseId)) {
+        payload.applicableCourses = payload.courseId;
+      } else if (payload.courseId) {
+        payload.applicableCourses = [payload.courseId];
+      }
+      delete payload.courseId;
+    }
+
+    // Si se proporcionó courseIds (nomenclatura previa), mapear a applicableCourses
+    if (payload.courseIds !== undefined) {
+      payload.applicableCourses = Array.isArray(payload.courseIds) ? payload.courseIds : [payload.courseIds];
+      delete payload.courseIds;
+    }
+
+    // Si se especificaron cursos aplicables, asegurar isGlobal = false
+    if (payload.applicableCourses !== undefined && Array.isArray(payload.applicableCourses) && payload.applicableCourses.length > 0) {
+      payload.isGlobal = false;
+    }
+
+    // Si el código es global y no hay cursos aplicables, enviar un arreglo vacío para applicableCourses
+    if (payload.isGlobal && (!payload.applicableCourses || payload.applicableCourses.length === 0)) {
+      payload.applicableCourses = [];
+    }
+
+    // Asegurar que siempre enviamos `applicableCourses` (array) para el backend
+    if (!Array.isArray(payload.applicableCourses)) {
+      payload.applicableCourses = [];
+    }
+
     // payload ready to send
-    
+    // payload ready to send
+    console.log('PromotionalCode payload ->', JSON.stringify(payload, null, 2));
     if (isCreate) {
       this.service.createPromotionalCode(payload).subscribe({
         next: (res) => {

@@ -109,6 +109,27 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
         this.course.set(courseData);
 
+        // Intentar obtener la marca `hasActivePromotionalCode` desde el endpoint de cursos del usuario
+        try {
+          this.coursesService.getStudentCourses().subscribe({
+            next: (studentRes: any) => {
+              const studentCourses = studentRes?.data || studentRes || [];
+              if (Array.isArray(studentCourses) && studentCourses.length > 0) {
+                const found = studentCourses.find((c: any) => (c._id || c.id) === (courseId || courseData._id));
+                if (found && found.hasActivePromotionalCode) {
+                  const patched = { ...(this.course() || {}), hasActivePromotionalCode: true } as any;
+                  this.course.set(patched);
+                }
+              }
+            },
+            error: () => {
+              // No bloquear la carga del curso si falla esta verificación
+            }
+          });
+        } catch (e) {
+          // ignore
+        }
+
         if (courseData.questionnaires) {
           const activeQuestionnaires = courseData.questionnaires.filter((q: Questionnaire) => q.status === 'ACTIVE');
           this.questionnaires.set(activeQuestionnaires);

@@ -55,6 +55,14 @@
           <div class="w-full h-full bg-linear-to-br from-indigo-500 to-purple-600"></div>
         }
         <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
+        @if (courseData.hasActivePromotionalCode) {
+          <div class="absolute top-4 left-4 bg-amber-500 px-3 py-1 rounded-full flex items-center gap-2 text-sm font-semibold text-white z-20" aria-label="Código promocional activo">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.59 13.41L12 4.83 2.83 14 11.41 22.59 20.59 13.41zM6.5 11.5a1.5 1.5 0 11.001-3.001A1.5 1.5 0 016.5 11.5z"/>
+            </svg>
+            <span>Promoción activa</span>
+          </div>
+        }
         <div class="absolute bottom-0 left-0 right-0 p-8">
           <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">{{ courseData.name }}</h1>
           <div class="flex flex-wrap items-center gap-4 text-white/90">

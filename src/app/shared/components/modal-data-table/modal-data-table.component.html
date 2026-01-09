@@ -135,6 +135,87 @@
                             [class.border-red-500]="isFieldInvalid(field)"
                           ></textarea>
                         }
+                        @case ('autocomplete') {
+                          <div class="relative">
+                            <input
+                              type="text"
+                              [value]="getSearchValue(field.key, field)"
+                              (input)="searchOptions(field.key, $event.target.value)"
+                              (focus)="onInputFocus(field.key)"
+                              (blur)="onInputBlur(field.key)"
+                              [placeholder]="field.placeholder || 'Buscar...'"
+                              class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors pr-10"
+                              [class.border-red-500]="isFieldInvalid(field)"
+                            />
+
+                            <!-- Clear button -->
+                            @if (getSearchValue(field.key, field) || form.get(field.key)?.value) {
+                              <button
+                                type="button"
+                                (click)="clearAutocomplete(field.key)"
+                                class="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-sm text-gray-500 hover:bg-gray-100"
+                                title="Borrar selección"
+                              >
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            }
+
+                            @if ((getAutocompleteOptions(field.key).length > 0 && getRawSearchValue(field.key).length > 0) || getFocusSignal(field.key)()) {
+                              <ul class="absolute z-40 w-full mt-1 max-h-56 overflow-auto rounded-md bg-white border border-gray-200 shadow-lg">
+                                @for (option of getAutocompleteOptions(field.key); track option.value) {
+                                  <li
+                                    (click)="selectAutocompleteOption(field.key, option)"
+                                    class="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer"
+                                  >
+                                    {{ option.label }}
+                                  </li>
+                                }
+                              </ul>
+                            }
+                          </div>
+                        }
+                        @case ('autocomplete-multiselect') {
+                          <div class="relative">
+                            <!-- Selected chips -->
+                            <div class="flex flex-wrap gap-2 mb-2">
+                              @for (sel of getMultiselectValue(field); track sel) {
+                                <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm">
+                                  <span class="truncate max-w-xs">{{ getOptionLabel(field, sel) }}</span>
+                                  <button type="button" (click)="removeAutocompleteSelection(field.key, sel)" class="p-0.5 rounded ml-1 text-blue-600 hover:bg-blue-100">
+                                    ×
+                                  </button>
+                                </span>
+                              }
+                            </div>
+
+                            <input
+                              type="text"
+                              [value]="getSearchValue(field.key, field)"
+                              (input)="searchOptions(field.key, $event.target.value)"
+                              (focus)="onInputFocus(field.key)"
+                              (blur)="onInputBlur(field.key)"
+                              [placeholder]="field.placeholder || 'Buscar...'"
+                              class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors pr-10"
+                              [class.border-red-500]="isFieldInvalid(field)"
+                            />
+
+                            @if ((getAutocompleteOptions(field.key).length > 0 && getRawSearchValue(field.key).length > 0) || getFocusSignal(field.key)()) {
+                              <ul class="absolute z-40 w-full mt-1 max-h-56 overflow-auto rounded-md bg-white border border-gray-200 shadow-lg">
+                                @for (option of getAutocompleteOptions(field.key); track option.value) {
+                                  <li
+                                    (click)="addAutocompleteSelection(field.key, option)"
+                                    class="px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-between"
+                                  >
+                                    <span>{{ option.label }}</span>
+                                    <input type="checkbox" [checked]="isAutocompleteSelected(field.key, option.value)" readonly />
+                                  </li>
+                                }
+                              </ul>
+                            }
+                          </div>
+                        }
                         @case ('select') {
                           <select
                             [formControlName]="field.key"
@@ -142,7 +223,7 @@
                             [class.border-red-500]="isFieldInvalid(field)"
                           >
                             <option value="">Seleccionar...</option>
-                            @for (option of field.options; track option.value) {
+                            @for (option of getFieldOptions(field); track option.value) {
                               <option [value]="option.value">{{ option.label }}</option>
                             }
                           </select>
@@ -151,24 +232,24 @@
                           <div class="space-y-3">
                             <!-- Contenedor de opciones con checkboxes -->
                             <div class="border border-gray-300 rounded-lg p-3 max-h-60 overflow-y-auto bg-gray-50" [class.border-red-500]="isFieldInvalid(field)">
-                              @if (field.options && field.options.length > 0) {
-                                <div class="space-y-2">
-                                  @for (option of field.options; track option.value) {
-                                    <label class="flex items-center gap-3 p-2 rounded-md hover:bg-white cursor-pointer transition-colors">
-                                      <input
-                                        type="checkbox"
-                                        [checked]="isOptionSelected(field, option.value)"
-                                        [disabled]="isOptionDisabled(field, option.value)"
-                                        (change)="onCheckboxChange(field, option.value, $event)"
-                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                      />
-                                      <span class="flex-1 text-sm text-gray-700">{{ option.label }}</span>
-                                    </label>
-                                  }
-                                </div>
-                              } @else {
-                                <p class="text-sm text-gray-500 text-center py-4">No hay opciones disponibles</p>
-                              }
+                              @if (getFieldOptions(field).length > 0) {
+                                  <div class="space-y-2">
+                                    @for (option of getFieldOptions(field); track option.value) {
+                                      <label class="flex items-center gap-3 p-2 rounded-md hover:bg-white cursor-pointer transition-colors">
+                                        <input
+                                          type="checkbox"
+                                          [checked]="isOptionSelected(field, option.value)"
+                                          [disabled]="isOptionDisabled(field, option.value)"
+                                          (change)="onCheckboxChange(field, option.value, $event)"
+                                          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                        <span class="flex-1 text-sm text-gray-700">{{ option.label }}</span>
+                                      </label>
+                                    }
+                                  </div>
+                                } @else {
+                                  <p class="text-sm text-gray-500 text-center py-4">No hay opciones disponibles</p>
+                                }
                             </div>
                             
                             <!-- Información y validación -->
