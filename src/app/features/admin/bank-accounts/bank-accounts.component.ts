@@ -45,8 +45,8 @@ export class BankAccountsComponent implements OnInit {
   // Configuración de columnas para la tabla
   tableColumns: TableColumn[] = [
     {
-      header: 'ID de Pago',
-      field: 'paymentId',
+      header: 'Usuario',
+      render: (row: any) => this.getUsernameForRow(row),
       cellClass: 'font-medium text-gray-900'
     },
     {
@@ -234,6 +234,24 @@ export class BankAccountsComponent implements OnInit {
       default:
         return status || 'Desconocido';
     }
+  }
+
+  getUsernameForRow(row: any): string {
+    if (!row) return '';
+    // Priorizar campos de username posibles según el shape de los datos
+    const username = row.username || row.user?.username || row.userName || row.studentUsername;
+    if (username) return username;
+
+    // Fallbacks: email del payer, studentEmail, o nombre y apellido
+    const payerEmail = row.payer?.email || row.payer?.email_address;
+    if (payerEmail) return payerEmail;
+
+    if (row.studentEmail) return row.studentEmail;
+
+    const first = row.payer?.first_name || row.firstName || row.studentFirstName || '';
+    const last = row.payer?.last_name || row.lastName || row.studentLastName || '';
+    const full = `${first} ${last}`.trim();
+    return full || '';
   }
 
   // Las validaciones de formulario para cuentas bancarias las maneja el componente modal.

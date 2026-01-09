@@ -1,12 +1,13 @@
 import { Component, Input, Output, EventEmitter, signal, computed, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableColumn, TableConfig, TableAction, PaginationData } from '../../models/table.interface';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent, DatePipe],
   templateUrl: './data-table.component.html'
 })
 export class DataTableComponent {
@@ -27,6 +28,16 @@ export class DataTableComponent {
   currentSort = signal<{ column: string; direction: 'ASC' | 'DESC' } | null>(null);
   showConfirmModal = signal<boolean>(false);
   pendingAction = signal<{ action: TableAction; row: any } | null>(null);
+
+  confirmConfig = computed<ConfirmModalConfig>(() => {
+    return {
+      title: this.getConfirmTitle(),
+      message: this.getConfirmMessage(),
+      confirmText: this.getConfirmButtonText(),
+      cancelText: 'Cancelar',
+      icon: 'danger'
+    } as ConfirmModalConfig;
+  });
 
   // Expose Math for template
   Math = Math;

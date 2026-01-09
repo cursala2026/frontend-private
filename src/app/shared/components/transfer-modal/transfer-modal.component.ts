@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PromotionalCodesService } from '../../../core/services/promotional-codes.service';
 import { InfoService } from '../../../core/services/info.service';
+import { BankAccountService } from '../../../core/services/bank-account.service';
 
 @Component({
   selector: 'app-transfer-modal',
@@ -13,6 +14,7 @@ import { InfoService } from '../../../core/services/info.service';
 export class TransferModalComponent implements OnInit {
   private promotionalCodesService = inject(PromotionalCodesService);
   private infoService = inject(InfoService);
+  private bankAccountService = inject(BankAccountService);
 
   isOpen = input.required<boolean>();
   amount = input<number>(0);
@@ -37,12 +39,26 @@ export class TransferModalComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Usar datos hardcodeados por ahora, ya que el endpoint requiere permisos de admin
-    this.bankAccount.set({
-      cbu: '0000000000000000000000',
-      alias: 'CURSALA.PAGO'
+    this.loading.set(true);
+    this.bankAccountService.getPublicStudentBankAccounts().subscribe({
+      next: (res) => {
+        const list = res?.data || [];
+        const first = list.length ? list[0] : null;
+        if (first) {
+          this.bankAccount.set({ cbu: first.cbu, alias: first.alias });
+        } else {
+          this.bankAccount.set(null);
+          this.infoService.showError('Error al cargar datos bancarios. Intente nuevamente.');
+        }
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching public bank accounts:', err);
+        this.infoService.showError('Error al cargar datos bancarios. Intente nuevamente.');
+        this.bankAccount.set(null);
+        this.loading.set(false);
+      }
     });
-    this.loading.set(false);
   }
 
   close(): void {
