@@ -141,8 +141,8 @@ export class TeacherQuestionnairesComponent implements OnInit {
     this.showCourseDropdown = true;
   }
 
-  onCourseInputBlur(event: FocusEvent): void {
-    setTimeout(() => this.showCourseDropdown = false, 150);
+  onCourseInputBlur(): void {
+    setTimeout(() => this.showCourseDropdown = false, 200);
   }
 
   clearCourseFilter(): void {

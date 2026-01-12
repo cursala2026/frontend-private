@@ -25,7 +25,7 @@
             [(ngModel)]="courseFilter"
             (focus)="onCourseInputFocus()"
             (input)="onCourseInputFocus()"
-            (focusout)="onCourseInputBlur($event)"
+            (blur)="onCourseInputBlur()"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
           />
           <button
@@ -42,13 +42,13 @@
           </button>
           <div *ngIf="showCourseDropdown" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
             <ul id="course-list" role="listbox">
-              <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (click)="selectCourse('', '')">
+              <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
                 <strong>Todos los cursos</strong>
               </li>
               @for (course of filteredCourses(); track course._id) {
                 <li
                   class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
-                  (click)="selectCourse(course._id, course.name)"
+                  (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
                   role="option"
                   [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
                 >

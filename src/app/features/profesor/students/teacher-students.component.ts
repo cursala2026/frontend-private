@@ -185,9 +185,9 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     this.showCourseDropdown.set(true);
   }
 
-  onCourseInputBlur(event: FocusEvent): void {
+  onCourseInputBlur(): void {
     // Delay hiding to allow click on dropdown items
-    setTimeout(() => this.showCourseDropdown.set(false), 150);
+    setTimeout(() => this.showCourseDropdown.set(false), 200);
   }
 
   clearCourseFilter(): void {
