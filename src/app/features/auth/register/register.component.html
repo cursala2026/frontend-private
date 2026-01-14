@@ -1,4 +1,4 @@
-<div class="h-screen bg-linear-to-t from-brand-primary/90 to-white flex items-center justify-center px-4 py-2 sm:py-4">
+<div class="h-screen bg-gradient-to-t from-brand-primary/90 to-white flex items-center justify-center px-4 py-2 sm:py-4">
   <img ngSrc="/images/sections/hero/cursos.jpg" alt="Fondo registro" fill class="absolute inset-0 object-cover object-center opacity-10 pointer-events-none select-none z-0" aria-hidden="true" />
   <main class="relative z-10 flex w-full items-center justify-center px-0 py-2">
     <div class="w-full max-w-md sm:max-w-lg">
@@ -11,7 +11,7 @@
         </div>
 
         <!-- Card -->
-        <div class="rounded-2xl relative bg-white/85 p-2 shadow-xl backdrop-blur-xl overflow-auto sm:p-3">
+        <div class="rounded-2xl relative bg-white p-2 shadow-xl overflow-auto sm:p-3 md:bg-white/85 md:backdrop-blur-xl">
 
           <h2 class="mb-2 text-center text-xl sm:text-2xl font-bold tracking-tight text-brand-primary">Crear cuenta</h2>
 
@@ -34,7 +34,7 @@
                 <div>
                   <label for="firstName" class="block text-xs sm:text-sm font-normal text-brand-tertiary mb-0.5">Nombre</label>
                   <div class="mt-0.5 relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">person</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">person</span>
                     <input id="firstName" formControlName="firstName" type="text" placeholder="Nombre" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   </div>
                   @if (hasError('firstName','required')) {
@@ -44,7 +44,7 @@
                 <div>
                   <label for="lastName" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Apellido</label>
                   <div class="mt-0.5 relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">badge</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">badge</span>
                     <input id="lastName" formControlName="lastName" type="text" placeholder="Apellido" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   </div>
                   @if (hasError('lastName','required')) {
@@ -56,7 +56,7 @@
               <div>
                 <label for="email" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Email</label>
                 <div class="mt-0.5 relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">email</span>
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">email</span>
                   <input id="email" formControlName="email" type="email" placeholder="email@ejemplo.com" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                 </div>
                 @if (hasError('email','required')) {
@@ -71,7 +71,7 @@
                 <div>
                   <label for="phone" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Teléfono</label>
                   <div class="mt-0.5 relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">phone</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">phone</span>
                     <input id="phone" formControlName="phone" type="tel" placeholder="(11) 1234-5678" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   </div>
                   @if (hasError('phone','required')) {
@@ -81,10 +81,10 @@
                 <div>
                   <label for="password" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Contraseña</label>
                   <div class="mt-0.5 relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">lock</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
                     <input id="password" formControlName="password" [type]="showPassword ? 'text' : 'password'" placeholder="Contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                     <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowPassword()" aria-label="Mostrar contraseña">
-                      <span class="material-symbols-outlined text-[14px] sm:text-[16px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
                     </button>
                   </div>
                   @if (hasError('password','required')) {
@@ -99,10 +99,10 @@
               <div>
                 <label for="confirmPassword" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Confirmar contraseña</label>
                 <div class="mt-0.5 relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[14px] sm:text-[20px]">lock</span>
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
                   <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'" placeholder="Confirmar contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowConfirmPassword()" aria-label="Mostrar confirmar contraseña">
-                      <span class="material-symbols-outlined text-[14px] sm:text-[16px]">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
                   </button>
                 </div>
                 @if (registerForm.hasError('passwordsMismatch')) {

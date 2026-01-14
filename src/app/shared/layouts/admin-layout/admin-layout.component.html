@@ -24,6 +24,7 @@
       @for (item of menuItems; track item.route) {
         <a
           [routerLink]="item.route"
+          (click)="onMenuItemClick()"
           [class.bg-gray-900]="isActiveRoute(item.route)"
           class="flex items-center px-4 py-3 mb-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
         >
@@ -80,7 +81,7 @@
               
               <!-- Menu Options -->
               <button
-                (click)="switchToProfesorMode()"
+                (click)="switchToProfesorMode(); onMenuItemClick()"
                 class="w-full flex items-center px-4 py-3 text-sm text-indigo-400 hover:bg-gray-700 transition-colors border-b border-gray-700"
               >
                 <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
@@ -89,7 +90,7 @@
                 Ver como Profesor
               </button>
               <button
-                (click)="navigateToProfile()"
+                (click)="navigateToProfile(); onMenuItemClick()"
                 class="w-full flex items-center px-4 py-3 text-sm text-white hover:bg-gray-700 transition-colors"
               >
                 <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
@@ -98,7 +99,7 @@
                 Mi Perfil
               </button>
               <button
-                (click)="logout()"
+                (click)="logout(); onMenuItemClick()"
                 class="w-full flex items-center px-4 py-3 text-sm text-red-400 hover:bg-gray-700 transition-colors"
               >
                 <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">

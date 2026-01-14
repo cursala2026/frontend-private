@@ -144,6 +144,14 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  onMenuItemClick(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      if (window.innerWidth < 1024) {
+        this.isSidebarOpen.set(false);
+      }
+    }
+  }
+
   onImageError(event: any): void {
     event.target.style.display = 'none';
   }
