@@ -3,6 +3,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableColumn, TableConfig, TableAction, PaginationData } from '../../models/table.interface';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../confirm-modal/confirm-modal.component';
+import { Observable } from 'rxjs';
+import * as ExcelJS from 'exceljs';
 
 @Component({
   selector: 'app-data-table',
@@ -22,6 +24,27 @@ export class DataTableComponent {
   @Output() actionClick = new EventEmitter<{ action: string; row: any }>();
   @Output() selectionChange = new EventEmitter<any[]>();
   @Output() switchToggle = new EventEmitter<{ row: any; column: TableColumn; newValue: boolean }>();
+
+  // Export configuration (opcional)
+  @Input() showExportButtons: boolean = false;
+  @Input() isFiltered: boolean = false;
+  // Functions provided por el padre para obtener los datos a exportar.
+  // Si no se proveen, la tabla exportará los datos actualmente mostrados.
+  @Input() exportFilteredFn?: () => Observable<any[]>;
+  @Input() exportAllFn?: () => Observable<any[]>;
+  @Input() exportFilenamePrefix: string = 'export';
+  @Input() exportFields?: string[];
+  @Input() exportFieldLabels?: Record<string, string> | undefined;
+  @Input() exportContextLabel?: string | undefined;
+  // Permitir que el componente padre pase el término de búsqueda actual para sincronizar la caja de búsqueda
+  @Input()
+  set externalSearchTerm(val: string | undefined) {
+    try {
+      this.searchTerm.set(val || '');
+    } catch (e) {
+      // ignore
+    }
+  }
 
   searchTerm = signal<string>('');
   selectedRows = signal<Set<any>>(new Set());
@@ -43,6 +66,24 @@ export class DataTableComponent {
   Math = Math;
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  // Tooltip hover control (para mostrar solo el tooltip del botón hovered)
+  hoveredTooltip = signal<{ row: any; label: string } | null>(null);
+  private _tooltipTimeout: any = null;
+
+  handleTooltipEnter(row: any, label: string, delay = 150): void {
+    if (this._tooltipTimeout) clearTimeout(this._tooltipTimeout);
+    this._tooltipTimeout = setTimeout(() => {
+      this.hoveredTooltip.set({ row, label });
+    }, delay);
+  }
+
+  handleTooltipLeave(delay = 50): void {
+    if (this._tooltipTimeout) clearTimeout(this._tooltipTimeout);
+    this._tooltipTimeout = setTimeout(() => {
+      this.hoveredTooltip.set(null);
+    }, delay);
+  }
 
   allSelected = computed(() => {
     if (this.data.length === 0) return false;
@@ -352,4 +393,228 @@ export class DataTableComponent {
     const pending = this.pendingAction();
     return pending?.action?.confirmButtonText || 'Eliminar';
   }
+
+  // Export helpers
+  onExportFiltered(): void {
+    const filename = this.buildExportFilename();
+    if (this.exportFilteredFn) {
+      this.exportFilteredFn().subscribe({
+        next: (data: any[]) => this.generateExcelFromData(data, filename),
+        error: (err) => console.error('Error exportFilteredFn:', err)
+      });
+      return;
+    }
+
+    // Fallback: exportar los datos actualmente mostrados
+    this.generateExcelFromData(this.data, filename);
+  }
+
+  onExportAll(): void {
+    const filename = this.buildExportFilename();
+    if (this.exportAllFn) {
+      this.exportAllFn().subscribe({
+        next: (data: any[]) => this.generateExcelFromData(data, filename),
+        error: (err) => console.error('Error exportAllFn:', err)
+      });
+      return;
+    }
+
+    // Si no hay exportAllFn, intentar exportar la página actual como fallback
+    this.generateExcelFromData(this.data, filename);
+  }
+
+  // Único handler para el botón de exportación: decide si pedir filtrado o todo
+  onExportButtonClick(): void {
+    if (this.isFiltered) {
+      this.onExportFiltered();
+      return;
+    }
+
+    // Si no está filtrado, preferir exportAllFn si existe
+    if (this.exportAllFn) {
+      this.onExportAll();
+      return;
+    }
+
+    // Fallback: exportar los datos actualmente mostrados
+    this.generateExcelFromData(this.data, this.buildExportFilename());
+  }
+
+  private buildExportFilename(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`; // YYYYMMDD
+    const base = (this.exportFilenamePrefix || 'export').toString().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/gi, '');
+    return `${base}_${datePart}.xlsx`;
+  }
+
+  private async generateExcelFromData(items: any[], filename: string): Promise<void> {
+    if (!Array.isArray(items) || items.length === 0) {
+      console.warn('No hay datos para exportar');
+      return;
+    }
+
+    // Determinar campos a exportar: usar `exportFields` si se provee, sino las columnas de la tabla
+    const fields = Array.isArray(this.exportFields) && this.exportFields.length > 0
+      ? this.exportFields
+      : (Array.isArray(this.config?.columns) ? this.config.columns.map(c => c.key) : []);
+
+    const defaultLabels: Record<string, string> = {
+      firstName: 'Nombre',
+      lastName: 'Apellido',
+      phone: 'Teléfono',
+      email: 'Email',
+      courses: 'Curso',
+      course: 'Curso',
+      username: 'Usuario'
+    };
+
+    const headers = fields.map(f => (this.exportFieldLabels && this.exportFieldLabels[f]) || defaultLabels[f] || f);
+
+    const rows = items.map(item => fields.map(field => {
+      let val: any = undefined;
+
+      // Extraer valor según campo conocido
+      if (field === 'courses' || field === 'course') {
+        const c = item.courses || item.course || item.enrolledCourses || item.studentCourses || item.courseIds;
+        if (Array.isArray(c)) {
+          // intentar obtener título/nombre de cada curso
+          const titles = c.map((x: any) => (typeof x === 'string' ? x : (x.title || x.name || x._id || x.id || ''))).filter(Boolean);
+          val = titles.join(' | ');
+        } else if (c && typeof c === 'object') {
+          val = c.title || c.name || c._id || c.id || '';
+        } else {
+          val = c || '';
+        }
+      } else {
+        val = item[field];
+      }
+
+      // Si la columna tiene formatter en config, intentar aplicarlo
+      const colDef = Array.isArray(this.config?.columns) ? this.config.columns.find(c => c.key === field) : undefined;
+      if (colDef && colDef.formatter) {
+        try { val = colDef.formatter(val, item); } catch (e) { /* ignore */ }
+      }
+
+      // Para el campo `phone`, limpiar HTML (por ejemplo anchors de WhatsApp) y dejar solo el número
+      if (field === 'phone' && typeof val === 'string') {
+        // Eliminar etiquetas HTML
+        const stripped = val.replace(/<[^>]*>/g, '');
+        // Mantener solo dígitos y signo +
+        const onlyNumber = stripped.replace(/[^+\d]/g, '');
+        val = onlyNumber;
+      }
+
+      if (Array.isArray(val)) return val.join(' | ');
+      if (val instanceof Date) return val.toISOString();
+      return val ?? '';
+    }));
+
+    // Use ExcelJS to create a styled workbook (supports fills, fonts, borders, autofilter and freeze)
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Cursala';
+      const sheet = workbook.addWorksheet('Sheet1', { properties: { defaultRowHeight: 20 } });
+
+      let currentRow = 1;
+
+      // Always include a title. If parent provided a context label (filters), use it;
+      // otherwise fall back to a default list title.
+      const titleLabel = this.exportContextLabel && String(this.exportContextLabel).trim().length > 0
+        ? String(this.exportContextLabel)
+        : 'Lista de usuarios de Cursala';
+
+      const titleRow = sheet.getRow(currentRow);
+      titleRow.getCell(1).value = titleLabel;
+      titleRow.height = 24;
+      titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D9CDB' } };
+      if (headers.length > 1) sheet.mergeCells(currentRow, 1, currentRow, headers.length);
+      currentRow++;
+
+      // Always include generation date below the title
+      const genDate = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const dateStr = `Generado: ${genDate.getFullYear()}-${pad(genDate.getMonth() + 1)}-${pad(genDate.getDate())}`;
+      const dateRow = sheet.getRow(currentRow);
+      dateRow.getCell(1).value = dateStr;
+      dateRow.getCell(1).font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF333333' } };
+      dateRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      if (headers.length > 1) sheet.mergeCells(currentRow, 1, currentRow, headers.length);
+      currentRow++;
+
+      // Header row
+      const headerRow = sheet.getRow(currentRow);
+      headers.forEach((h, i) => {
+        const cell = headerRow.getCell(i + 1);
+        cell.value = h;
+        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F6FEB' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+        };
+      });
+      headerRow.height = 20;
+      currentRow++;
+
+      // Add data rows
+      const phoneColIndex = fields.indexOf('phone');
+      rows.forEach(r => {
+        const row = sheet.getRow(currentRow);
+        r.forEach((val: any, idx: number) => {
+          const cell = row.getCell(idx + 1);
+          // Ensure phone is text
+          if (idx === phoneColIndex) {
+            cell.value = val != null ? String(val) : '';
+          } else {
+            cell.value = val;
+          }
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          cell.border = { bottom: { style: 'hair', color: { argb: 'FFEEEEEE' } } } as any;
+        });
+        row.commit();
+        currentRow++;
+      });
+
+      // Set column widths (do not set the `header` property to avoid ExcelJS overwriting rows)
+      headers.forEach((h, idx) => {
+        const col = sheet.getColumn(idx + 1);
+        col.width = h.length < 10 ? 18 : Math.min(Math.max(h.length + 8, 12), 40);
+      });
+
+      // Autofilter and freeze header
+      const headerRowNumber = currentRow - rows.length - 1; // header row was the one before data rows
+      try {
+        sheet.autoFilter = {
+          from: { row: headerRowNumber, column: 1 },
+          to: { row: headerRowNumber, column: headers.length }
+        } as any;
+      } catch (e) { /* ignore */ }
+
+      try {
+        sheet.views = [{ state: 'frozen', ySplit: headerRowNumber } as any];
+      } catch (e) { /* ignore */ }
+
+      // Write workbook to buffer and trigger download
+      const buf = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error generando Excel con ExcelJS', err);
+      // Fallback: try previous XLSX export if available
+    }
+  }
+ 
 }

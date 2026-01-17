@@ -1,4 +1,6 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectorRef } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -7,6 +9,7 @@ import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../share
 import { StudentCoursesModalComponent } from '../../../shared/components/student-courses-modal/student-courses-modal.component';
 import { TableColumn, TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { UsersService, UserListResponse } from '../../../core/services/users.service';
+import { CoursesService } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UserRole } from '../../../core/models/user-role.enum';
 
@@ -20,6 +23,7 @@ export class UsersComponent implements OnInit {
   users = signal<any[]>([]);
   loading = signal<boolean>(false);
   pagination = signal<PaginationData | undefined>(undefined);
+  courses = signal<any[]>([]);
   
   isModalOpen = signal<boolean>(false);
   modalConfig!: ModalConfig;
@@ -35,15 +39,25 @@ export class UsersComponent implements OnInit {
   sortDirection: 'ASC' | 'DESC' = 'DESC';
   searchTerm = '';
   selectedRole: string = '';
+  selectedCourse: string = '';
+  // Guardar total de usuarios sin filtros para detectar respuestas inconsistentes del backend
+  private _lastUnfilteredTotal: number | null = null;
+  
   
   // Exponer UserRole para usar en el template
   UserRole = UserRole;
 
+  // Token para evitar sobrescribir resultados con respuestas antiguas
+  private _requestToken = 0;
+
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(
     private usersService: UsersService,
     private infoService: InfoService
+    ,
+    private coursesService: CoursesService
   ) {}
 
   tableConfig: TableConfig = {
@@ -75,7 +89,17 @@ export class UsersComponent implements OnInit {
         label: 'Teléfono',
         type: 'html',
         width: '15%',
-        formatter: (value: string) => value ? `<a href="tel:${value}" class="text-blue-600 hover:text-blue-800 underline">${value}</a>` : '-'
+        formatter: (value: string) => {
+          if (!value) return '-';
+          // Normalizar número para WhatsApp: eliminar todo lo que no sea dígito
+          try {
+            const normalized = String(value).replace(/\D+/g, '');
+            const waLink = `https://wa.me/${normalized}`;
+            return `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-800 underline">${value}</a>`;
+          } catch (e) {
+            return `<span>${value}</span>`;
+          }
+        }
       },
       {
         key: 'createdAt',
@@ -100,7 +124,8 @@ export class UsersComponent implements OnInit {
         onChange: (row: any, newValue: string) => this.handleRoleChange(row, newValue),
         align: 'center',
         width: '12%'
-      }
+      },
+      
     ],
     sortBy: this.sortColumn,
     sortDirection: this.sortDirection,
@@ -135,62 +160,257 @@ export class UsersComponent implements OnInit {
     // Leer el parámetro 'role' de la URL si existe
     this.route.queryParamMap.subscribe(params => {
       const roleFromQuery = params.get('role');
+      const courseFromQuery = params.get('course');
       if (roleFromQuery) {
         this.selectedRole = roleFromQuery;
       }
+        if (courseFromQuery) {
+          this.selectedCourse = courseFromQuery;
+          if (this.selectedCourse) {
+            // Si hay cualquier filtro por curso (incluyendo 'NO_COURSE'), seleccionar rol Alumno
+            this.selectedRole = UserRole.ALUMNO;
+            // Defer to next tick to ensure bindings update on first render
+            setTimeout(() => this.cdr.detectChanges(), 0);
+          }
+        }
+      // Cargar lista de cursos y luego usuarios
+      this.loadCourses();
       this.loadUsers();
+    });
+  }
+
+  loadCourses(): void {
+    // Cargar cursos para el filtro (cargar muchos resultados razonables)
+    this.courses.set([]);
+    const params = { page: 1, page_size: 1000 };
+    this.coursesService.getCourses(params).subscribe({
+      next: (response: any) => {
+        const data = response?.data?.data || response?.data || response || [];
+        const coursesList = Array.isArray(data) ? data : [];
+        
+        this.courses.set(coursesList);
+      },
+      error: (error) => {
+        console.error('Error loading courses for filter:', error);
+      }
     });
   }
 
   loadUsers(): void {
     this.loading.set(true);
-    
-    const params = {
+    this._requestToken += 1;
+    const currentToken = this._requestToken;
+
+    const setUsersIfCurrent = (data: any[], paginationData: any, tag?: string) => {
+      if (this._requestToken !== currentToken) {
+        return false;
+      }
+      this.users.set(Array.isArray(data) ? data : []);
+      this.pagination.set(paginationData || { page: this.currentPage, page_size: this.pageSize, total: 0, totalPages: 0 });
+      
+      return true;
+    };
+
+    // Delegar filtrado por curso al backend usando el parámetro `courseId`.
+    const courseIdParam = this.selectedCourse ? (this.selectedCourse === 'NO_COURSE' ? 'none' : this.selectedCourse) : undefined;
+
+    const paramsForBackend: any = {
       page: this.currentPage,
       page_size: this.pageSize,
       sort: this.sortColumn,
       sort_dir: this.sortDirection,
+      dir: this.sortDirection,
       search: this.searchTerm || undefined,
-      role: this.selectedRole || undefined
+      role: this.selectedRole || undefined,
+      courseId: courseIdParam
     };
 
-    this.usersService.getUsers(params).subscribe({
-      next: (response: any) => {
-        // Handle backend response format: { status, message, data: { data, pagination } }
-        const data = response?.data?.data || response?.data || [];
-        const pagination = response?.data?.pagination || response?.pagination || {
-          page: this.currentPage,
-          page_size: this.pageSize,
-          total: 0,
-          totalPages: 0
-        };
-        
-        // Normalizar los roles para asegurar que siempre sean arrays y en mayúsculas
-        const normalizedData = Array.isArray(data) ? data.map((user: any) => {
-          let roles = [];
-          if (Array.isArray(user.roles)) {
-            roles = user.roles.map((r: any) => String(r).toUpperCase());
-          } else if (user.roles) {
-            roles = [String(user.roles).toUpperCase()];
-          } else {
-            roles = ['ALUMNO'];
-          }
-          return {
-            ...user,
-            roles: roles
+    const fetchWithCourseParam = (courseIdValue?: string, attempt = 0) => {
+      const p: any = { ...paramsForBackend, courseId: courseIdValue };
+
+      const extractUserId = (s: any): string | null => {
+        if (!s && s !== 0) return null;
+        if (typeof s === 'string') return s;
+        if (typeof s === 'number') return String(s);
+        if (s._id) return String(s._id);
+        if (s.id) return String(s.id);
+        if (s.userId) return String(s.userId);
+        if (s.user && typeof s.user === 'string') return s.user;
+        if (s.user && (s.user._id || s.user.id)) return String(s.user._id || s.user.id);
+        if (s.student && (s.student._id || s.student.id)) return String(s.student._id || s.student.id);
+        if (s.student && typeof s.student === 'string') return s.student;
+        return null;
+      };
+
+      this.usersService.getUsers(p).subscribe({
+        next: (response: any) => {
+          
+          const data = response?.data?.data || response?.data || response || [];
+          const pagination = response?.data?.pagination || response?.pagination || response?.pagination || {
+            page: this.currentPage,
+            page_size: this.pageSize,
+            total: 0,
+            totalPages: 0
           };
-        }) : [];
-        
-        this.users.set(normalizedData);
-        this.pagination.set(pagination);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading users:', error);
-        this.users.set([]);
-        this.loading.set(false);
-      }
-    });
+
+          // Si esta fue la petición sin filtro por curso, guardar total para comparar luego
+          if (!courseIdValue) {
+            this._lastUnfilteredTotal = pagination?.total || 0;
+          }
+
+          
+
+          const normalizedData = Array.isArray(data) ? data.map((user: any) => {
+            let roles = [];
+            if (Array.isArray(user.roles)) roles = user.roles.map((r: any) => String(r).toUpperCase());
+            else if (user.roles) roles = [String(user.roles).toUpperCase()];
+            else roles = ['ALUMNO'];
+            return { ...user, roles };
+          }) : [];
+
+          // Si pedimos 'none' y no vienen resultados, reintentar con 'unassigned' una vez
+          if (courseIdValue === 'none' && Array.isArray(normalizedData) && normalizedData.length === 0 && attempt === 0) {
+            
+            fetchWithCourseParam('unassigned', 1);
+            return;
+          }
+
+          // Si pedimos 'none' y el backend devolvió el mismo total que sin filtro,
+          // interpretamos que el backend no está aplicando el filtro 'none' correctamente.
+          if (courseIdValue === 'none' && this._lastUnfilteredTotal !== null && pagination?.total === this._lastUnfilteredTotal) {
+            
+            // Obtener lista de cursos para construir set de usuarios inscritos
+            const courseParams = { page: 1, page_size: 1000 };
+            this.coursesService.getCourses(courseParams).subscribe({
+              next: (coursesResp: any) => {
+                // Obtener todos los usuarios y filtrar localmente usando heurística por usuario
+                this.usersService.getAllUsers().subscribe({
+                  next: (allResp: any) => {
+                    const allUsers = allResp?.data || allResp || [];
+                    const normalizedAll = Array.isArray(allUsers) ? allUsers.map((u: any) => {
+                      let roles = [];
+                      if (Array.isArray(u.roles)) roles = u.roles.map((r:any)=>String(r).toUpperCase());
+                      else if (u.roles) roles = [String(u.roles).toUpperCase()];
+                      else roles = ['ALUMNO'];
+                      return { ...u, roles };
+                    }) : [];
+
+                    const hasAnyCourse = (user: any) => {
+                      return !!(
+                        (Array.isArray(user.courses) && user.courses.length > 0) ||
+                        (Array.isArray(user.enrolledCourses) && user.enrolledCourses.length > 0) ||
+                        (Array.isArray(user.studentCourses) && user.studentCourses.length > 0) ||
+                        (Array.isArray(user.enrollments) && user.enrollments.length > 0) ||
+                        (Array.isArray(user.courseIds) && user.courseIds.length > 0) ||
+                        (user.course && (Array.isArray(user.course) ? user.course.length > 0 : !!user.course))
+                      );
+                    };
+
+                    const filtered = normalizedAll.filter((u:any) => !hasAnyCourse(u));
+                    const total = filtered.length;
+                    const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const pageData = filtered.slice(start, start + this.pageSize);
+
+                    if (setUsersIfCurrent(pageData, { page: this.currentPage, page_size: this.pageSize, total, totalPages }, `NONE-FALLBACK`)) {
+                    }
+                    this.loading.set(false);
+                  },
+                  error: (err) => {
+                    console.error('Error loading all users for NONE fallback:', err);
+                    this.users.set([]);
+                    this.loading.set(false);
+                  }
+                });
+              },
+              error: (err) => {
+                console.error('Error loading courses for NONE fallback:', err);
+                this.users.set([]);
+                this.loading.set(false);
+              }
+            });
+            return;
+          }
+
+          // Si pedimos un curso específico y no vienen resultados, loguear RAW para diagnóstico
+          if (courseIdValue && Array.isArray(normalizedData) && normalizedData.length === 0) {
+            
+            // Intentar fallback cliente: usar cursos en caché si están disponibles, si no pedir curso por id
+            if (attempt === 0) {
+              
+              const cachedCourses = Array.isArray(this.courses()) ? this.courses() : [];
+              const courseData = cachedCourses.find((c: any) => (c._id || c.id) === courseIdValue);
+              const handleStudents = (students: any[]) => {
+                const studentIds = new Set<string>();
+                students.forEach((s: any) => {
+                  const id = extractUserId(s);
+                  if (id) studentIds.add(id.toString());
+                });
+                this.usersService.getAllUsers().subscribe({
+                  next: (allResp: any) => {
+                    const allUsers = allResp?.data || allResp || [];
+                    const normalizedAll = Array.isArray(allUsers) ? allUsers.map((u: any) => {
+                      let roles = [];
+                      if (Array.isArray(u.roles)) roles = u.roles.map((r:any)=>String(r).toUpperCase());
+                      else if (u.roles) roles = [String(u.roles).toUpperCase()];
+                      else roles = ['ALUMNO'];
+                      return { ...u, roles };
+                    }) : [];
+
+                    const filtered = normalizedAll.filter((u:any) => studentIds.has((u._id||u.id||'').toString()));
+                    const total = filtered.length;
+                    const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const pageData = filtered.slice(start, start + this.pageSize);
+
+                    if (setUsersIfCurrent(pageData, { page: this.currentPage, page_size: this.pageSize, total, totalPages }, `FALLBACK-${courseIdValue}`)) {
+                    }
+                    this.loading.set(false);
+                  },
+                  error: (err) => {
+                    console.error('Error in fallback getAllUsers:', err);
+                    this.users.set([]);
+                    this.loading.set(false);
+                  }
+                });
+              };
+
+              if (courseData) {
+                const students = Array.isArray(courseData.students) ? courseData.students : (courseData.students || []);
+                handleStudents(students);
+              } else {
+                this.coursesService.getCourseById(courseIdValue).subscribe({
+                  next: (courseResp: any) => {
+                    const cd = courseResp?.data || courseResp || {};
+                    const students = Array.isArray(cd.students) ? cd.students : (cd.students || []);
+                    handleStudents(students);
+                  },
+                  error: (err2) => {
+                    console.error('Error loading course for fallback:', err2);
+                    this.users.set([]);
+                    this.loading.set(false);
+                  }
+                });
+              }
+              return;
+            }
+          }
+
+          if (setUsersIfCurrent(normalizedData, pagination, `BACKEND${courseIdValue ? '-' + courseIdValue : ''}`)) {
+        }
+          this.loading.set(false);
+        },
+        error: (error) => {
+          console.error('Error loading users (backend):', error);
+          this.users.set([]);
+          this.loading.set(false);
+        }
+      });
+    };
+
+    fetchWithCourseParam(courseIdParam, 0);
+
+    // No additional requests: ya delegamos todo al backend incluyendo `courseId`.
   }
 
   onSortChange(event: { column: string; direction: 'ASC' | 'DESC' }): void {
@@ -222,6 +442,24 @@ export class UsersComponent implements OnInit {
     this.currentPage = 1;
     this.loadUsers();
   }
+
+  onCourseFilterChange(course: string): void {
+    this.selectedCourse = course;
+    this.currentPage = 1;
+    if (this.selectedCourse) {
+      // Aplicar rol Alumno también para 'NO_COURSE'
+      this.selectedRole = UserRole.ALUMNO;
+      // Defer detection and load to next tick so the role select reflects the change immediately
+      setTimeout(() => {
+        this.cdr.detectChanges();
+        this.loadUsers();
+      }, 0);
+      return;
+    }
+    this.loadUsers();
+  }
+
+  
 
   editUser(user: any): void {
     this.selectedUser = user;
@@ -609,5 +847,89 @@ export class UsersComponent implements OnInit {
   onCoursesUpdated(): void {
     // Opcional: recargar la lista de usuarios si es necesario
     // this.loadUsers();
+  }
+  // Proveer funciones reutilizables para export (la generación/descarga se realiza en data-table)
+  private buildExportParams(): any {
+    const courseIdParam = this.selectedCourse ? (this.selectedCourse === 'NO_COURSE' ? 'none' : this.selectedCourse) : undefined;
+    return {
+      page: 1,
+      page_size: 10000,
+      sort: this.sortColumn,
+      sort_dir: this.sortDirection,
+      dir: this.sortDirection,
+      search: this.searchTerm || undefined,
+      role: this.selectedRole || undefined,
+      courseId: courseIdParam,
+      _t: String(Date.now())
+    };
+  }
+
+  // Función que devuelve un Observable con los usuarios filtrados (para que data-table los solicite)
+  getFilteredUsersForExport = (): Observable<any[]> => {
+    const params = this.buildExportParams();
+    return this.usersService.getUsers(params).pipe(map((resp: any) => {
+      const data = resp?.data?.data || resp?.data || resp || [];
+      return Array.isArray(data) ? data.map((u: any) => ({ ...u, roles: Array.isArray(u.roles) ? u.roles.map((r:any)=>String(r).toUpperCase()) : (u.roles ? [String(u.roles).toUpperCase()] : ['ALUMNO']) })) : [];
+    }));
+  }
+
+  // Función que devuelve un Observable con todos los usuarios (para export todo)
+  getAllUsersForExport = (): Observable<any[]> => {
+    return this.usersService.getAllUsers().pipe(map((resp: any) => {
+      const data = resp?.data || resp || [];
+      return Array.isArray(data) ? data.map((u: any) => ({ ...u, roles: Array.isArray(u.roles) ? u.roles.map((r:any)=>String(r).toUpperCase()) : (u.roles ? [String(u.roles).toUpperCase()] : ['ALUMNO']) })) : [];
+    }));
+  }
+
+  // Construir una etiqueta de contexto para la exportación, por ejemplo "Alumnos del curso 'Nombre'"
+  getExportContextLabel(): string {
+    // Si hay filtro por curso, intentar obtener su nombre
+    if (this.selectedCourse) {
+      if (this.selectedCourse === 'NO_COURSE') {
+        return 'Alumnos sin cursos asignados';
+      }
+      const cachedCourses = Array.isArray(this.courses()) ? this.courses() : [];
+      const course = cachedCourses.find((c: any) => (c._id || c.id) === this.selectedCourse);
+      const courseName = course ? (course.title || course.name || course._id || course.id) : this.selectedCourse;
+      // Si además se filtró por rol y es alumno, usar 'Alumnos del curso'
+      if (this.selectedRole && this.selectedRole.toUpperCase() === 'ALUMNO') {
+        return `Alumnos del curso "${courseName}"`;
+      }
+      return `Usuarios del curso "${courseName}"`;
+    }
+
+    // Si hay filtro por rol pero no por curso
+    if (this.selectedRole) {
+      return `Usuarios con rol: ${this.getRoleLabel(this.selectedRole)}`;
+    }
+
+    // Si hay búsqueda, mostrarla
+    if (this.searchTerm) {
+      return `Resultados de búsqueda: "${this.searchTerm}"`;
+    }
+
+    return '';
+  }
+
+  // Construir prefijo para el nombre del archivo: rol_filtro (usado por data-table)
+  getExportFilenamePrefix(): string {
+    const sanitize = (s: string) => String(s || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+
+    const rolePart = this.selectedRole ? sanitize(this.selectedRole) : 'todos';
+
+    let filterPart = 'todos';
+    if (this.selectedCourse) {
+      if (this.selectedCourse === 'NO_COURSE') {
+        filterPart = 'sin-curso';
+      } else {
+        const cachedCourses = Array.isArray(this.courses()) ? this.courses() : [];
+        const course = cachedCourses.find((c: any) => (c._id || c.id) === this.selectedCourse);
+        filterPart = course ? sanitize(course.title || course.name || course._id || course.id) : sanitize(String(this.selectedCourse));
+      }
+    } else if (this.searchTerm) {
+      filterPart = 'busqueda-' + sanitize(this.searchTerm);
+    }
+
+    return `${rolePart}_${filterPart}`;
   }
 }

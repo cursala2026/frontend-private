@@ -16,6 +16,20 @@
           class="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary transition-all duration-200 placeholder:text-gray-400"
         />
       </div>
+      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        @if (showExportButtons) {
+          <div class="relative" (mouseenter)="handleTooltipEnter({}, 'export', 150)" (mouseleave)="handleTooltipLeave(50)">
+            <button (click)="onExportButtonClick()" title="Exportar a Excel" aria-label="Exportar a Excel" class="p-2 bg-green-600 text-white rounded-md hover:bg-green-700 shadow flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M8 3h8v4H8V3zM12 11v6m-3-3h6"/>
+              </svg>
+            </button>
+            <div [class.opacity-100]="hoveredTooltip()?.label === 'export'" class="pointer-events-none absolute -top-10 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity transition-transform duration-200 ease-out z-50">
+              Exportar a Excel
+            </div>
+          </div>
+        }
+      </div>
     </div>
   }
 
@@ -87,7 +101,9 @@
             </th>
           }
           @if (config.actions && config.actions.length > 0) {
-            <th class="px-2 sm:px-3 py-2 text-center font-semibold text-gray-800 uppercase text-[10px] sm:text-xs tracking-wide bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50">Acciones</th>
+            <th class="px-2 sm:px-3 py-2 font-semibold text-gray-800 uppercase text-[10px] sm:text-xs tracking-wide bg-linear-to-r from-slate-50 via-brand-primary/10 to-slate-50 md:sticky md:right-0 md:z-50 md:pr-2" style="min-width:110px">
+              <div class="md:pr-2 md:text-right">Acciones</div>
+            </th>
           }
         </tr>
       </thead>
@@ -225,23 +241,29 @@
               </td>
             }
             @if (config.actions && config.actions.length > 0) {
-              <td class="px-2 sm:px-3 py-2">
-                <div class="flex items-center justify-center gap-1">
+              <td class="px-2 sm:px-3 py-2 md:sticky md:right-0 md:z-50 md:pr-2" style="min-width:110px; background:transparent">
+                <div class="flex items-center justify-start md:justify-end gap-1 pr-0 md:pr-2">
                   @for (action of config.actions; track action.label) {
                     @if (!action.condition || action.condition(row)) {
-                      <button
-                        (click)="handleAction(action, row)"
-                        [class]="'inline-flex items-center justify-center p-1.5 sm:p-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer ' + getActionClass(action.class)"
-                        [title]="action.label"
-                      >
-                        @if (action.iconSvg) {
-                          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path [attr.d]="action.iconSvg"/>
-                          </svg>
-                        } @else {
-                          {{ action.icon || action.label }}
-                        }
-                      </button>
+                      <div class="relative" (mouseenter)="handleTooltipEnter(row, action.label, 150)" (mouseleave)="handleTooltipLeave(50)">
+                        <button
+                          (click)="handleAction(action, row)"
+                          [class]="'inline-flex items-center justify-center p-1.5 sm:p-2 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer ' + getActionClass(action.class)"
+                          [attr.aria-label]="action.label"
+                          title="{{action.label}}"
+                        >
+                          @if (action.iconSvg) {
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path [attr.d]="action.iconSvg"/>
+                            </svg>
+                          } @else {
+                            {{ action.icon || action.label }}
+                          }
+                        </button>
+                        <div [class.opacity-100]="(hoveredTooltip()?.row === row && hoveredTooltip()?.label === action.label)" class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity transition-transform duration-200 ease-out z-50">
+                          {{ action.label }}
+                        </div>
+                      </div>
                     }
                   }
                 </div>

@@ -46,6 +46,8 @@ export class UsersService {
     search?: string;
     role?: string;
     _t?: string;
+    courseId?: string;
+    dir?: 'ASC' | 'DESC';
   }): Observable<UserListResponse> {
     let httpParams = new HttpParams();
 
@@ -56,9 +58,17 @@ export class UsersService {
       httpParams = httpParams.set('limit', params.page_size.toString());
     }
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    // Mantener compatibilidad con ambos nombres: sort_dir y dir
     if (params.sort_dir) httpParams = httpParams.set('sort_dir', params.sort_dir);
+    if (params.dir) httpParams = httpParams.set('dir', params.dir);
     if (params.search) httpParams = httpParams.set('search', params.search);
     if (params.role) httpParams = httpParams.set('role', params.role);
+    if (params.courseId) {
+      // Enviar varias claves por compatibilidad con distintos backends
+      httpParams = httpParams.set('courseId', params.courseId);
+      httpParams = httpParams.set('course', params.courseId);
+      httpParams = httpParams.set('course_id', params.courseId);
+    }
     if (params._t) httpParams = httpParams.set('_t', params._t);
 
     return this.http.get<UserListResponse>(this.apiUrl, { params: httpParams });

@@ -234,6 +234,12 @@ export class CoursesComponent implements OnInit {
         // Handle backend response format
         let data: any[] = Array.isArray(response?.data) ? response.data : [];
 
+        // Aplicar filtrado por nombre localmente (asegura que el buscador filtre por nombre de curso)
+        if (this.searchTerm && String(this.searchTerm).trim().length > 0) {
+          const term = String(this.searchTerm).toLowerCase();
+          data = data.filter((c: any) => String(c.name || '').toLowerCase().includes(term));
+        }
+
         // Aplicar ordenamiento cliente según sortColumn/sortDirection (fallback si backend no ordena)
         const sortKey = this.sortColumn;
         const direction = this.sortDirection === 'ASC' ? 1 : -1;
