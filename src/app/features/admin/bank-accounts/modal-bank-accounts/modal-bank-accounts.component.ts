@@ -11,6 +11,7 @@ import { InfoService } from '../../../../core/services/info.service';
   templateUrl: './modal-bank-accounts.component.html'
 })
 export class ModalBankAccountsComponent {
+  
   private bankAccountService = inject(BankAccountService);
   private info = inject(InfoService);
   private fb = inject(FormBuilder);

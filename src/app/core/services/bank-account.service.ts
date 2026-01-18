@@ -22,6 +22,7 @@ export interface UpdateBankAccountDto {
   providedIn: 'root'
 })
 export class BankAccountService {
+  
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/companySpecificData/company-specific-data`;
 

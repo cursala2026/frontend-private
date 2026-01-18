@@ -37,7 +37,6 @@ export interface MercadoPagoPreferenceData {
   };
   auto_return?: string;
   externalReference: string;
-  notificationUrl?: string;
   metadata?: any;
 }
 
@@ -121,11 +120,9 @@ export class MercadoPagoPaymentService {
     finalPrice?: number
   ): Observable<any> {
     const timestamp = Date.now();
-    // Considerar que existe promo cuando hay un código (incluso si discountAmount es 0)
     const hasPromo = !!promotionalCode;
     const actualPrice = typeof finalPrice === 'number' ? finalPrice : coursePrice;
     
-    // External reference incluye código promocional si existe
     let externalReference = `course_${courseId}_${studentEmail}_${timestamp}`;
     if (hasPromo) {
       externalReference += `_PROMO_${promotionalCode}`;
@@ -168,34 +165,19 @@ export class MercadoPagoPaymentService {
         } : {}),
         ...(paymentRequestId ? { paymentRequestId } : {})
       }
-      // notificationUrl: se omite para que el backend use WEBHOOK_URL (ngrok) automáticamente
     };
 
     return this.createPaymentPreference(preferenceData);
   }
 
-  /**
-   * Obtiene estadísticas de pagos de Mercado Pago
-   */
   getPaymentStats(): Observable<any> {
     return this.http.get(`${this.apiUrl}/stats`);
   }
 
-  /**
-   * Obtiene lista de todos los pagos de Mercado Pago
-   */
   getAllPayments(limit: number = 50): Observable<any> {
     return this.http.get(`${this.apiUrl}/all?limit=${limit}`);
   }
 
-  /**
-   * Elimina pagos antiguos
-   */
-  // bulk delete removed per UI change
-
-  /**
-   * Elimina un pago específico
-   */
   deletePayment(paymentId: string): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/payment/${paymentId}`);
   }
