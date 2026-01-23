@@ -1,30 +1,32 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage],
   templateUrl: './register.component.html',
   
 })
 export class RegisterComponent {
-  registerForm: FormGroup;
-  isLoading = false;
-  errorMessage: string | null = null;
-  showPassword = false;
-  showConfirmPassword = false;
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private info = inject(InfoService);
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private info: InfoService
-  ) {
+  registerForm: FormGroup;
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
+  courseId = signal<string | null>(null);
+
+  constructor() {
+    this.courseId.set(this.route.snapshot.queryParamMap.get('courseId'));
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
@@ -43,21 +45,22 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    this.errorMessage = null;
+    this.errorMessage.set(null);
     if (this.registerForm.invalid) {
-      this.errorMessage = 'Por favor, completa correctamente todos los campos.';
+      this.errorMessage.set('Por favor, completa correctamente todos los campos.');
       return;
     }
     // Sanitizar y validar teléfono (solo números, mínimo 10 dígitos)
     const rawPhone: string = this.registerForm.get('phone')?.value || '';
     const cleanPhone = rawPhone.replace(/\D/g, '');
     if (cleanPhone.length < 10) {
-      this.errorMessage = 'El teléfono debe tener al menos 10 dígitos.';
-      this.info.showError(this.errorMessage);
+      const msg = 'El teléfono debe tener al menos 10 dígitos.';
+      this.errorMessage.set(msg);
+      this.info.showError(msg);
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     const { firstName, lastName, email, password } = this.registerForm.value;
     const payload = {
       firstName,
@@ -69,44 +72,52 @@ export class RegisterComponent {
 
     this.authService.register(payload).subscribe({
       next: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         // Al registrarse con éxito, iniciar sesión automáticamente
         this.info.showSuccess('Registro exitoso. Iniciando sesión...');
         this.authService.login(email, password).subscribe({
           next: () => {
-            // redirigir según rol si login exitoso
-            this.router.navigate(['/dashboard']);
+            // redirigir según rol si login exitoso o al curso si hay courseId
+            const id = this.courseId();
+            if (id) {
+              this.router.navigate(['/alumno/course-detail', id]);
+            } else {
+              this.router.navigate(['/dashboard']);
+            }
           },
           error: () => {
             // Si falló el login automático, redirigir al login para que inicie sesión manualmente
             this.info.showInfo('Registro exitoso. Por favor inicia sesión.');
-            this.router.navigate(['/login'], { queryParams: { registered: '1' } });
+            const queryParams: any = { registered: '1' };
+            if (this.courseId()) {
+              queryParams.courseId = this.courseId();
+            }
+            this.router.navigate(['/login'], { queryParams });
           }
         });
       },
       error: (err) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         // Backend may return 400 (user already exists) or 409 depending on config.
         const backendMessage = err?.error?.message || err?.error?.meta?.error?.message || err?.error?.error?.message || err?.error?.meta?.error?.message_eng;
+        let msg = '';
         if (err?.status === 409 || err?.status === 400) {
-          const msg = backendMessage || 'El usuario o email ya existe.';
-          this.errorMessage = msg;
-          this.info.showError(msg);
+          msg = backendMessage || 'El usuario o email ya existe.';
         } else {
-          const msg = backendMessage || 'Error al registrarse. Intenta nuevamente.';
-          this.errorMessage = msg;
-          this.info.showError(msg);
+          msg = backendMessage || 'Error al registrarse. Intenta nuevamente.';
         }
+        this.errorMessage.set(msg);
+        this.info.showError(msg);
       }
     });
   }
 
   toggleShowPassword(): void {
-    this.showPassword = !this.showPassword;
+    this.showPassword.update(v => !v);
   }
 
   toggleShowConfirmPassword(): void {
-    this.showConfirmPassword = !this.showConfirmPassword;
+    this.showConfirmPassword.update(v => !v);
   }
 
   hasError(fieldName: string, errorType: string): boolean {

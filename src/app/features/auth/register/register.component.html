@@ -1,4 +1,4 @@
-<div class="h-screen bg-gradient-to-t from-brand-primary/90 to-white flex items-center justify-center px-4 py-2 sm:py-4">
+<div class="h-screen bg-linear-to-t from-brand-primary/90 to-white flex items-center justify-center px-4 py-2 sm:py-4">
   <img ngSrc="/images/sections/hero/cursos.jpg" alt="Fondo registro" fill class="absolute inset-0 object-cover object-center opacity-10 pointer-events-none select-none z-0" aria-hidden="true" />
   <main class="relative z-10 flex w-full items-center justify-center px-0 py-2">
     <div class="w-full max-w-md sm:max-w-lg">
@@ -16,14 +16,14 @@
           <h2 class="mb-2 text-center text-xl sm:text-2xl font-bold tracking-tight text-brand-primary">Crear cuenta</h2>
 
           <form class="space-y-2 sm:space-y-3" [formGroup]="registerForm" (ngSubmit)="onSubmit()" autocomplete="on">
-            @if (errorMessage) {
+            @if (errorMessage()) {
               <div class="rounded-md bg-red-50 p-4">
                 <div class="flex">
                   <div class="shrink-0">
                     <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
                   </div>
                   <div class="ml-3">
-                    <p class="text-sm font-medium text-red-800">{{ errorMessage }}</p>
+                    <p class="text-sm font-medium text-red-800">{{ errorMessage() }}</p>
                   </div>
                 </div>
               </div>
@@ -82,9 +82,9 @@
                   <label for="password" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Contraseña</label>
                   <div class="mt-0.5 relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
-                    <input id="password" formControlName="password" [type]="showPassword ? 'text' : 'password'" placeholder="Contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                    <input id="password" formControlName="password" [type]="showPassword() ? 'text' : 'password'" placeholder="Contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                     <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowPassword()" aria-label="Mostrar contraseña">
-                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
                     </button>
                   </div>
                   @if (hasError('password','required')) {
@@ -100,9 +100,9 @@
                 <label for="confirmPassword" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Confirmar contraseña</label>
                 <div class="mt-0.5 relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
-                  <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'" placeholder="Confirmar contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                  <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" placeholder="Confirmar contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowConfirmPassword()" aria-label="Mostrar confirmar contraseña">
-                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                      <span class="material-icons text-[14px] sm:text-[16px]">{{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}</span>
                   </button>
                 </div>
                 @if (registerForm.hasError('passwordsMismatch')) {
@@ -112,8 +112,8 @@
             </div>
 
             <div>
-              <button type="submit" [disabled]="isLoading" class="group relative flex w-full justify-center rounded-full text-brand-tertiary px-3 py-2.5 sm:px-4 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary border-2 border-[#dcab07] hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white">
-                @if (isLoading) {
+              <button type="submit" [disabled]="isLoading()" class="group relative flex w-full justify-center rounded-full text-brand-tertiary px-3 py-2.5 sm:px-4 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary border-2 border-[#dcab07] hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white">
+                @if (isLoading()) {
                   <!-- <svg class="mr-3 h-5 w-5 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg> -->
                   Registrando...
                 } @else {
@@ -123,7 +123,10 @@
               </button>
             </div>
 
-            <p class="text-xs sm:text-sm text-center text-brand-tertiary-light mt-1">¿Ya tienes cuenta? <a routerLink="/login" class="text-brand-primary active:text-brand-secondary hover:underline transition-colors">Inicia sesión</a></p>
+            <p class="text-xs sm:text-sm text-center text-brand-tertiary-light mt-1">
+              ¿Ya tienes cuenta? 
+              <a [routerLink]="['/login']" [queryParams]="courseId() ? { courseId: courseId() } : {}" class="text-brand-primary active:text-brand-secondary hover:underline transition-colors">Inicia sesión</a>
+            </p>
 
           </form>
         </div>

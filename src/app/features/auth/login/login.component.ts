@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { PasswordFieldComponent } from '../../../shared/components/password-field/password-field.component';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
@@ -9,12 +9,17 @@ import { environment } from '../../../core/config/environment';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage, PasswordFieldComponent],
   templateUrl: './login.component.html',
   
 })
 export class LoginComponent {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private info = inject(InfoService);
+
   loginForm: FormGroup;
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(false);
@@ -23,21 +28,18 @@ export class LoginComponent {
   // forzar enmascarado manual en dispositivos problemáticos (p. ej. Xiaomi)
   useManualMask = signal<boolean>(false);
   private returnUrl: string = '/dashboard';
+  private courseId: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private info: InfoService
-  ) {
+  constructor() {
     // Si ya está autenticado, redirigir al dashboard
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
     }
 
-    // Obtener URL de retorno de los query params
+    // Obtener parámetros de los query params
+    this.courseId = this.route.snapshot.queryParams['courseId'] || null;
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+
     // Si venimos desde registro, mostrar mensaje de éxito
     if (this.route.snapshot.queryParams['registered'] === '1') {
       this.info.showSuccess('Registro exitoso. Por favor inicia sesión.');
@@ -121,6 +123,11 @@ export class LoginComponent {
    * Redirige al usuario según su rol
    */
   private redirectByRole(): void {
+    if (this.courseId && this.authService.isAlumno()) {
+      this.router.navigate(['/alumno/course-detail', this.courseId]);
+      return;
+    }
+
     if (this.authService.isAdmin()) {
       this.router.navigate(['/admin']);
     } else if (this.authService.isProfesor()) {
