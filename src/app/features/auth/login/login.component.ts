@@ -5,6 +5,7 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { InfoService } from '../../../core/services/info.service';
+import { UserRole } from '../../../core/models/user-role.enum';
 import { environment } from '../../../core/config/environment';
 
 @Component({
@@ -130,6 +131,8 @@ export class LoginComponent {
 
     if (this.authService.isAdmin()) {
       this.router.navigate(['/admin']);
+    } else if (this.authService.hasRole(UserRole.VENDEDOR)) {
+      this.router.navigate(['/vendedor']);
     } else if (this.authService.isProfesor()) {
       this.router.navigate(['/profesor']);
     } else if (this.authService.isAlumno()) {

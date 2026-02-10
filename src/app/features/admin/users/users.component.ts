@@ -11,6 +11,7 @@ import { TableColumn, TableConfig, PaginationData } from '../../../shared/models
 import { UsersService, UserListResponse } from '../../../core/services/users.service';
 import { CoursesService } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { UserRole } from '../../../core/models/user-role.enum';
 
 @Component({
@@ -55,9 +56,9 @@ export class UsersComponent implements OnInit {
 
   constructor(
     private usersService: UsersService,
-    private infoService: InfoService
-    ,
-    private coursesService: CoursesService
+    private infoService: InfoService,
+    private coursesService: CoursesService,
+    private authService: AuthService
   ) {}
 
   tableConfig: TableConfig = {
@@ -130,9 +131,11 @@ export class UsersComponent implements OnInit {
         selectOptions: [
           { value: UserRole.ALUMNO, label: 'Alumno' },
           { value: UserRole.PROFESOR, label: 'Profesor' },
-          { value: UserRole.ADMIN, label: 'Administrador' }
+          { value: UserRole.ADMIN, label: 'Administrador' },
+          { value: UserRole.VENDEDOR, label: 'Vendedor' }
         ],
         onChange: (row: any, newValue: string) => this.handleRoleChange(row, newValue),
+        editable: () => this.authService.hasRole(UserRole.ADMIN),
         align: 'center',
         width: '12%'
       },
@@ -149,20 +152,29 @@ export class UsersComponent implements OnInit {
         iconSvg: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
         handler: (row) => this.openCoursesModal(row),
         class: 'btn-info',
-        condition: (row) => row.roles?.includes('ALUMNO') || row.roles?.includes(UserRole.ALUMNO)
+        condition: (row) => {
+          const isStudent = row.roles?.includes('ALUMNO') || row.roles?.includes(UserRole.ALUMNO);
+          const isAdmin = this.authService.hasRole(UserRole.ADMIN);
+          return isStudent && isAdmin;
+        }
       },
       {
         label: 'Editar',
         iconSvg: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
         handler: (row) => this.editUser(row),
-        class: 'btn-primary'
+        class: 'btn-primary',
+        condition: () => this.authService.hasRole(UserRole.ADMIN)
       },
       {
         label: 'Eliminar',
         iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
         handler: (row) => this.deleteUser(row),
         class: 'btn-danger',
-        condition: (row) => !row.roles?.includes('ADMIN')
+        condition: (row) => {
+          const isNotAdmin = !row.roles?.includes('ADMIN');
+          const hasAdminRole = this.authService.hasRole(UserRole.ADMIN);
+          return isNotAdmin && hasAdminRole;
+        }
       }
     ]
   };
@@ -570,7 +582,8 @@ export class UsersComponent implements OnInit {
         options: [
           { value: 'ALUMNO', label: 'Alumno' },
           { value: 'PROFESOR', label: 'Profesor' },
-          { value: 'ADMIN', label: 'Administrador' }
+          { value: 'ADMIN', label: 'Administrador' },
+          { value: 'VENDEDOR', label: 'Vendedor' }
         ],
         section: 'Información de Cuenta'
       },

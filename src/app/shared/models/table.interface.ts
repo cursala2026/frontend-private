@@ -17,6 +17,7 @@ export interface TableColumn {
   onChange?: (row: any, newValue: any) => void; // Callback para cambios en switch o select
   onClick?: (row: any) => void; // Acción al hacer click en la celda
   switchColor?: 'green' | 'blue' | 'purple' | 'indigo' | 'yellow' | 'red'; // Color del switch cuando está activo
+  editable?: () => boolean; // Función para determinar si el campo es editable (para select y switch)
 }
 
 export interface TableConfig {

@@ -323,7 +323,7 @@ export class DataTableComponent {
     if (column.key === 'roles') {
       result = result.toUpperCase().trim();
       // Asegurar que sea uno de los valores válidos
-      if (!result || (result !== 'ADMIN' && result !== 'PROFESOR' && result !== 'ALUMNO')) {
+      if (!result || (result !== 'ADMIN' && result !== 'PROFESOR' && result !== 'ALUMNO' && result !== 'VENDEDOR')) {
         result = 'ALUMNO'; // Valor por defecto
       }
     }
@@ -362,7 +362,8 @@ export class DataTableComponent {
     const selectClasses: Record<string, string> = {
       'ADMIN': 'bg-brand-primary/20 text-brand-primary ring-1 ring-brand-primary/30 focus:ring-brand-primary',
       'PROFESOR': 'bg-brand-secondary/30 text-brand-secondary-text ring-1 ring-brand-secondary/40 focus:ring-brand-secondary',
-      'ALUMNO': 'bg-green-100 text-green-800 ring-1 ring-green-600/20 focus:ring-green-500'
+      'ALUMNO': 'bg-green-100 text-green-800 ring-1 ring-green-600/20 focus:ring-green-500',
+      'VENDEDOR': 'bg-orange-100 text-orange-800 ring-1 ring-orange-600/20 focus:ring-orange-500'
     };
     return selectClasses[normalizedValue] || 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 focus:ring-gray-500';
   }

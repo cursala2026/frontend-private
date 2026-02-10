@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
-import { adminGuard, profesorGuard, alumnoGuard, profesorOrAdminInProfesorModeGuard } from './core/guards/role.guard';
+import { adminGuard, vendedorGuard, profesorGuard, alumnoGuard, profesorOrAdminInProfesorModeGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   // Ruta raíz - redirige al login
@@ -81,6 +81,28 @@ export const routes: Routes = [
       {
         path: 'roles',
         loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+      }
+    ]
+  },
+
+  // Rutas de Vendedor (con sidebar layout simple)
+  {
+    path: 'vendedor',
+    canActivate: [authGuard, vendedorGuard],
+    loadComponent: () => import('./shared/layouts/vendedor-layout/vendedor-layout.component').then(m => m.VendedorLayoutComponent),
+    children: [
+      {
+        path: '',
+        redirectTo: 'users',
+        pathMatch: 'full'
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./features/vendedor/users/vendedor-users.component').then(m => m.VendedorUsersComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
   },

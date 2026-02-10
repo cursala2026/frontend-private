@@ -1,0 +1,14 @@
+<div class="h-full flex flex-col py-3">
+  <!-- Data Table -->
+  <div class="flex-1 min-h-0 overflow-hidden">
+    <app-data-table
+      [data]="users()"
+      [config]="tableConfig"
+      [loading]="loading()"
+      [pagination]="pagination()"
+      (sortChange)="onSortChange($event)"
+      (pageChange)="onPageChange($event)"
+      (searchChange)="onSearchChange($event)"
+    />
+  </div>
+</div>

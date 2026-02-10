@@ -48,6 +48,19 @@ export const profesorGuard: CanActivateFn = createRoleGuard([UserRole.PROFESOR])
 export const alumnoGuard: CanActivateFn = createRoleGuard([UserRole.ALUMNO]);
 
 /**
+ * Guard específico para rol VENDEDOR
+ */
+export const vendedorGuard: CanActivateFn = createRoleGuard([UserRole.VENDEDOR]);
+
+/**
+ * Guard para ADMIN o VENDEDOR (acceso al área de administración)
+ */
+export const adminOrVendedorGuard: CanActivateFn = createRoleGuard([
+  UserRole.ADMIN,
+  UserRole.VENDEDOR
+]);
+
+/**
  * Guard para PROFESOR o ALUMNO (excluye ADMIN)
  */
 export const studentOrTeacherGuard: CanActivateFn = createRoleGuard([

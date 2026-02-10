@@ -18,6 +18,11 @@ export class DashboardDispatcherComponent implements OnInit {
       return;
     }
 
+    if (this.auth.hasRole(UserRole.VENDEDOR)) {
+      this.router.navigate(['/vendedor']);
+      return;
+    }
+
     if (this.auth.isProfesor()) {
       this.router.navigate(['/profesor']);
       return;
