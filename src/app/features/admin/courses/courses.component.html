@@ -30,6 +30,14 @@
         (sortChange)="onSortChange($event)"
         (pageChange)="onPageChange($event)"
         (searchChange)="onSearchChange($event)"
+        [showExportButtons]="true"
+        [isFiltered]="(searchTerm || '').length > 0"
+        [exportAllFn]="exportAllCourses"
+        [exportFilteredFn]="exportFilteredCourses"
+        [exportFields]="['name','registrationOpenDate','startDate','assignedTeachers','price']"
+        [exportFieldLabels]="{ name: 'Curso', registrationOpenDate: 'Fecha inscripción', startDate: 'Fecha inicio', assignedTeachers: 'Profe', price: 'Precio' }"
+        [exportFilenamePrefix]="'cursos'"
+        [exportContextLabel]="'Cursos'"
       />
     </div>
   </div>

@@ -6,6 +6,8 @@ import { ModalDataTableComponent, ModalConfig } from '../../../shared/components
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
@@ -433,6 +435,7 @@ export class CoursesComponent implements OnInit {
           key: 'description',
           label: 'Descripción Corta',
           type: 'textarea',
+          maxlength: 350,
           placeholder: 'Descripción breve del curso',
           section: 'Datos Básicos del Curso'
         },
@@ -440,6 +443,7 @@ export class CoursesComponent implements OnInit {
           key: 'longDescription',
           label: 'Descripción Larga',
           type: 'textarea',
+          maxlength: 850,
           placeholder: 'Descripción detallada del curso',
           section: 'Datos Básicos del Curso'
         },
@@ -753,4 +757,27 @@ export class CoursesComponent implements OnInit {
   onTeacherAssignmentRefresh(): void {
     this.loadCourses();
   }
+
+  // Export helpers para el DataTable: devuelven Observable<any[]> con todos/filtrados
+  exportAllCourses = (): Observable<any[]> => {
+    // Pedir un page_size grande para obtener todos los cursos (fallback si no existe endpoint específico)
+    return this.coursesService.getCourses({ page: 1, page_size: 100000 }).pipe(
+      map((res: any) => {
+        if (Array.isArray(res)) return res;
+        if (Array.isArray(res?.data)) return res.data;
+        return [];
+      })
+    );
+  };
+
+  exportFilteredCourses = (): Observable<any[]> => {
+    const search = this.searchTerm || '';
+    return this.coursesService.getCourses({ page: 1, page_size: 100000, search: search || undefined }).pipe(
+      map((res: any) => {
+        if (Array.isArray(res)) return res;
+        if (Array.isArray(res?.data)) return res.data;
+        return [];
+      })
+    );
+  };
 }

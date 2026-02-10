@@ -18,6 +18,7 @@ export interface ModalField {
   validators?: any[];
   value?: any;
   rows?: number; // For textarea
+  maxlength?: number; // Optional maxlength for text/textarea
   imageShape?: 'circle' | 'rectangle'; // For image fields
   aspectRatio?: string; // For image fields
   accept?: string; // For file fields (e.g., '.pdf', 'application/pdf')
@@ -471,6 +472,27 @@ export class ModalDataTableComponent {
         this.form.patchValue({ [fieldKey]: file });
       }
     }
+  }
+
+  fieldLength(fieldKey: string): number {
+    try {
+      const val = this.form?.get(fieldKey)?.value || '';
+      return typeof val === 'string' ? val.length : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  onTextareaInput(fieldKey: string): void {
+    const field = this.config.fields.find(f => f.key === fieldKey);
+    const ctrl = this.form?.get(fieldKey);
+    if (!ctrl || !field) return;
+    const val = ctrl.value || '';
+    if (field.maxlength && typeof val === 'string' && val.length > field.maxlength) {
+      ctrl.setValue(val.slice(0, field.maxlength));
+    }
+    // Mark touched/dirty so validations appear
+    try { ctrl.markAsTouched(); ctrl.markAsDirty(); } catch (e) { /* ignore */ }
   }
 
   getProgramUrl(value: any): string {

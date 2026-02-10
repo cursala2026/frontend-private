@@ -98,9 +98,14 @@
           id="description"
           formControlName="description"
           rows="3"
+          maxlength="350"
+          (input)="updateDescriptionCount()"
           class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="Descripción breve del curso"
         ></textarea>
+        <div class="flex justify-end mt-1">
+          <span class="text-sm text-gray-500">{{ descriptionLength() }} / 350</span>
+        </div>
       </div>
 
       <!-- Long Description -->
@@ -112,9 +117,14 @@
           id="longDescription"
           formControlName="longDescription"
           rows="6"
+          maxlength="850"
+          (input)="updateLongDescriptionCount()"
           class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           placeholder="Descripción detallada del curso"
         ></textarea>
+        <div class="flex justify-end mt-1">
+          <span class="text-sm text-gray-500">{{ longDescriptionLength() }} / 850</span>
+        </div>
       </div>
 
       <!-- Header Section -->

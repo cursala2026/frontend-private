@@ -579,6 +579,7 @@ export class UsersComponent implements OnInit {
         key: 'professionalDescription',
         label: 'Descripción Profesional',
         type: 'textarea' as const,
+        maxlength: 500,
         placeholder: 'Descripción de la experiencia profesional...',
         section: 'Información Profesional'
       }

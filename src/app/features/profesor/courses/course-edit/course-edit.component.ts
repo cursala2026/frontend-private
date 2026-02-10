@@ -42,8 +42,8 @@ export class CourseEditComponent implements OnInit {
   initForm(): void {
     this.courseForm = this.fb.group({
       name: ['', [Validators.required]],
-      description: [''],
-      longDescription: [''],
+      description: ['', [Validators.maxLength(350)]],
+      longDescription: ['', [Validators.maxLength(850)]],
       modality: [''],
       price: [0],
       maxInstallments: [1],
@@ -127,6 +127,38 @@ export class CourseEditComponent implements OnInit {
     }
   }
 
+  longDescriptionLength(): number {
+    const val = this.courseForm.get('longDescription')?.value || '';
+    return typeof val === 'string' ? val.length : 0;
+  }
+
+  updateLongDescriptionCount(): void {
+    const ctrl = this.courseForm.get('longDescription');
+    if (!ctrl) return;
+    let val = ctrl.value || '';
+    if (val && val.length > 850) {
+      val = val.slice(0, 850);
+      ctrl.setValue(val);
+    }
+    this.courseForm.markAsDirty();
+  }
+
+  descriptionLength(): number {
+    const val = this.courseForm.get('description')?.value || '';
+    return typeof val === 'string' ? val.length : 0;
+  }
+
+  updateDescriptionCount(): void {
+    const ctrl = this.courseForm.get('description');
+    if (!ctrl) return;
+    let val = ctrl.value || '';
+    if (val && val.length > 350) {
+      val = val.slice(0, 350);
+      ctrl.setValue(val);
+    }
+    this.courseForm.markAsDirty();
+  }
+
   removeImage(): void {
     this.imagePreview = null;
     this.selectedImageFile = null;
@@ -183,6 +215,13 @@ export class CourseEditComponent implements OnInit {
     }
 
     if (this.courseId) {
+      // Asegurar que description y longDescription no excedan sus límites antes de enviar
+      if (processedData.description) {
+        processedData.description = processedData.description.slice(0, 350);
+      }
+      if (processedData.longDescription) {
+        processedData.longDescription = processedData.longDescription.slice(0, 850);
+      }
       this.coursesService.updateCourse(this.courseId, processedData).subscribe({
         next: () => {
           this.infoService.showSuccess('Curso actualizado exitosamente');

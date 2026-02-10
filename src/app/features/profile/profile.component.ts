@@ -44,7 +44,7 @@ export class ProfileComponent {
       phone: [currentUser.phone || ''],
       dni: [currentUser.dni || ''],
       birthDate: [currentUser.birthDate ? new Date(currentUser.birthDate).toISOString().split('T')[0] : ''],
-      professionalDescription: [currentUser.professionalDescription || '']
+      professionalDescription: [currentUser.professionalDescription || '', [Validators.maxLength(500)]]
     });
 
     // Establecer preview de imagen actual
@@ -107,6 +107,22 @@ export class ProfileComponent {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  professionalDescriptionLength(): number {
+    const val = this.profileForm.get('professionalDescription')?.value || '';
+    return typeof val === 'string' ? val.length : 0;
+  }
+
+  updateProfessionalDescriptionCount(): void {
+    const ctrl = this.profileForm.get('professionalDescription');
+    if (!ctrl) return;
+    let val = ctrl.value || '';
+    if (val && val.length > 500) {
+      val = val.slice(0, 500);
+      ctrl.setValue(val);
+    }
+    try { ctrl.markAsTouched(); ctrl.markAsDirty(); } catch (e) {}
   }
 
   removeImage(): void {
@@ -192,7 +208,9 @@ export class ProfileComponent {
       formDataToSend.append('birthDate', formData.birthDate ?? '');
     }
     if (formData.professionalDescription !== undefined) {
-      formDataToSend.append('professionalDescription', formData.professionalDescription ?? '');
+      // Truncar a 500 por seguridad
+      const pd = (formData.professionalDescription ?? '').slice(0, 500);
+      formDataToSend.append('professionalDescription', pd);
     }
     
     // Agregar la foto si existe
