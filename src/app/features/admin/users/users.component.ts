@@ -89,13 +89,24 @@ export class UsersComponent implements OnInit {
         label: 'Teléfono',
         type: 'html',
         width: '15%',
-        formatter: (value: string) => {
-          if (!value) return '-';
-          // Normalizar número para WhatsApp: eliminar todo lo que no sea dígito
+        formatter: (value: string, row: any) => {
+          if (!value) return 'Teléfono no disponible';
           try {
-            const normalized = String(value).replace(/\D+/g, '');
-            const waLink = `https://wa.me/${normalized}`;
-            return `<a href="${waLink}" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-800 underline">${value}</a>`;
+            // Combinar código de país y número local si están presentes
+            const fullNumber = row.countryCode ? `${row.countryCode}${value}` : value;
+
+            // Normalizar número: eliminar todo lo que no sea dígito
+            const normalized = String(fullNumber).replace(/\D+/g, '');
+
+            // Validar que el número tenga al menos 10 dígitos
+            if (normalized.length < 10) {
+              return `<span class="text-red-600">Número inválido</span>`;
+            }
+
+            // Generar enlace directo a WhatsApp Web sin abrir nueva pestaña
+            const waLink = `https://web.whatsapp.com/send?phone=${normalized}`;
+
+            return `<a href="${waLink}" rel="noopener noreferrer" class="text-green-600 hover:text-green-800 underline">${normalized}</a>`;
           } catch (e) {
             return `<span>${value}</span>`;
           }
@@ -265,7 +276,19 @@ export class UsersComponent implements OnInit {
             if (Array.isArray(user.roles)) roles = user.roles.map((r: any) => String(r).toUpperCase());
             else if (user.roles) roles = [String(user.roles).toUpperCase()];
             else roles = ['ALUMNO'];
-            return { ...user, roles };
+
+            // Validar y normalizar el número de teléfono y el código de país
+            const phone = user.phone ? String(user.phone).replace(/\D+/g, '') : '';
+            const countryCode = user.countryCode ? String(user.countryCode).replace(/\D+/g, '') : '';
+
+            // Si falta el código de país, mostrar un mensaje de advertencia
+            const fullPhone = countryCode && phone ? `${countryCode}${phone}` : phone || 'Teléfono no disponible';
+
+            return {
+              ...user,
+              roles,
+              phone: fullPhone
+            };
           }) : [];
 
           // Si pedimos 'none' y no vienen resultados, reintentar con 'unassigned' una vez

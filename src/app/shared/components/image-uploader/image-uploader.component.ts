@@ -85,7 +85,7 @@ import { environment } from '../../../core/config/environment';
         <div class="text-xs text-blue-700">
           <p class="font-medium mb-1">Formato de imagen recomendado:</p>
           <ul class="list-disc list-inside space-y-0.5 text-blue-600">
-            <li>Tamaño máximo: 5 MB</li>
+            <li>Tamaño máximo: 25 MB</li>
             <li>Formatos: JPG, PNG, WebP</li>
             <li>Relación: {{ aspectRatio }}</li>
           </ul>
@@ -121,8 +121,8 @@ export class ImageUploaderComponent {
     const file = input.files[0];
 
     // Validar tamaño
-    if (file.size > 5 * 1024 * 1024) {
-      this.uploadError.set('La imagen no debe superar los 5 MB');
+    if (file.size > 25 * 1024 * 1024) {
+      this.uploadError.set('La imagen no debe superar los 25 MB');
       return;
     }
 

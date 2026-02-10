@@ -91,10 +91,10 @@ export class ProfileComponent {
         return;
       }
 
-      // Validar tamaño (5MB)
-      const maxSize = 5 * 1024 * 1024;
+      // Validar tamaño (25MB)
+      const maxSize = 25 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.infoService.showError('La imagen no debe superar los 5MB');
+        this.infoService.showError('La imagen no debe superar los 25MB');
         return;
       }
 
@@ -126,10 +126,10 @@ export class ProfileComponent {
         return;
       }
 
-      // Validar tamaño (5MB)
-      const maxSize = 5 * 1024 * 1024;
+      // Validar tamaño (25MB)
+      const maxSize = 25 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.infoService.showError('La imagen no debe superar los 5MB');
+        this.infoService.showError('La imagen no debe superar los 25MB');
         return;
       }
 
