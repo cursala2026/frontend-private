@@ -25,6 +25,7 @@ export class StudentCoursesModalComponent implements OnChanges {
   @Input() isOpen = signal<boolean>(false);
   @Input() studentId: string = '';
   @Input() studentName: string = '';
+  @Input() isReadOnly: boolean = false;
   
   @Output() close = new EventEmitter<void>();
   @Output() coursesUpdated = new EventEmitter<void>();

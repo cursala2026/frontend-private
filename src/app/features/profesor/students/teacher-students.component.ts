@@ -12,6 +12,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
 import { InfoService } from '../../../core/services/info.service';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { CertificateService } from '../../../core/services/certificate.service';
 
 interface Student {
   userId: string;
@@ -58,6 +59,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private coursesService = inject(CoursesService);
   private router = inject(Router);
   private info = inject(InfoService);
+  private certificateService = inject(CertificateService);
   
   user = this.authService.currentUser;
   students = signal<Student[]>([]);
@@ -71,6 +73,19 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   pendingExams = signal<PendingExam[]>([]);
   pendingExamsByStudent = signal<Map<string, PendingExam[]>>(new Map());
   private routerSubscription?: Subscription;
+
+  // Modal de confirmación para certificados
+  showCertificateModal = signal<boolean>(false);
+  studentForCertificate: Student | null = null;
+  certificateModalConfig: ConfirmModalConfig = {
+    title: 'Generar Certificado Manualmente',
+    message: '',
+    confirmText: 'Generar',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-green-600 hover:bg-green-700',
+    icon: 'info'
+  };
+  generatingCertificate = signal<boolean>(false);
 
   // Modal de confirmación para resetear progreso
   showResetModal = signal<boolean>(false);
@@ -444,8 +459,67 @@ Esta acción no se puede deshacer.`
     this.studentToReset = null;
   }
 
+  /**   * Abre el modal para generar certificado manualmente
+   */
+  openCertificateModal(student: Student): void {
+    this.studentForCertificate = student;
+    this.certificateModalConfig = {
+      ...this.certificateModalConfig,
+      message: `¿Deseas generar manualmente el certificado para ${student.firstName} ${student.lastName} en el curso "${student.courseName}"? El certificado se enviará por correo electrónico al alumno automáticamente.`
+    };
+    this.showCertificateModal.set(true);
+  }
+
   /**
-   * Abre el modal de confirmación para desasociar un estudiante del curso
+   * Genera el certificado y lo envía al alumno
+   */
+  confirmGenerateCertificate(): void {
+    if (!this.studentForCertificate) return;
+
+    this.generatingCertificate.set(true);
+    const student = this.studentForCertificate;
+
+    this.certificateService.generateCertificate(student.userId, student.courseId).subscribe({
+      next: (response: any) => {
+        this.info.showSuccess(`Certificado para ${student.firstName} ${student.lastName} generado y enviado exitosamente`);
+        
+        // Intentar descargar el PDF automáticamente
+        if (response?.data?.verificationCode) {
+          this.certificateService.downloadCertificate(response.data.verificationCode).subscribe({
+            next: (blob: Blob) => {
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `Certificado_${student.firstName}_${student.lastName}.pdf`;
+              link.click();
+              window.URL.revokeObjectURL(url);
+            },
+            error: (err) => console.error('Error al descargar PDF:', err)
+          });
+        }
+
+        this.showCertificateModal.set(false);
+        this.studentForCertificate = null;
+        this.generatingCertificate.set(false);
+      },
+      error: (error) => {
+        console.error('Error generando certificado:', error);
+        const errorMsg = error?.error?.message || 'Error al generar el certificado';
+        this.info.showError(errorMsg);
+        this.generatingCertificate.set(false);
+      }
+    });
+  }
+
+  /**
+   * Cancela la generación de certificado
+   */
+  cancelCertificate(): void {
+    this.showCertificateModal.set(false);
+    this.studentForCertificate = null;
+  }
+
+  /**   * Abre el modal de confirmación para desasociar un estudiante del curso
    */
   openUnenrollModal(student: Student): void {
     this.studentToUnenroll = student;

@@ -16,7 +16,7 @@
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-xl font-bold text-white">
-                Gestionar Cursos
+                {{ isReadOnly ? 'Cursos Inscritos' : 'Gestionar Cursos' }}
               </h3>
               <p class="text-white/90 text-sm mt-1">
                 {{ studentName }}
@@ -53,75 +53,81 @@
             </div>
 
             <!-- Courses List -->
-            @if (courses().length === 0) {
+            @if (courses().length === 0 || (isReadOnly && getEnrolledCount() === 0)) {
               <div class="text-center py-12">
                 <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                <p class="text-gray-500">No hay cursos publicados disponibles</p>
+                <p class="text-gray-500">
+                  {{ isReadOnly ? 'El estudiante no tiene cursos asignados' : 'No hay cursos publicados disponibles' }}
+                </p>
               </div>
             } @else {
               <div class="max-h-[500px] overflow-y-auto space-y-3">
                 @for (course of courses(); track course._id) {
-                  <div class="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <!-- Course Image -->
-                    <img
-                      [src]="getCourseImageUrl(course.imageUrl)"
-                      [alt]="course.name"
-                      class="w-20 h-20 object-cover rounded-lg flex-linear-0"
-                    />
+                  @if (!isReadOnly || course.isEnrolled) {
+                    <div class="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <!-- Course Image -->
+                      <img
+                        [src]="getCourseImageUrl(course.imageUrl)"
+                        [alt]="course.name"
+                        class="w-20 h-20 object-cover rounded-lg flex-linear-0"
+                      />
 
-                    <!-- Course Info -->
-                    <div class="flex-1 min-w-0">
-                      <h4 class="font-semibold text-gray-900 truncate">
-                        {{ course.name }}
-                        @if (course.isEnrolled) {
-                          <span class="text-xs text-gray-500 font-normal ml-2">
-                            {{ getEnrollmentTypeLabel(course.enrollmentType) }}
-                          </span>
+                      <!-- Course Info -->
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 truncate">
+                          {{ course.name }}
+                          @if (course.isEnrolled) {
+                            <span class="text-xs text-gray-500 font-normal ml-2">
+                              {{ getEnrollmentTypeLabel(course.enrollmentType) }}
+                            </span>
+                          }
+                        </h4>
+                        @if (course.description) {
+                          <p class="text-sm text-gray-600 line-clamp-2 mt-1">
+                            {{ course.description }}
+                          </p>
                         }
-                      </h4>
-                      @if (course.description) {
-                        <p class="text-sm text-gray-600 line-clamp-2 mt-1">
-                          {{ course.description }}
-                        </p>
-                      }
-                      @if (course.isEnrolled && course.enrolledAt) {
-                        <p class="text-xs text-gray-500 mt-1">
-                          Inscrito: {{ formatDate(course.enrolledAt) }}
-                        </p>
+                        @if (course.isEnrolled && course.enrolledAt) {
+                          <p class="text-xs text-gray-500 mt-1">
+                            Inscrito: {{ formatDate(course.enrolledAt) }}
+                          </p>
+                        }
+                      </div>
+
+                      <!-- Toggle Button -->
+                      @if (!isReadOnly) {
+                        <button
+                          (click)="toggleCourseEnrollment(course)"
+                          [disabled]="processingCourseId() === course._id"
+                          class="relative inline-flex h-8 w-14 flex-linear-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          [ngClass]="{
+                            'bg-brand-primary': course.isEnrolled,
+                            'bg-gray-200': !course.isEnrolled
+                          }"
+                          role="switch"
+                          [attr.aria-checked]="course.isEnrolled"
+                        >
+                          <span class="sr-only">Inscribir en curso</span>
+                          <span
+                            class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            [ngClass]="{
+                              'translate-x-6': course.isEnrolled,
+                              'translate-x-0': !course.isEnrolled
+                            }"
+                          >
+                            @if (processingCourseId() === course._id) {
+                              <svg class="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-brand-primary" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            }
+                          </span>
+                        </button>
                       }
                     </div>
-
-                    <!-- Toggle Button -->
-                    <button
-                      (click)="toggleCourseEnrollment(course)"
-                      [disabled]="processingCourseId() === course._id"
-                      class="relative inline-flex h-8 w-14 flex-linear-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      [ngClass]="{
-                        'bg-brand-primary': course.isEnrolled,
-                        'bg-gray-200': !course.isEnrolled
-                      }"
-                      role="switch"
-                      [attr.aria-checked]="course.isEnrolled"
-                    >
-                      <span class="sr-only">Inscribir en curso</span>
-                      <span
-                        class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                        [ngClass]="{
-                          'translate-x-6': course.isEnrolled,
-                          'translate-x-0': !course.isEnrolled
-                        }"
-                      >
-                        @if (processingCourseId() === course._id) {
-                          <svg class="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-brand-primary" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        }
-                      </span>
-                    </button>
-                  </div>
+                  }
                 }
               </div>
             }

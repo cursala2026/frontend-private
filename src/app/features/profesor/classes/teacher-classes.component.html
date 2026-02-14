@@ -127,70 +127,74 @@
 
       <!-- Classes Grid -->
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @for (classItem of classes(); track classItem._id) {
+        @for (classItem of classes(); track classItem._id; let i = $index) {
+          @let theme = getCardTheme(i);
           <div 
             (click)="openClassEdit(classItem)"
-            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group"
+            class="rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group border {{ theme.bg }} {{ theme.border }}"
           >
-            <!-- Class Image -->
-            <div class="relative h-48 bg-linear-to-b from-white to-white overflow-hidden">
-              @if (getClassImageUrl(classItem.imageUrl)) {
-                <img
-                  [src]="getClassImageUrl(classItem.imageUrl)"
-                  [alt]="classItem.name"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  (error)="handleImageError($event)"
-                />
-              }
-              <div class="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
-              <div class="absolute bottom-4 left-4 right-4">
-                <h3 class="text-white font-bold text-xl line-clamp-2">{{ classItem.name }}</h3>
-                
+            <div class="p-6 relative">
+              <!-- Actions & Reorder -->
+              <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+                <div class="flex flex-col gap-1">
+                  @if (i > 0) {
+                    <button
+                      (click)="moveClassUp(i); $event.stopPropagation()"
+                      class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
+                      title="Mover arriba"
+                    >
+                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                  }
+                  
+                  @if (i < classes().length - 1) {
+                    <button
+                      (click)="moveClassDown(i); $event.stopPropagation()"
+                      class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
+                      title="Mover abajo"
+                    >
+                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  }
+                </div>
               </div>
 
-              <!-- Delete Button -->
-              <button
-                (click)="deleteClass($event, classItem)"
-                class="cursor-pointer absolute top-4 left-4 bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors duration-200 z-10"
-                title="Eliminar clase"
-              >
-                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+              <!-- Class Info -->
+              <h3 class="font-bold text-xl mb-2 pr-24 line-clamp-2 leading-tight {{ theme.title }}">{{ classItem.name }}</h3>
 
-              <!-- Video Icon -->
-              @if (classItem.videoUrl) {
-                <div class="absolute top-4 right-4 bg-blue-500/90 hover:bg-blue-600 p-2 rounded-full transition-colors duration-200 z-10" title="{{ classItem.videoOriginalName || 'Tiene video' }}" aria-label="{{ classItem.videoOriginalName || 'Tiene video' }}">
-                  <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              }
+              <div class="flex items-center gap-2 mb-6">
+                <!-- Status Badge -->
+                @if (classItem.status === 'ACTIVE') {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">
+                    Activa
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+                    Inactiva
+                  </span>
+                }
 
-              <!-- Status Badge -->
-              @if (classItem.status === 'ACTIVE') {
-                <div [class]="classItem.videoUrl ? 'absolute top-16 right-4 bg-green-500 px-2 py-0.5 text-sm leading-4 rounded-xs' : 'absolute top-4 right-4 bg-green-500 px-2 py-0.5 text-sm leading-4 rounded-xs'">
-                  <span class="text-white font-semibold text-xs leading-2.5">Activa</span>
-                </div>
-              } @else {
-                <div [class]="classItem.videoUrl ? 'absolute top-16 right-4 bg-gray-500 px-2 py-0.5 text-sm leading-4 rounded-xs' : 'absolute top-4 right-4 bg-gray-500 px-2 py-0.5 text-sm leading-4 rounded-xs'">
-                  <span class="text-white font-semibold text-xs leading-2.5">Inactiva</span>
-                </div>
-              }
-            </div>
-
-              <!-- El indicador de progreso por tarjeta fue eliminado porque existe un componente global que lo muestra -->
-
-            <!-- Class Info -->
-            <div class="p-6">
-              @if (classItem.description) {
-                <p class="text-brand-tertiary text-sm mb-4 line-clamp-2">{{ classItem.description }}</p>
-              }
+                <!-- Video Icon -->
+                @if (classItem.videoUrl) {
+                  <span 
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold {{ theme.badge }}"
+                    title="{{ classItem.videoOriginalName || 'Tiene video' }}"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Video
+                  </span>
+                }
+              </div>
               
-              <div class="text-sm text-brand-primary font-bold inline-flex items-center border border-brand-primary transition-all group-hover:bg-brand-primary/10 py-2 rounded-full px-4 mt-2 ring-1 ring-brand-primary active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07]">
-                  Editar clase
-                <svg class="w-5 h-5 ml-2 text-brand-primary group-active:text-white transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="text-sm font-bold inline-flex items-center border transition-all py-2 rounded-full px-4 ring-1 active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07] {{ theme.title }} {{ theme.border }} group-hover:bg-white/50">
+                Editar clase
+                <svg class="w-5 h-5 ml-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>
@@ -201,11 +205,3 @@
     }
   </div>
 </div>
-
-<!-- Modal de confirmación de eliminación -->
-<app-confirm-modal
-  [isOpen]="showDeleteModal"
-  [config]="deleteModalConfig"
-  (confirm)="confirmDelete()"
-  (cancel)="cancelDelete()"
-></app-confirm-modal>

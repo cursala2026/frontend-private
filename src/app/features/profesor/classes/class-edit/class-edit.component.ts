@@ -12,11 +12,12 @@ import { UserRole } from '../../../../core/models/user-role.enum';
 import { VideoUploadProgressService } from '../../../../core/services/video-upload-progress.service';
 import { VideoUploadManagerService } from '../../../../core/services/video-upload-manager.service';
 import { Subscription } from 'rxjs';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-teacher-class-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, ConfirmModalComponent],
   templateUrl: './class-edit.component.html'
 })
 export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -35,6 +36,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   classForm!: FormGroup;
   classData = signal<ClassData | null>(null);
   course = signal<Course | null>(null);
+  courseClasses = signal<ClassData[]>([]);
   courses = signal<Course[]>([]);
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
@@ -47,6 +49,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
 
   selectedImageFile: File | null = null;
   imagePreview: string | null = null;
+  imageLoaded = signal<boolean>(false); // Nuevo: trackear si la imagen cargó correctamente
   originalImageUrl: string | null = null; // URL de la imagen original
   deleteCurrentImage: boolean = false; // Flag para eliminar la imagen original
 
@@ -62,6 +65,17 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   classId: string | null = null;
   courseId: string | null = null;
   isEditMode = false;
+
+  // Modal de confirmación para eliminación
+  showDeleteModal = signal<boolean>(false);
+  deleteModalConfig: ConfirmModalConfig = {
+    title: 'Eliminar Clase',
+    message: '¿Estás seguro de que deseas eliminar esta clase? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    icon: 'danger'
+  };
 
   private progressSubscription: Subscription | null = null;
   
@@ -82,50 +96,55 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   ngOnInit(): void {
-    try {
-      this.classId = this.route.snapshot.paramMap.get('id');
-      // Si el id es 'new' o no existe, estamos en modo creación
-      this.isEditMode = !!this.classId && this.classId !== 'new' && this.classId !== 'edit';
+    this.route.paramMap.subscribe(params => {
+      try {
+        this.classId = params.get('id');
+        // Si el id es 'new' o no existe, estamos en modo creación
+        this.isEditMode = !!this.classId && this.classId !== 'new' && this.classId !== 'edit';
 
-      // Capturar courseId de query params si estamos creando
-      const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
-      if (courseIdFromQuery) {
-        this.courseId = courseIdFromQuery;
-      }
-
-      this.initializeForm();
-      this.loadCourses();
-      
-      // Resetear flags
-      this.deleteCurrentVideo = false;
-      this.deleteCurrentImage = false;
-      this.originalVideoUrl = null;
-      this.originalImageUrl = null;
-      
-      // Limpiar estado de video
-      this.videoStatus.set(null);
-      this.videoUploadProgress.set(0);
-      this.isUploadingVideo.set(false);
-      this.cleanupProgressSubscription();
-
-      if (this.isEditMode && this.classId) {
-        this.loadClass();
-      } else {
-        // En modo creación, si hay courseId en query params, precargarlo
+        // Capturar courseId de query params
+        const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
         if (courseIdFromQuery) {
-          this.loadCourse();
-          this.classForm.patchValue({ courseId: courseIdFromQuery });
+          this.courseId = courseIdFromQuery;
         }
+
+        this.initializeForm();
+        this.loadCourses();
+        
+        // Resetear flags
+        this.deleteCurrentVideo = false;
+        this.deleteCurrentImage = false;
+        this.originalVideoUrl = null;
+        this.originalImageUrl = null;
+        this.imagePreview = null;
+        this.imageLoaded.set(false);
+        this.videoPreview = null;
+        this.videoName.set(null);
+        
+        // Limpiar estado de video
+        this.videoStatus.set(null);
+        this.videoUploadProgress.set(0);
+        this.isUploadingVideo.set(false);
+        this.cleanupProgressSubscription();
+
+        if (this.isEditMode && this.classId) {
+          this.loadClass();
+        } else {
+          this.loading.set(false);
+          // En modo creación, si hay courseId en query params, precargarlo
+          if (this.courseId) {
+            this.loadCourse();
+            this.classForm.patchValue({ courseId: this.courseId });
+          }
+        }
+      } catch (err) {
+        console.error('Error en ngOnInit de TeacherClassEditComponent:', err);
+        try {
+          this.info.showError('Error inicializando el editor de clase. Revisa la consola.');
+        } catch {}
         this.loading.set(false);
       }
-    } catch (err) {
-      console.error('Error en ngOnInit de TeacherClassEditComponent:', err);
-      // Evitar bloqueo total del módulo en dev; mostrar mensaje al usuario
-      try {
-        this.info.showError('Error inicializando el editor de clase. Revisa la consola.');
-      } catch {}
-      this.loading.set(false);
-    }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -218,6 +237,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
         // Cargar preview de imagen
         if (classData.imageUrl) {
           this.imagePreview = this.getClassImageUrl(classData.imageUrl);
+          this.imageLoaded.set(false); // Esperar a que cargue el elemento img
           this.originalImageUrl = classData.imageUrl;
         }
 
@@ -321,6 +341,9 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
       next: (response: any) => {
         const courseData = response?.data || response;
         this.course.set(courseData);
+        if (courseData.classes) {
+          this.courseClasses.set(courseData.classes);
+        }
       },
       error: (error) => {
         console.error('Error loading course:', error);
@@ -335,6 +358,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
       this.deleteCurrentImage = false; // Si se selecciona nueva imagen, no eliminar la original
       this.classForm.patchValue({ imageFile: this.selectedImageFile });
       this.classForm.markAsDirty(); // Marcar formulario como modificado
+      this.imageLoaded.set(false); // Resetear estado de carga
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.imagePreview = e.target.result;
@@ -345,6 +369,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
 
   removeImage(): void {
     this.imagePreview = null;
+    this.imageLoaded.set(false);
     this.selectedImageFile = null;
     this.deleteCurrentImage = true;
     this.classForm.patchValue({ imageFile: null });
@@ -534,9 +559,16 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     return safeUrl;
   }
 
+  handleImageLoad(): void {
+    this.imageLoaded.set(true);
+  }
+
   handleImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.style.display = 'none';
+    // Si la imagen falla al cargar, ocultamos el preview por completo
+    this.imagePreview = null;
+    this.imageLoaded.set(false);
+    // No reseteamos selectedImageFile ni deleteCurrentImage aquí para evitar efectos secundarios
+    // pero al poner imagePreview a null el template ocultará el contenedor y el botón
   }
 
   onSupportFilesSelected(event: Event): void {
@@ -730,6 +762,41 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     } else {
       this.router.navigate(['/profesor/classes']);
     }
+  }
+
+  openClassCreate(): void {
+    if (this.courseId) {
+      this.router.navigate(['/profesor/classes/new'], { 
+        queryParams: { courseId: this.courseId } 
+      });
+    }
+  }
+
+  onDelete(): void {
+    this.showDeleteModal.set(true);
+  }
+
+  confirmDelete(): void {
+    if (!this.classId) return;
+
+    this.saving.set(true);
+    this.classesService.deleteClass(this.classId).subscribe({
+      next: () => {
+        this.info.show('Clase eliminada exitosamente', 'success');
+        this.showDeleteModal.set(false);
+        this.onCancel();
+      },
+      error: (err) => {
+        console.error('Error deleting class:', err);
+        this.info.show('Error al eliminar la clase', 'error');
+        this.saving.set(false);
+        this.showDeleteModal.set(false);
+      }
+    });
+  }
+
+  cancelDelete(): void {
+    this.showDeleteModal.set(false);
   }
 
   /**

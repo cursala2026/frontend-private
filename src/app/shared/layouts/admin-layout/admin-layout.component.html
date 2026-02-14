@@ -20,7 +20,7 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="mt-6 px-4">
+    <nav class="mt-6 px-4 flex-1 overflow-y-auto">
       @for (item of menuItems; track item.route) {
         <a
           [routerLink]="item.route"
@@ -34,6 +34,20 @@
           {{ item.label }}
         </a>
       }
+
+      <div class="my-4 border-t border-gray-700"></div>
+
+      <a
+        href="https://mail.cursala.com.ar/webmail/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center px-4 py-3 mb-2 text-sm rounded-lg hover:bg-gray-700 transition-colors text-white"
+      >
+        <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+        </svg>
+        Correo Webmail
+      </a>
     </nav>
 
     <!-- User Info -->

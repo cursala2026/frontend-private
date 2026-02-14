@@ -1,4 +1,74 @@
-<div class="h-full flex flex-col py-3">
+<div class="h-full flex flex-col py-3 space-y-2">
+  <!-- Filtros -->
+  <div class="px-2">
+    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+      <!-- Course Selector (Searchable Combobox) -->
+      <div class="w-full md:w-96 relative">
+        <label for="courseCombobox" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Filtrar por Curso</label>
+        <div class="relative">
+          <input
+            id="courseCombobox"
+            type="text"
+            role="combobox"
+            [attr.aria-expanded]="showCourseDropdown()"
+            aria-controls="course-list"
+            placeholder="Buscar curso..."
+            [(ngModel)]="courseFilter"
+            (focus)="onCourseInputFocus()"
+            (input)="onCourseInputFocus()"
+            (blur)="onCourseInputBlur()"
+            class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all pr-10"
+          />
+          <button
+            *ngIf="courseFilter || selectedCourse"
+            type="button"
+            (click)="clearCourseFilter(); $event.stopPropagation()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+            title="Limpiar filtro"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          
+          <!-- Dropdown -->
+          <div 
+            *ngIf="showCourseDropdown()" 
+            class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-200"
+          >
+            <ul id="course-list" role="listbox" class="py-1">
+              <li 
+                class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-50 border-b border-gray-100 cursor-pointer hover:bg-brand-primary/5 transition-colors"
+                (mousedown)="selectCourse('', ''); $event.preventDefault()"
+              >
+                Todos los cursos
+              </li>
+              <li 
+                class="px-4 py-2 text-sm text-gray-600 cursor-pointer hover:bg-brand-primary/5 transition-colors border-b border-gray-50"
+                (mousedown)="selectCourse('NO_COURSE', 'Sin cursos asignados'); $event.preventDefault()"
+              >
+                Sin cursos asignados
+              </li>
+              <li 
+                *ngFor="let course of filteredCourses()"
+                class="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-brand-primary/5 transition-colors flex justify-between items-center"
+                (mousedown)="selectCourse(course._id || course.id, course.name || course.title); $event.preventDefault()"
+                [class.bg-brand-primary.text-white]="selectedCourse === (course._id || course.id)"
+              >
+                <span>{{ course.name || course.title }}</span>
+                <span *ngIf="selectedCourse === (course._id || course.id)" class="text-xs opacity-80">Seleccionado</span>
+              </li>
+              <li *ngIf="filteredCourses().length === 0" class="px-4 py-3 text-sm text-gray-400 italic text-center">
+                No se encontraron cursos
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Data Table -->
   <div class="flex-1 min-h-0 overflow-hidden">
     <app-data-table
@@ -6,9 +76,19 @@
       [config]="tableConfig"
       [loading]="loading()"
       [pagination]="pagination()"
+      [isFiltered]="!!(selectedCourse || searchTerm)"
       (sortChange)="onSortChange($event)"
       (pageChange)="onPageChange($event)"
       (searchChange)="onSearchChange($event)"
     />
   </div>
 </div>
+
+<!-- Modal de cursos del estudiante (Ligero/Lectura) -->
+<app-student-courses-view-modal
+  [isOpen]="showCoursesModal"
+  [studentId]="selectedStudentForCourses?._id || ''"
+  [studentName]="selectedStudentForCourses ? (selectedStudentForCourses.firstName + ' ' + selectedStudentForCourses.lastName) : ''"
+  [studentData]="selectedStudentForCourses"
+  (close)="closeCoursesModal()"
+/>

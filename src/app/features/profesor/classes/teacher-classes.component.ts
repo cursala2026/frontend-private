@@ -7,7 +7,6 @@ import { ClassesService, ClassData } from '../../../core/services/classes.servic
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { UserRole } from '../../../core/models/user-role.enum';
-import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 // Los servicios de progreso de video ahora son gestionados por componentes/servicios globales
 
 interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
@@ -18,7 +17,7 @@ interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
 @Component({
   selector: 'app-teacher-classes',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './teacher-classes.component.html',
 })
 export class TeacherClassesComponent implements OnInit, OnDestroy {
@@ -41,18 +40,6 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
   
   // Tracking de progreso de videos por clase
   // El progreso por tarjeta ahora lo maneja el componente global de subidas
-
-  // Modal de confirmación
-  showDeleteModal = signal<boolean>(false);
-  classToDelete: ClassData | null = null;
-  deleteModalConfig: ConfirmModalConfig = {
-    title: 'Eliminar Clase',
-    message: '',
-    confirmText: 'Eliminar',
-    cancelText: 'Cancelar',
-    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
-    icon: 'danger'
-  };
 
   ngOnInit(): void {
     // Inicialización básica
@@ -146,6 +133,18 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
     this.showCourseDropdown = false;
   }
 
+  getCardTheme(index: number) {
+    const themes = [
+      { bg: 'bg-blue-50', border: 'border-blue-200', title: 'text-blue-900', button: 'bg-blue-600', hover: 'hover:bg-blue-700', badge: 'bg-blue-100 text-blue-700' },
+      { bg: 'bg-purple-50', border: 'border-purple-200', title: 'text-purple-900', button: 'bg-purple-600', hover: 'hover:bg-purple-700', badge: 'bg-purple-100 text-purple-700' },
+      { bg: 'bg-amber-50', border: 'border-amber-200', title: 'text-amber-900', button: 'bg-amber-600', hover: 'hover:bg-amber-700', badge: 'bg-amber-100 text-amber-700' },
+      { bg: 'bg-emerald-50', border: 'border-emerald-200', title: 'text-emerald-900', button: 'bg-emerald-600', hover: 'hover:bg-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
+      { bg: 'bg-indigo-50', border: 'border-indigo-200', title: 'text-indigo-900', button: 'bg-indigo-600', hover: 'hover:bg-indigo-700', badge: 'bg-indigo-100 text-indigo-700' },
+      { bg: 'bg-rose-50', border: 'border-rose-200', title: 'text-rose-900', button: 'bg-rose-600', hover: 'hover:bg-rose-700', badge: 'bg-rose-100 text-rose-700' }
+    ];
+    return themes[index % themes.length];
+  }
+
   private isReloading = false;
 
   loadClassesByCourse(courseId: string): void {
@@ -175,6 +174,37 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
     });
   }
 
+  moveClassUp(index: number): void {
+    if (index === 0) return;
+    const list = [...this.classes()];
+    const temp = list[index];
+    list[index] = list[index - 1];
+    list[index - 1] = temp;
+    this.saveOrder(list);
+  }
+
+  moveClassDown(index: number): void {
+    const list = [...this.classes()];
+    if (index === list.length - 1) return;
+    const temp = list[index];
+    list[index] = list[index + 1];
+    list[index + 1] = temp;
+    this.saveOrder(list);
+  }
+
+  private saveOrder(newList: ClassData[]): void {
+    this.classes.set(newList);
+    const reorderData = newList.map((c, i) => ({ id: c._id, order: i + 1 }));
+    this.classesService.reorderClasses(reorderData, this.selectedCourseId).subscribe({
+      next: () => {
+        console.log('Orden de clases actualizado');
+      },
+      error: (error) => {
+        console.error('Error actualizando el orden de las clases:', error);
+      }
+    });
+  }
+
   // El manejo de progreso por tarjeta fue movido al componente global
 
   ngOnDestroy(): void {
@@ -191,38 +221,6 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
       // Navegar a la página de creación de clase con el courseId como query param
       this.router.navigate(['/profesor/classes/new'], { queryParams: { courseId: this.selectedCourseId } });
     }
-  }
-
-  deleteClass(event: Event, classItem: ClassData): void {
-    event.stopPropagation(); // Evitar que se dispare el click de la tarjeta
-
-    // Configurar el modal con la información de la clase
-    this.classToDelete = classItem;
-    this.deleteModalConfig.message = `¿Estás seguro de que deseas eliminar la clase "${classItem.name}"?\n\nEsta acción no se puede deshacer.`;
-    this.showDeleteModal.set(true);
-  }
-
-  confirmDelete(): void {
-    if (this.classToDelete?._id) {
-      this.classesService.deleteClass(this.classToDelete._id).subscribe({
-        next: () => {
-          // Recargar las clases del curso actual
-          if (this.selectedCourseId) {
-            this.loadClassesByCourse(this.selectedCourseId);
-          }
-          this.classToDelete = null;
-        },
-        error: (error) => {
-          console.error('Error deleting class:', error);
-          alert('Error al eliminar la clase. Por favor, inténtalo de nuevo.');
-          this.classToDelete = null;
-        }
-      });
-    }
-  }
-
-  cancelDelete(): void {
-    this.classToDelete = null;
   }
 
   getClassImageUrl(imageUrl?: string): string {

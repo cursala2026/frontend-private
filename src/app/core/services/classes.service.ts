@@ -207,6 +207,10 @@ export class ClassesService {
     return this.http.patch(`${this.uploadUrl}/${classId}`, formData);
   }
 
+  reorderClasses(reorderData: { id: string; order: number }[], courseId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/reorder`, { reorderData, courseId });
+  }
+
   deleteClass(classId: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${classId}/delete`);
   }
