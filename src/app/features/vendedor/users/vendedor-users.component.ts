@@ -167,9 +167,10 @@ export class VendedorUsersComponent implements OnInit {
 
   loadCourses(): void {
     this.courses.set([]);
-    this.coursesService.getPublishedCourses().subscribe({
+    // Cargar todos los cursos (incluyendo workshops/no publicados) para el filtro
+    this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
       next: (response: any) => {
-        const data = response?.data || response || [];
+        const data = response?.data?.data || response?.data || response || [];
         const coursesList = Array.isArray(data) ? data : [];
         this.courses.set(coursesList);
 

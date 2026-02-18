@@ -57,14 +57,13 @@ export class StudentCoursesModalComponent implements OnChanges {
 
   loadCourses(): void {
     this.loading.set(true);
-    
-    // Cargar cursos publicados
-    this.coursesService.getPublishedCourses().subscribe({
+    // Cargar todos los cursos para gestión (incluyendo workshops/no publicados)
+    this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
       next: (response: any) => {
-        const publishedCourses = response?.data || response || [];
+        const allCourses = response?.data?.data || response?.data || response || [];
         
         // Verificar cuáles cursos ya tiene el estudiante
-        const coursesWithEnrollment: StudentCourse[] = publishedCourses.map((course: any) => {
+        const coursesWithEnrollment: StudentCourse[] = allCourses.map((course: any) => {
           const students = course.students || [];
           const enrollment = students.find((s: any) => {
             const studentId = typeof s === 'string' ? s : 

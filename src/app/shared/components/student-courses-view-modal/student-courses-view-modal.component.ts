@@ -122,10 +122,10 @@ export class StudentCoursesViewModalComponent {
     }
 
     // 2. Fallback: Consultar todos los cursos (si falla lo anterior)
-    this.coursesService.getPublishedCourses().subscribe({
+    this.coursesService.getCourses({ page: 1, page_size: 1000 }).subscribe({
       next: (response: any) => {
-        const publishedCourses = response?.data || response || [];
-        const enrolled = publishedCourses.filter((course: any) => {
+        const allCourses = response?.data?.data || response?.data || response || [];
+        const enrolled = allCourses.filter((course: any) => {
           const students = course.students || [];
           return students.some((s: any) => {
             const id = typeof s === 'string' ? s : (s.userId?._id || s.userId || s._id);
