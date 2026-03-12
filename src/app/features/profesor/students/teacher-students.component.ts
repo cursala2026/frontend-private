@@ -483,9 +483,12 @@ Esta acción no se puede deshacer.`
       next: (response: any) => {
         this.info.showSuccess(`Certificado para ${student.firstName} ${student.lastName} generado y enviado exitosamente`);
         
-        // Intentar descargar el PDF automáticamente
+        // Descargar PDF y abrir vista del certificado en nueva pestaña
         if (response?.data?.verificationCode) {
-          this.certificateService.downloadCertificate(response.data.verificationCode).subscribe({
+          const verificationCode = response.data.verificationCode;
+
+          // Descarga del PDF
+          this.certificateService.downloadCertificate(verificationCode).subscribe({
             next: (blob: Blob) => {
               const url = window.URL.createObjectURL(blob);
               const link = document.createElement('a');
@@ -496,6 +499,9 @@ Esta acción no se puede deshacer.`
             },
             error: (err) => console.error('Error al descargar PDF:', err)
           });
+
+          // Abrir vista pública del certificado en nueva pestaña
+          window.open(`/certificate/${verificationCode}`, '_blank', 'noopener,noreferrer');
         }
 
         this.showCertificateModal.set(false);

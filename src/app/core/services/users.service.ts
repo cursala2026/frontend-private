@@ -105,4 +105,8 @@ export class UsersService {
   deleteUser(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/deleteUser/${id}`);
   }
+
+  deleteSelf(): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/delete-self`);
+  }
 }

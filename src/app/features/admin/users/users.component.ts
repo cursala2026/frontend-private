@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectorRef, computed } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -21,7 +21,15 @@ import { UserRole } from '../../../core/models/user-role.enum';
   templateUrl: './users.component.html'
 })
 export class UsersComponent implements OnInit {
-  users = signal<any[]>([]);
+  private rawUsers = signal<any[]>([]);
+  users = computed(() => {
+    const raw = this.rawUsers();
+    const courses = this.courses();
+    // Si no hay cursos cargados aún, no enriquecemos para dejar que el formateador use los campos originales
+    if (!courses || courses.length === 0) return raw;
+    return this.enrichUsersWithCourses(raw);
+  });
+  
   loading = signal<boolean>(false);
   pagination = signal<PaginationData | undefined>(undefined);
   courses = signal<any[]>([]);
@@ -111,6 +119,18 @@ export class UsersComponent implements OnInit {
           } catch (e) {
             return `<span>${value}</span>`;
           }
+        }
+      },
+      {
+        key: 'enrolledCourses',
+        label: 'Cursos',
+        type: 'html',
+        width: '20%',
+        formatter: (value: any[]) => {
+          if (!value || value.length === 0) return '<span class="text-gray-400 text-xs italic">Sin cursos</span>';
+          return `<div class="flex flex-wrap gap-1 max-h-[60px] overflow-y-auto pr-1">
+            ${value.map(c => `<span class="inline-block px-1.5 py-0.5 text-[10px] bg-brand-primary/10 text-brand-primary rounded-md font-medium border border-brand-primary/20" title="${c.name || c.title || ''}">${c.name || c.title || 'Curso'}</span>`).join('')}
+          </div>`;
         }
       },
       {
@@ -228,7 +248,7 @@ export class UsersComponent implements OnInit {
       if (this._requestToken !== currentToken) {
         return false;
       }
-      this.users.set(Array.isArray(data) ? data : []);
+      this.rawUsers.set(Array.isArray(data) ? data : []);
       this.pagination.set(paginationData || { page: this.currentPage, page_size: this.pageSize, total: 0, totalPages: 0 });
       
       return true;
@@ -353,14 +373,14 @@ export class UsersComponent implements OnInit {
                   },
                   error: (err) => {
                     console.error('Error loading all users for NONE fallback:', err);
-                    this.users.set([]);
+                    this.rawUsers.set([]);
                     this.loading.set(false);
                   }
                 });
               },
               error: (err) => {
                 console.error('Error loading courses for NONE fallback:', err);
-                this.users.set([]);
+                this.rawUsers.set([]);
                 this.loading.set(false);
               }
             });
@@ -404,7 +424,7 @@ export class UsersComponent implements OnInit {
                   },
                   error: (err) => {
                     console.error('Error in fallback getAllUsers:', err);
-                    this.users.set([]);
+                    this.rawUsers.set([]);
                     this.loading.set(false);
                   }
                 });
@@ -422,7 +442,7 @@ export class UsersComponent implements OnInit {
                   },
                   error: (err2) => {
                     console.error('Error loading course for fallback:', err2);
-                    this.users.set([]);
+                    this.rawUsers.set([]);
                     this.loading.set(false);
                   }
                 });
@@ -437,7 +457,7 @@ export class UsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading users (backend):', error);
-          this.users.set([]);
+          this.rawUsers.set([]);
           this.loading.set(false);
         }
       });
@@ -446,6 +466,67 @@ export class UsersComponent implements OnInit {
     fetchWithCourseParam(courseIdParam, 0);
 
     // No additional requests: ya delegamos todo al backend incluyendo `courseId`.
+  }
+
+  private enrichUsersWithCourses(users: any[]): any[] {
+    const allCourses = this.courses();
+    if (!allCourses || allCourses.length === 0) return users;
+
+    return users.map(user => {
+      const userId = String(user._id || user.id || '');
+      const userEmail = String(user.email || '').toLowerCase();
+      
+      let userCourses = user.enrolledCourses || user.courses || user.studentCourses || user.enrollments || user.course || user.courseIds || [];
+      let coursesArray = Array.isArray(userCourses) ? userCourses : [userCourses].filter(Boolean);
+      
+      // 1. Intentar encontrar cursos en la lista global buscando al estudiante
+      const foundFromStudentsList = allCourses.filter(course => {
+        const students = course.students || [];
+        return students.some((s: any) => {
+          // Comparar por ID
+          const sId = String(typeof s === 'string' ? s : (s.userId?._id || s.userId || s._id || s.user || ''));
+          if (sId && userId && sId === userId) return true;
+          
+          // Comparar por Email (si está disponible en la metadata del estudiante)
+          const sEmail = String(s.email || s.userId?.email || '').toLowerCase();
+          if (sEmail && userEmail && sEmail === userEmail) return true;
+          
+          return false;
+        });
+      });
+
+      let finalCourses = coursesArray;
+
+      // 2. Priorizar lo encontrado en el mapeo global de estudiantes
+      if (foundFromStudentsList.length > 0) {
+        finalCourses = foundFromStudentsList;
+      } 
+      // 3. Fallback: Si no hay nada o son solo IDs, intentar resolverlos
+      else if (coursesArray.length === 0 || typeof coursesArray[0] === 'string') {
+        if (coursesArray.length > 0 && typeof coursesArray[0] === 'string') {
+          finalCourses = coursesArray.map((id: string) => {
+            const found = allCourses.find(c => String(c._id || c.id) === String(id));
+            return found || { title: 'Curso ID: ' + id, _id: id };
+          });
+        }
+      }
+      // 4. Fallback: Si son objetos pero sin nombre/título, resolver el curso por ID
+      else if (coursesArray.length > 0 && typeof coursesArray[0] === 'object' && !coursesArray[0].name && !coursesArray[0].title) {
+        finalCourses = coursesArray.map((item: any) => {
+          const cId = item.courseId || item.course || item._id || item.id;
+          if (cId) {
+            const found = allCourses.find(c => String(c._id || c.id) === String(cId));
+            return found || item;
+          }
+          return item;
+        });
+      }
+
+      return {
+        ...user,
+        enrolledCourses: finalCourses
+      };
+    });
   }
 
   onSortChange(event: { column: string; direction: 'ASC' | 'DESC' }): void {
@@ -803,8 +884,8 @@ export class UsersComponent implements OnInit {
     const oldRole = user.roles && user.roles.length > 0 ? user.roles[0] : null;
 
     // Obtener el array actual de usuarios
-    const currentUsers = this.users();
-    const userIndex = currentUsers.findIndex(u => u._id === user._id);
+    const currentUsers = this.rawUsers();
+    const userIndex = currentUsers.findIndex((u: any) => u._id === user._id);
 
     // Actualizar visualmente de inmediato - crear nuevo objeto para forzar detección de cambios
     if (userIndex !== -1) {
@@ -820,7 +901,7 @@ export class UsersComponent implements OnInit {
       // Crear nuevo array con el usuario actualizado
       const newUsers = [...currentUsers];
       newUsers[userIndex] = updatedUser;
-      this.users.set(newUsers);
+      this.rawUsers.set(newUsers);
     }
 
     // Enviar actualización al backend
@@ -830,13 +911,13 @@ export class UsersComponent implements OnInit {
         
         // Actualizar el usuario con la respuesta del backend si está disponible
         if (response?.data && userIndex !== -1) {
-          const updatedUsers = [...this.users()];
+          const updatedUsers = [...this.rawUsers()];
           updatedUsers[userIndex] = {
             ...updatedUsers[userIndex],
             ...response.data,
             roles: Array.isArray(response.data.roles) ? response.data.roles : [response.data.roles || newRole]
           };
-          this.users.set(updatedUsers);
+          this.rawUsers.set(updatedUsers);
         } else {
           // Recargar la lista de usuarios para asegurar que los datos estén sincronizados
           this.loadUsers();
@@ -848,13 +929,13 @@ export class UsersComponent implements OnInit {
 
         // Revertir el cambio visual en caso de error
         if (oldRole && userIndex !== -1) {
-          const revertedUsers = [...this.users()];
+          const revertedUsers = [...this.rawUsers()];
           revertedUsers[userIndex] = {
             ...revertedUsers[userIndex],
             roles: [oldRole]
           };
           user.roles = [oldRole];
-          this.users.set(revertedUsers);
+          this.rawUsers.set(revertedUsers);
         } else {
           this.loadUsers();
         }

@@ -12,17 +12,20 @@ import { CategoriesService } from '../../../core/services/categories.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
 import { TeacherAssignmentModalComponent } from '../../../shared/components/teacher-assignment-modal/teacher-assignment-modal.component';
+import { CertificateLogosModalComponent } from './certificate-logos-modal/certificate-logos-modal.component';
+import { PublicDataService, PublicData } from '../../../core/services/public-data.service';
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent],
+  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
   @ViewChild(ModalDataTableComponent) modalComponent!: ModalDataTableComponent;
 
   private router = inject(Router);
+  private publicDataService = inject(PublicDataService);
 
   courses = signal<any[]>([]);
   loading = signal<boolean>(false);
@@ -32,6 +35,8 @@ export class CoursesComponent implements OnInit {
   isModalOpen = signal<boolean>(false);
   isTeacherAssignmentModalOpen = signal<boolean>(false);
   showDuplicateModal = signal<boolean>(false);
+  isCertificateLogosModalOpen = signal<boolean>(false);
+  companyData = signal<PublicData | null>(null);
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
   duplicateModalConfig: ConfirmModalConfig = {
@@ -184,6 +189,29 @@ export class CoursesComponent implements OnInit {
     this.loadCourses();
     this.loadTeachers();
     this.loadCategories();
+    this.loadCompanyData();
+  }
+
+  loadCompanyData(): void {
+    this.publicDataService.getAllPublicData().subscribe({
+      next: (res) => {
+        const data = res?.data?.[0] ?? null;
+        this.companyData.set(data);
+      },
+      error: () => { /* no crítico */ }
+    });
+  }
+
+  openCertificateLogosModal(): void {
+    this.isCertificateLogosModalOpen.set(true);
+  }
+
+  onCertificateLogosModalClose(): void {
+    this.isCertificateLogosModalOpen.set(false);
+  }
+
+  onCertificateLogosDataUpdated(updated: PublicData): void {
+    this.companyData.set(updated);
   }
 
   loadCategories(): void {

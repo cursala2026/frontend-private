@@ -6,11 +6,12 @@ import { InfoService } from '../../core/services/info.service';
 import { UsersService } from '../../core/services/users.service';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { ConfirmModalComponent, ConfirmModalConfig } from '../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
@@ -28,6 +29,17 @@ export class ProfileComponent {
   profileImagePreview: string | null = null;
   selectedSignatureImage: File | null = null;
   signatureImagePreview: string | null = null;
+
+  // Modal de confirmación para eliminar cuenta
+  isDeleteModalOpen = signal(false);
+  deleteModalConfig: ConfirmModalConfig = {
+    title: 'Eliminar cuenta permanentemente',
+    message: '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y perderás el acceso a todos tus cursos, progreso y certificados generados.',
+    confirmText: 'Eliminar definitivamente',
+    cancelText: 'Cancelar',
+    icon: 'danger',
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+  };
 
   constructor() {
     const currentUser = this.user();
@@ -313,6 +325,26 @@ export class ProfileComponent {
         this.redirectToDashboard(currentUser);
       }
     }
+  }
+
+  onDeleteAccount(): void {
+    this.isDeleteModalOpen.set(true);
+  }
+
+  onConfirmDeleteAccount(): void {
+    this.isSubmitting.set(true);
+    this.usersService.deleteSelf().subscribe({
+      next: () => {
+        this.infoService.showSuccess('Tu cuenta ha sido eliminada correctamente.');
+        this.authService.logout();
+        this.router.navigate(['/auth/login']);
+      },
+      error: (error) => {
+        console.error('Error deleting account:', error);
+        this.infoService.showError(error.error?.message || 'Error al intentar eliminar la cuenta');
+        this.isSubmitting.set(false);
+      }
+    });
   }
 
   /**

@@ -7,6 +7,7 @@ export interface PublicData {
   _id: string;
   privacyPolicy: string;
   termsOfService: string;
+  certificateLogos?: string[];
   bankAccounts?: Array<{
     _id: string;
     cbu: string;
@@ -47,5 +48,21 @@ export class PublicDataService {
    */
   updatePublicData(id: string, data: Partial<PublicData>): Observable<SinglePublicDataResponse> {
     return this.http.patch<SinglePublicDataResponse>(`${this.apiUrl}/${id}`, data);
+  }
+
+  /**
+   * Sube un logo institucional para los certificados
+   */
+  uploadCertificateLogo(id: string, file: File): Observable<SinglePublicDataResponse> {
+    const formData = new FormData();
+    formData.append('logoFile', file);
+    return this.http.post<SinglePublicDataResponse>(`${this.apiUrl}/${id}/certificate-logos`, formData);
+  }
+
+  /**
+   * Elimina un logo institucional del certificado por su índice
+   */
+  removeCertificateLogo(id: string, index: number): Observable<SinglePublicDataResponse> {
+    return this.http.delete<SinglePublicDataResponse>(`${this.apiUrl}/${id}/certificate-logos/${index}`);
   }
 }

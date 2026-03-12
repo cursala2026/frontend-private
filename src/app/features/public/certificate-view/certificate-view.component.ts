@@ -4,9 +4,17 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
 
+interface CertificateTeacher {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  professionalSignatureUrl?: string;
+}
+
 interface CertificateData {
   isValid: boolean;
   message?: string;
+  certificateLogos?: string[];
   student?: {
     firstName: string;
     lastName: string;
@@ -16,11 +24,7 @@ interface CertificateData {
     name: string;
     duration?: number;
   };
-  teacher?: {
-    firstName: string;
-    lastName: string;
-    professionalSignatureUrl?: string;
-  } | null;
+  teachers?: CertificateTeacher[];
   certificateInfo?: {
     certificateId: string;
     generatedAt: string;

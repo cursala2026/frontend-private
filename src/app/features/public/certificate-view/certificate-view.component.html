@@ -1,161 +1,156 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-[#e8edf1] py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-4xl mx-auto">
-    <!-- Loading State -->
+
+    <!-- Loading -->
     @if (loading()) {
       <div class="bg-white rounded-lg shadow-xl p-8 text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p class="text-gray-600">Validando certificado...</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0090d8] mx-auto mb-4"></div>
+        <p class="text-[#4a5560]">Validando certificado...</p>
       </div>
     }
 
-    <!-- Error State -->
+    <!-- Error -->
     @if (!loading() && error()) {
       <div class="bg-white rounded-lg shadow-xl p-8 text-center">
         <div class="text-red-500 text-5xl mb-4">✗</div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Certificado no válido</h1>
-        <p class="text-gray-600 mb-6">{{ error() }}</p>
-        <a routerLink="/login" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+        <h1 class="text-2xl font-bold text-[#24313d] mb-2">Certificado no válido</h1>
+        <p class="text-[#4a5560] mb-6">{{ error() }}</p>
+        <a routerLink="/login" class="inline-block bg-[#0090d8] text-white px-6 py-2 rounded-lg hover:opacity-90 transition">
           Volver al inicio
         </a>
       </div>
     }
 
-    <!-- Certificate Display -->
+    <!-- Certificado -->
     @if (!loading() && !error() && certificateData()) {
       @let cert = certificateData()!;
-      <div class="bg-white rounded-lg shadow-2xl overflow-hidden relative">
-        <!-- Logo Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-center relative">
-          <div class="flex justify-center items-center mb-2">
-            <img src="/logo/cursala.svg" alt="Cursala Logo" class="h-12 w-auto">
-          </div>
-          <p class="text-blue-100 text-sm">Certificado de Aprobación</p>
+
+      <div class="bg-white shadow-2xl rounded-lg overflow-hidden border border-[#d1d9de]">
+
+        <!-- ── ENCABEZADO ── -->
+        <div class="bg-[#0090d8] px-8 py-4 flex items-center justify-between">
+          <img src="/logo/cursala.svg" alt="Cursala" class="h-9 w-auto brightness-0 invert">
+          <p class="text-white text-xs font-light tracking-[0.2em] uppercase">Certificado de Aprobación</p>
         </div>
 
-        <!-- Certificate Content -->
-        <div class="p-8 md:p-12 relative">
-          <!-- QR Code - Positioned top right (desktop) -->
-          @if (verificationCode()) {
-            <div class="hidden md:flex absolute top-8 right-8 flex-col items-center">
-              <div class="bg-white p-2 rounded-lg border-2 border-gray-300 shadow-md">
-                <img 
-                  [src]="getQRCodeUrl()" 
-                  alt="QR Code" 
-                  class="w-32 h-32"
-                  (error)="handleQRError($event)"
-                />
+        <!-- ── CUERPO ── -->
+        <div class="px-10 pt-10 pb-6">
+
+          <!-- Contenido principal + QR en fila -->
+          <div class="flex items-start gap-8">
+
+            <!-- Texto central -->
+            <div class="flex-1 text-center">
+              <p class="text-[#4a5560] text-base mb-3 tracking-wide">Se certifica que:</p>
+
+              <h2 class="text-3xl md:text-4xl font-bold text-[#24313d] mb-4 tracking-wider uppercase leading-tight">
+                {{ cert.student?.firstName }} {{ cert.student?.lastName }}
+              </h2>
+
+              @if (cert.student?.dni) {
+                <p class="text-xl text-[#4a5560] mb-4">
+                  <span class="font-normal">D.N.I.</span>
+                  <span class="font-bold text-[#24313d] ml-3 tracking-widest">{{ cert.student?.dni }}</span>
+                </p>
+              }
+
+              <p class="text-[#4a5560] text-sm uppercase tracking-[0.15em] mb-3">Aprobó el curso</p>
+
+              <h3 class="text-2xl md:text-3xl font-bold text-[#24313d] mb-3 leading-snug">
+                "{{ cert.course?.name }}"
+              </h3>
+
+              @if (cert.course?.duration) {
+                <p class="text-[#4a5560] text-sm mb-1">
+                  Duración: {{ cert.course?.duration }} horas académicas
+                </p>
+              }
+
+              @if (cert.certificateInfo?.generatedAt) {
+                <p class="text-[#4a5560] text-sm mt-3">
+                  Emitido el {{ formatDate(cert.certificateInfo?.generatedAt || '') }}
+                </p>
+              }
+            </div>
+
+            <!-- QR — desktop -->
+            @if (verificationCode()) {
+              <div class="hidden md:flex flex-col items-center shrink-0 pt-2">
+                <div class="border border-[#d1d9de] p-2">
+                  <img [src]="getQRCodeUrl()" alt="QR" class="w-28 h-28" (error)="handleQRError($event)">
+                </div>
+                <p class="text-[10px] text-[#4a5560] mt-1 text-center max-w-[120px] leading-tight">Escanea para<br>verificar</p>
               </div>
-              <p class="text-xs text-gray-500 mt-2 text-center max-w-[140px]">Escanea para verificar</p>
-              
-              <!-- Teacher Signature - Desktop (below QR) -->
-              @if (cert.teacher) {
-                <div class="mt-6 text-center">
-                  @if (cert.teacher.professionalSignatureUrl) {
-                    <div class="flex justify-center mb-2">
-                      <img 
-                        [src]="cert.teacher.professionalSignatureUrl" 
-                        [alt]="'Firma de ' + cert.teacher.firstName + ' ' + cert.teacher.lastName"
-                        class="h-12 object-contain"
-                        (error)="$event.target.style.display='none'"
+            }
+
+          </div><!-- /fila principal -->
+
+          <!-- ── FIRMAS ── -->
+          @if (cert.teachers && cert.teachers.length > 0) {
+            <div class="mt-8 pt-6 border-t border-[#d1d9de] flex justify-center gap-12 flex-wrap">
+              @for (teacher of cert.teachers; track teacher._id) {
+                <div class="flex flex-col items-center">
+                  <!-- Imagen de firma -->
+                  @if (teacher.professionalSignatureUrl) {
+                    <div class="h-14 flex items-end justify-center mb-1">
+                      <img
+                        [src]="teacher.professionalSignatureUrl"
+                        [alt]="'Firma de ' + teacher.firstName + ' ' + teacher.lastName"
+                        class="max-h-full max-w-[120px] object-contain"
+                        (error)="$any($event.target).style.display='none'"
                       />
                     </div>
+                  } @else {
+                    <div class="h-14"></div>
                   }
-                  <div class="inline-block border-t border-gray-800 pt-1">
-                    <p class="text-xs font-bold text-gray-900">
-                      {{ cert.teacher.firstName }} {{ cert.teacher.lastName }}
+                  <!-- Línea + nombre + rol -->
+                  <div class="border-t border-[#24313d] pt-2 w-40 text-center">
+                    <p class="text-[11px] font-bold text-[#24313d] uppercase tracking-wide leading-tight">
+                      {{ teacher.firstName }} {{ teacher.lastName }}
                     </p>
-                    <p class="text-[10px] text-gray-600">INSTRUCTOR DE CURSALA</p>
+                    <p class="text-[9px] text-[#4a5560] uppercase tracking-wider mt-0.5">Instructor de Cursala</p>
                   </div>
                 </div>
               }
             </div>
           }
 
-          <div class="text-center mb-8 md:pr-40">
-            <p class="text-gray-600 text-lg mb-4">Se certifica que:</p>
-            <h2 class="text-4xl font-bold text-gray-900 mb-6">
-              {{ cert.student?.firstName }} {{ cert.student?.lastName }}
-            </h2>
-            
-            @if (cert.student?.dni) {
-              <p class="text-2xl text-gray-700 mb-6">
-                <span class="font-normal">D.N.I.</span>
-                <span class="font-bold ml-2">{{ cert.student?.dni }}</span>
-              </p>
-            }
-
-            <p class="text-gray-600 text-lg mb-4">APROBÓ EL CURSO</p>
-            <h3 class="text-3xl font-bold text-gray-900 mb-4">
-              "{{ cert.course?.name }}"
-            </h3>
-
-            @if (cert.course?.duration) {
-              <p class="text-gray-600 mb-4">
-                Duración: {{ cert.course?.duration }} horas académicas
-              </p>
-            }
-
-            @if (cert.certificateInfo?.generatedAt) {
-              <p class="text-gray-600 mt-6">
-                Emitido el {{ formatDate(cert.certificateInfo?.generatedAt || '') }}
-              </p>
-            }
-          </div>
-
-          <!-- QR Code - Mobile (below content) -->
-          @if (verificationCode()) {
-            <div class="md:hidden flex flex-col items-center mt-8 mb-4">
-              <div class="bg-white p-2 rounded-lg border-2 border-gray-300 shadow-md">
-                <img 
-                  [src]="getQRCodeUrl()" 
-                  alt="QR Code" 
-                  class="w-32 h-32"
-                  (error)="handleQRError($event)"
-                />
-              </div>
-              <p class="text-xs text-gray-500 mt-2 text-center">Escanea para verificar</p>
-              
-              <!-- Teacher Signature - Mobile (below QR) -->
-              @if (cert.teacher) {
-                <div class="mt-6 text-center">
-                  @if (cert.teacher.professionalSignatureUrl) {
-                    <div class="flex justify-center mb-3">
-                      <img 
-                        [src]="cert.teacher.professionalSignatureUrl" 
-                        [alt]="'Firma de ' + cert.teacher.firstName + ' ' + cert.teacher.lastName"
-                        class="h-16 object-contain"
-                        (error)="$event.target.style.display='none'"
-                      />
-                    </div>
-                  }
-                  <div class="inline-block border-t-2 border-gray-800 pt-2">
-                    <p class="text-base font-bold text-gray-900 mb-1">
-                      {{ cert.teacher.firstName }} {{ cert.teacher.lastName }}
-                    </p>
-                    <p class="text-sm text-gray-600">INSTRUCTOR DE CURSALA</p>
-                  </div>
-                </div>
+          <!-- ── LOGOS INSTITUCIONALES ── -->
+          @if (cert.certificateLogos && cert.certificateLogos.length > 0) {
+            <div class="mt-6 pt-5 border-t border-[#d1d9de] flex flex-wrap justify-center items-center gap-6">
+              @for (logo of cert.certificateLogos; track logo) {
+                <img [src]="logo" alt="Logo institucional" class="h-8 max-w-[90px] object-contain opacity-90">
               }
             </div>
           }
 
-          <!-- Verification Info -->
-          <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p class="text-xs text-gray-500 text-center mb-1">
-              Código de verificación:
-            </p>
-            <p class="text-xs font-mono font-bold text-gray-700 text-center break-all px-2">
-              {{ verificationCode() }}
-            </p>
+          <!-- QR — mobile -->
+          @if (verificationCode()) {
+            <div class="md:hidden flex flex-col items-center mt-6 pt-5 border-t border-[#d1d9de]">
+              <div class="border border-[#d1d9de] p-2">
+                <img [src]="getQRCodeUrl()" alt="QR" class="w-24 h-24" (error)="handleQRError($event)">
+              </div>
+              <p class="text-[10px] text-[#4a5560] mt-1">Escanea para verificar</p>
+            </div>
+          }
+
+        </div><!-- /cuerpo -->
+
+        <!-- ── PIE: verificación + logo ── -->
+        <div class="bg-[#f5f7f8] border-t border-[#d1d9de] px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-center sm:text-left">
+            <p class="text-[10px] text-[#4a5560] uppercase tracking-widest mb-0.5">Código de verificación</p>
+            <p class="text-xs font-mono font-bold text-[#24313d] break-all">{{ verificationCode() }}</p>
             @if (cert.certificateInfo?.certificateId) {
-              <p class="text-xs text-gray-400 text-center mt-3">
-                Certificado N°: {{ cert.certificateInfo?.certificateId }}
-              </p>
+              <p class="text-[10px] text-[#4a5560] mt-1">Certificado N°: {{ cert.certificateInfo?.certificateId }}</p>
             }
           </div>
+          <img src="/logo/cursala.svg" alt="Cursala" class="h-6 w-auto opacity-30 shrink-0">
         </div>
-      </div>
+
+      </div><!-- /card -->
     }
+
   </div>
 </div>
 
