@@ -108,7 +108,7 @@
                     <p class="text-[11px] font-bold text-[#24313d] uppercase tracking-wide leading-tight">
                       {{ teacher.firstName }} {{ teacher.lastName }}
                     </p>
-                    <p class="text-[9px] text-[#4a5560] uppercase tracking-wider mt-0.5">Instructor de Cursala</p>
+                    <p class="text-[9px] text-[#4a5560] uppercase tracking-wider mt-0.5">{{ teacher.role === 'director' ? 'Director de Cursala' : 'Instructor de Cursala' }}</p>
                   </div>
                 </div>
               }

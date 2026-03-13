@@ -9,6 +9,7 @@ interface CertificateTeacher {
   firstName: string;
   lastName: string;
   professionalSignatureUrl?: string;
+  role?: string;
 }
 
 interface CertificateData {
