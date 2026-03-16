@@ -138,6 +138,21 @@
                 }
               </div>
               
+              <div class="bg-blue-50 rounded-lg p-4 border border-blue-100 mt-4">
+                <h4 class="text-sm font-bold text-blue-800 mb-2 flex items-center">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Recomendaciones de subida
+                </h4>
+                <ul class="text-xs text-blue-700 space-y-1 ml-6 list-disc">
+                  <li>Sube una imagen nítida en formato PNG, JPG o JPEG (máx. 25MB).</li>
+                  <li>Evita subir fotos borrosas o con poca luz.</li>
+                  <li>Usa el editor de recorte para centrar y ampliar el trazo de la firma.</li>
+                  <li>Asegúrate de que la firma se vea clara sobre el fondo.</li>
+                </ul>
+              </div>
+
               <div class="bg-amber-50 rounded-lg p-3 border border-amber-100">
                 <p class="text-xs text-amber-700 text-center flex items-center justify-center">
                   <svg class="w-4 h-4 mr-1.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,6 +161,17 @@
                   Utilizada para documentos oficiales • Máx 25MB
                 </p>
               </div>
+
+              @if (signatureImagePreview && selectedSignatureImage) {
+                <button type="button" (click)="showPreviewModal = true"
+                  class="w-full mt-2 flex justify-center items-center rounded-xl border-2 border-brand-primary/30 text-brand-primary bg-brand-primary/5 px-6 py-2 text-xs font-bold hover:bg-brand-primary/10 transition-all duration-300">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Previsualizar en Certificado
+                </button>
+              }
             </div>
           </div>
 
@@ -325,6 +351,53 @@
         </button>
       </div>
     </form>
+
+    @if (showSignatureCropper) {
+      <app-signature-cropper 
+        [imageChangedEvent]="signatureImageEvent"
+        (cropped)="onSignatureCropped($event)"
+        (cancel)="onSignatureCropperCancel()">
+      </app-signature-cropper>
+    }
+
+    @if (showPreviewModal) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden">
+          <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 class="text-xl font-bold text-gray-900">Vista previa en certificado</h3>
+            <button (click)="showPreviewModal = false" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="p-10 flex flex-col items-center">
+            <p class="text-sm text-gray-500 mb-8 text-center italic">Así es como aparecerá tu firma en la parte inferior de los certificados:</p>
+            
+            <div class="relative w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 p-8 flex flex-col justify-end items-center">
+              <div class="absolute inset-0 opacity-5 pointer-events-none select-none flex items-center justify-center">
+                <span class="text-4xl font-serif tracking-[0.2em]">CERTIFICADO</span>
+              </div>
+
+              <div class="flex flex-col items-center">
+                <div class="h-[38px] w-[80px] flex items-center justify-center mb-1">
+                  <img [src]="signatureImagePreview" alt="Preview Firma" class="max-h-full max-w-full object-contain" />
+                </div>
+                <div class="w-32 h-[0.5px] bg-black mb-2"></div>
+                <p class="text-[10px] font-bold uppercase tracking-tight text-center">{{(user())?.firstName}} {{(user())?.lastName}}</p>
+                <p class="text-[8px] text-gray-500 uppercase tracking-tighter text-center">DIRECTOR DE CURSALA</p>
+              </div>
+            </div>
+          </div>
+          <div class="px-8 py-6 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <button (click)="showPreviewModal = false"
+              class="px-8 py-2.5 bg-brand-primary text-white text-sm font-bold rounded-xl hover:bg-brand-primary/90 shadow-lg active:scale-95 uppercase tracking-wider">
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- Modal de Confirmación de Eliminación -->
     <app-confirm-modal 

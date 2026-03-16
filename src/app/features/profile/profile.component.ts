@@ -7,11 +7,12 @@ import { UsersService } from '../../core/services/users.service';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../shared/components/confirm-modal/confirm-modal.component';
+import { SignatureCropperComponent } from '../../shared/components/signature-cropper/signature-cropper.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent, SignatureCropperComponent],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {
@@ -29,6 +30,11 @@ export class ProfileComponent {
   profileImagePreview: string | null = null;
   selectedSignatureImage: File | null = null;
   signatureImagePreview: string | null = null;
+  
+  // Cropper y vista previa de firma
+  showSignatureCropper = false;
+  signatureImageEvent: any = null;
+  showPreviewModal = false;
 
   // Modal de confirmación para eliminar cuenta
   isDeleteModalOpen = signal(false);
@@ -161,15 +167,27 @@ export class ProfileComponent {
         return;
       }
 
-      this.selectedSignatureImage = file;
-
-      // Crear preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.signatureImagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      // Abrir el cropper
+      this.signatureImageEvent = event;
+      this.showSignatureCropper = true;
     }
+  }
+
+  onSignatureCropped(blob: Blob): void {
+    const file = new File([blob], 'signature.png', { type: 'image/png' });
+    this.selectedSignatureImage = file;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.signatureImagePreview = e.target?.result as string;
+      this.showSignatureCropper = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onSignatureCropperCancel(): void {
+    this.showSignatureCropper = false;
+    this.signatureImageEvent = null;
   }
 
   removeSignature(): void {

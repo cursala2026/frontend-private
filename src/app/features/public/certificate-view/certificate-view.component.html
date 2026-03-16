@@ -117,9 +117,9 @@
 
           <!-- ── LOGOS INSTITUCIONALES ── -->
           @if (cert.certificateLogos && cert.certificateLogos.length > 0) {
-            <div class="mt-6 pt-5 border-t border-[#d1d9de] flex flex-wrap justify-center items-center gap-6">
+            <div class="mt-8 pt-6 border-t border-[#d1d9de] flex flex-wrap justify-center items-center gap-8">
               @for (logo of cert.certificateLogos; track logo) {
-                <img [src]="logo" alt="Logo institucional" class="h-8 max-w-[90px] object-contain opacity-90">
+                <img [src]="logo" alt="Logo institucional" class="h-14 max-w-[120px] object-contain opacity-90 transition-opacity hover:opacity-100">
               }
             </div>
           }
