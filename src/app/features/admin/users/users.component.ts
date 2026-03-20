@@ -680,13 +680,15 @@ export class UsersComponent implements OnInit {
     ];
 
     // Agregar firma solo para profesores y admins
-    if (user.roles?.includes('PROFESOR') || user.roles?.includes('ADMIN')) {
+    if (user.roles?.includes('PROFESOR') || user.roles?.includes('ADMIN') || 
+        user.roles?.includes(UserRole.PROFESOR) || user.roles?.includes(UserRole.ADMIN)) {
       fields.push({
         key: 'professionalSignatureUrl',
         label: 'Firma Digital',
         type: 'image' as const,
         imageShape: 'rectangle' as const,
         aspectRatio: '3:1' as const,
+        useCropper: true,
         section: 'Información Profesional'
       });
     }
@@ -699,6 +701,18 @@ export class UsersComponent implements OnInit {
     };
     
     this.isModalOpen.set(true);
+  }
+
+  onModalFieldChange(event: { key: string, value: any }): void {
+    if (event.key === 'roles') {
+      const isCreate = !this.selectedUser?._id;
+      // Actualizar roles en el usuario seleccionado temporalmente para regenerar el modal
+      const updatedRoles = Array.isArray(event.value) ? event.value : [event.value];
+      const tempUser = { ...this.selectedUser, roles: updatedRoles };
+      
+      // Regenerar la configuración del modal
+      this.buildEditModal(tempUser, isCreate);
+    }
   }
 
   viewUser(user: any): void {

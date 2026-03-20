@@ -21,6 +21,7 @@ export interface ModalField {
   maxlength?: number; // Optional maxlength for text/textarea
   imageShape?: 'circle' | 'rectangle'; // For image fields
   aspectRatio?: string; // For image fields
+  useCropper?: boolean; // For image fields
   accept?: string; // For file fields (e.g., '.pdf', 'application/pdf')
   maxSelections?: number; // For multiselect
   minSelections?: number; // For multiselect
@@ -47,6 +48,7 @@ export class ModalDataTableComponent {
   
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
+  @Output() fieldChange = new EventEmitter<{key: string, value: any}>();
   
   form!: FormGroup;
   isSubmitting = signal<boolean>(false);
@@ -176,6 +178,16 @@ export class ModalDataTableComponent {
     });
 
     this.form = this.fb.group(formControls);
+
+    // Escuchar cambios en el formulario y emitirlos
+    this.form.valueChanges.subscribe(values => {
+      Object.keys(values).forEach(key => {
+        const control = this.form.get(key);
+        if (control?.dirty) {
+          this.fieldChange.emit({ key, value: values[key] });
+        }
+      });
+    });
   }
 
   searchOptions(fieldKey: string, term: string): void {

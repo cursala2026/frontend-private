@@ -24,16 +24,32 @@ import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 
         <!-- Content -->
         <div class="p-8">
-          <div class="bg-white rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 min-h-[300px] flex items-center justify-center">
-            <image-cropper
-              [imageChangedEvent]="imageChangedEvent"
-              [maintainAspectRatio]="true"
-              [aspectRatio]="80 / 38"
-              [resizeToWidth]="400"
-              [format]="'png'"
-              (imageCropped)="imageCropped($event)"
-              class="max-h-[400px]"
-            ></image-cropper>
+          <div class="bg-white rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 min-h-[300px] flex items-center justify-center" style="touch-action: none;">
+            @if (imageChangedEvent?.originalBase64) {
+              <image-cropper
+                [imageBase64]="imageChangedEvent.originalBase64"
+                [maintainAspectRatio]="true"
+                [aspectRatio]="80 / 38"
+                [resizeToWidth]="400"
+                [format]="'png'"
+                (imageCropped)="imageCropped($event)"
+                (imageLoaded)="onImageLoaded()"
+                (loadImageFailed)="onLoadImageFailed()"
+                class="max-h-[400px]"
+              ></image-cropper>
+            } @else {
+              <image-cropper
+                [imageChangedEvent]="imageChangedEvent"
+                [maintainAspectRatio]="true"
+                [aspectRatio]="80 / 38"
+                [resizeToWidth]="400"
+                [format]="'png'"
+                (imageCropped)="imageCropped($event)"
+                (imageLoaded)="onImageLoaded()"
+                (loadImageFailed)="onLoadImageFailed()"
+                class="max-h-[400px]"
+              ></image-cropper>
+            }
           </div>
 
           <!-- Recommendations -->
@@ -72,6 +88,14 @@ export class SignatureCropperComponent {
 
   croppedImageBase64: any = '';
 
+  onImageLoaded() {
+    console.log('Firma cargada en el cropper exitosamente');
+  }
+
+  onLoadImageFailed() {
+    console.log('Error al cargar la firma en el cropper');
+  }
+
   imageCropped(event: ImageCroppedEvent) {
     this.croppedImageBase64 = event.objectUrl || event.base64;
   }
@@ -80,11 +104,23 @@ export class SignatureCropperComponent {
     this.cancel.emit();
   }
 
-  async onConfirm() {
+  onConfirm() {
     if (this.croppedImageBase64) {
-      const response = await fetch(this.croppedImageBase64);
-      const blob = await response.blob();
-      this.cropped.emit(blob);
+      if (typeof this.croppedImageBase64 === 'string' && this.croppedImageBase64.startsWith('blob:')) {
+        fetch(this.croppedImageBase64)
+          .then(res => res.blob())
+          .then(blob => this.cropped.emit(blob));
+      } else if (typeof this.croppedImageBase64 === 'string' && this.croppedImageBase64.startsWith('data:')) {
+        const byteString = atob(this.croppedImageBase64.split(',')[1]);
+        const mimeString = this.croppedImageBase64.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: mimeString });
+        this.cropped.emit(blob);
+      }
     }
   }
 }

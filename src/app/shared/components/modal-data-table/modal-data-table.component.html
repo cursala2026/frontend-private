@@ -122,6 +122,7 @@
                           [currentImageUrl]="form.get(field.key)?.value"
                           [imageShape]="field.imageShape || 'circle'"
                           [aspectRatio]="field.aspectRatio || '1:1'"
+                          [useCropper]="field.useCropper || false"
                           (imageUploaded)="onImageUploaded($event, field.key)"
                         ></app-image-uploader>
                       } @else {

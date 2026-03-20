@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
+import { SignatureCropperComponent } from '../signature-cropper/signature-cropper.component';
 
 @Component({
   selector: 'app-image-uploader',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SignatureCropperComponent],
   template: `
     <div class="space-y-4">
       <!-- Vista previa actual -->
@@ -32,18 +33,33 @@ import { environment } from '../../../core/config/environment';
               </div>
             </div>
             
-            <!-- Botón de cámara -->
+            <!-- Botón de cámara (usamos div en lugar de button para el contenedor por accesibilidad) -->
             @if (!uploading()) {
-              <button
-                type="button"
-                (click)="fileInput.click()"
-                class="absolute -bottom-2 -right-2 bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </button>
+              <div class="absolute -bottom-2 -right-2 flex gap-1 z-10">
+                @if (useCropper && (imageUrl() || currentImageUrl)) {
+                  <button
+                    type="button"
+                    (click)="reCropCurrent(); $event.stopPropagation()"
+                    class="bg-amber-500 hover:bg-amber-600 text-white p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 pointer-events-auto"
+                    title="Re-ajustar firma actual"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                }
+                <button
+                  type="button"
+                  (click)="fileInput.click(); $event.stopPropagation()"
+                  class="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 pointer-events-auto"
+                  title="Subir nueva firma"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </button>
+              </div>
             }
             
             <!-- Loading spinner -->
@@ -91,6 +107,15 @@ import { environment } from '../../../core/config/environment';
           </ul>
         </div>
       </div>
+
+      <!-- Cropper de firma -->
+      @if (showSignatureCropper) {
+        <app-signature-cropper
+          [imageChangedEvent]="signatureImageEvent"
+          (cropped)="onSignatureCropped($event)"
+          (cancel)="onSignatureCropperCancel()"
+        ></app-signature-cropper>
+      }
     </div>
   `
 })
@@ -98,11 +123,16 @@ export class ImageUploaderComponent {
   @Input() currentImageUrl?: string;
   @Input() imageShape: 'circle' | 'rectangle' = 'circle'; // Forma de la imagen
   @Input() aspectRatio: string = '1:1'; // Relación de aspecto recomendada
+  @Input() useCropper: boolean = false; // Si se debe usar el cropper de firma
   @Output() imageUploaded = new EventEmitter<string | File>();
 
   imageUrl = signal<string | undefined>(undefined);
   uploading = signal<boolean>(false);
   uploadError = signal<string | undefined>(undefined);
+
+  // Estados para el cropper
+  showSignatureCropper = false;
+  signatureImageEvent: any = null;
 
   constructor(private http: HttpClient) {}
 
@@ -134,6 +164,14 @@ export class ImageUploaderComponent {
 
     this.uploadError.set(undefined);
 
+    if (this.useCropper) {
+      // Importante: No resetear input.value inmediatamente si el cropper necesita acceder al archivo original
+      // Creamos una copia del evento
+      this.signatureImageEvent = event;
+      this.showSignatureCropper = true;
+      return;
+    }
+
     // Crear preview local
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -146,5 +184,58 @@ export class ImageUploaderComponent {
 
     // Limpiar el input para permitir subir el mismo archivo nuevamente
     input.value = '';
+  }
+
+  onSignatureCropped(blob: Blob): void {
+    const file = new File([blob], 'signature.png', { type: 'image/png' });
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.imageUrl.set(e.target?.result as string);
+      this.showSignatureCropper = false;
+      this.signatureImageEvent = null;
+    };
+    reader.readAsDataURL(file);
+
+    // Emitir el archivo recortado para que el componente padre lo maneje
+    this.imageUploaded.emit(file);
+  }
+
+  reCropCurrent(): void {
+    const url = this.imageUrl() || this.currentImageUrl;
+    if (url) {
+      if (url.startsWith('data:')) {
+        // Si ya es un base64, lo usamos directamente
+        this.signatureImageEvent = { target: { files: [] }, originalBase64: url };
+        this.showSignatureCropper = true;
+      } else {
+        // Para URLs externas del CDN, necesitamos descargarlas primero para evitar errores de atob/encoding
+        this.uploading.set(true);
+        fetch(url)
+          .then(res => res.blob())
+          .then(blob => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              this.signatureImageEvent = { target: { files: [] }, originalBase64: reader.result as string };
+              this.showSignatureCropper = true;
+              this.uploading.set(false);
+            };
+            reader.readAsDataURL(blob);
+          })
+          .catch(err => {
+            console.error('Error cargando imagen para re-recorte:', err);
+            this.uploadError.set('No se pudo cargar la firma actual para editar');
+            this.uploading.set(false);
+          });
+      }
+    }
+  }
+
+  onSignatureCropperCancel(): void {
+    this.showSignatureCropper = false;
+    this.signatureImageEvent = null;
+    // Ahora podemos limpiar el input
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (input) input.value = '';
   }
 }
