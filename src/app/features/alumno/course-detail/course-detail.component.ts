@@ -30,6 +30,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private routerSubscription?: Subscription;
+  private visibilityHandler?: () => void;
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
   private questionnairesService = inject(QuestionnairesService);
@@ -93,10 +94,24 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
           }
         }
       });
+
+    // Page Visibility API: actualizar al volver al tab
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        const currentCourseId = this.route.snapshot.paramMap.get('courseId');
+        if (currentCourseId) {
+          this.refreshProgress(currentCourseId);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   ngOnDestroy(): void {
     this.routerSubscription?.unsubscribe();
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+    }
   }
 
   loadCourse(courseId: string): void {
@@ -229,6 +244,23 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     });
 
     this.courseItems.set(items);
+  }
+
+  /**
+   * Refresca solo el progreso del curso sin re-cargar toda la UI (para polling y visibilitychange)
+   */
+  refreshProgress(courseId: string): void {
+    if (this.isWorkshopType()) return;
+    this.progressService.getProgress(courseId).subscribe({
+      next: (response: any) => {
+        const progress = response?.data || response;
+        this.courseProgress.set(progress);
+        if (progress?.overallProgress >= 100) {
+          this.checkCertificateExists(courseId);
+        }
+      },
+      error: () => { /* silencioso */ }
+    });
   }
 
   /**

@@ -72,6 +72,9 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   searchTerms = signal<Record<string, string>>({});
   pendingExams = signal<PendingExam[]>([]);
   pendingExamsByStudent = signal<Map<string, PendingExam[]>>(new Map());
+  expandedStudentId = signal<string | null>(null);
+  studentProgressDetails = signal<Record<string, any>>({});
+  loadingDetails = signal<boolean>(false);
   private routerSubscription?: Subscription;
 
   // Modal de confirmación para certificados
@@ -296,6 +299,212 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  toggleStudentDetails(student: Student): void {
+    if (this.expandedStudentId() === student.userId) {
+      this.expandedStudentId.set(null);
+      return;
+    }
+
+    this.expandedStudentId.set(student.userId);
+    this.loadStudentProgressDetails(student);
+  }
+
+  loadStudentProgressDetails(student: Student): void {
+    this.loadingDetails.set(true);
+
+    // Obtener los 3 recursos en paralelo
+    this.http.get<any>(`${environment.apiUrl}/courses/${student.courseId}`).subscribe({
+      next: (courseResponse: any) => {
+        const course = courseResponse?.data;
+        if (!course) { this.loadingDetails.set(false); return; }
+
+        this.http.get<any>(`${environment.apiUrl}/courseProgress/${student.courseId}?userId=${student.userId}`).subscribe({
+          next: (progressResponse: any) => {
+            const progress = progressResponse?.data;
+
+            this.http.get<any>(`${environment.apiUrl}/questionnaires/course/${student.courseId}`).subscribe({
+              next: (questResponse: any) => {
+                const questionnaires = (questResponse?.data || []).filter((q: any) => q.status === 'ACTIVE');
+                const classes = course.classes || [];
+
+                // Construir lista unificada ordenada igual que la ve el alumno:
+                // Clase 1 → Cuestionarios después de Clase 1 → Clase 2 → ... → Exámenes finales
+                const items: any[] = [];
+
+                classes.forEach((c: any) => {
+                  const classId = String(c._id);
+                  const cp = (progress?.classesProgress || []).find((p: any) => String(p.classId) === classId);
+                  items.push({
+                    _id: classId,
+                    name: c.name,
+                    type: 'class',
+                    completed: cp ? cp.completed : false,
+                    score: null
+                  });
+
+                  // Intercalar cuestionarios que van DESPUÉS de esta clase
+                  const afterThisClass = questionnaires.filter((q: any) =>
+                    q.position?.type === 'BETWEEN_CLASSES' &&
+                    String(q.position?.afterClassId) === classId
+                  );
+                  afterThisClass.forEach((q: any) => {
+                    const qId = String(q._id);
+                    const qp = (progress?.questionnairesProgress || []).find((p: any) => String(p.questionnaireId) === qId);
+                    items.push({
+                      _id: qId,
+                      name: q.title,
+                      type: 'questionnaire',
+                      completed: qp ? qp.completed : false,
+                      score: qp?.bestScore || 0
+                    });
+                  });
+                });
+
+                // Exámenes finales al final
+                const finalExams = questionnaires.filter((q: any) => q.position?.type === 'FINAL_EXAM');
+                finalExams.forEach((q: any) => {
+                  const qId = String(q._id);
+                  const qp = (progress?.questionnairesProgress || []).find((p: any) => String(p.questionnaireId) === qId);
+                  items.push({
+                    _id: qId,
+                    name: q.title,
+                    type: 'questionnaire',
+                    completed: qp ? qp.completed : false,
+                    score: qp?.bestScore || 0
+                  });
+                });
+
+                this.studentProgressDetails.update(prev => ({
+                  ...prev,
+                  [student.userId]: { items }
+                }));
+                this.loadingDetails.set(false);
+              },
+              error: () => this.loadingDetails.set(false)
+            });
+          },
+          error: () => this.loadingDetails.set(false)
+        });
+      },
+      error: () => this.loadingDetails.set(false)
+    });
+  }
+
+  updateManualProgress(student: Student, item: any, type: 'class' | 'questionnaire', event: any): void {
+    const completed = event.target.checked;
+    const score = type === 'questionnaire' && completed ? (item.score || 100) : 0;
+
+    const payload = {
+      userId: student.userId,
+      courseId: student.courseId,
+      type,
+      itemId: item._id,
+      completed,
+      score
+    };
+
+    this.http.patch<any>(`${environment.apiUrl}/courseProgress/manual-update`, payload).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          // Actualizar localmente los detalles
+          const details = this.studentProgressDetails()[student.userId];
+          if (details) {
+            const found = details.items.find((i: any) => i._id === item._id);
+            if (found) {
+              found.completed = completed;
+              if (type === 'questionnaire') found.score = score;
+            }
+          }
+
+          // Actualizar el progreso general del alumno en la lista principal
+          const updatedProgress = response.data; // El backend devuelve el objeto de progreso completo
+          this.students.update(current => current.map(s => {
+            if (s.userId === student.userId && s.courseId === student.courseId) {
+              // Calcular nuevos contadores
+              const compClasses = updatedProgress.classesProgress.filter((cp: any) => cp.completed).length;
+              const compQuests = (updatedProgress.questionnairesProgress || []).filter((qp: any) => qp.completed).length;
+              
+              return {
+                ...s,
+                progress: updatedProgress.overallProgress,
+                completedClasses: compClasses,
+                completedQuestionnaires: compQuests
+              };
+            }
+            return s;
+          }));
+
+          this.info.showSuccess('Progreso actualizado correctamente');
+        }
+      },
+      error: (err) => {
+        this.info.showError('Error al actualizar el progreso: ' + (err.error?.message || err.message));
+        // Revertir el checkbox si falló
+        event.target.checked = !completed;
+      }
+    });
+  }
+
+  updateManualScore(student: Student, item: any, event: any): void {
+    let score = Number(event.target.value);
+    
+    // Verificación de rango 0-100
+    if (isNaN(score)) return;
+    
+    if (score > 100) {
+      score = 100;
+      event.target.value = 100;
+      this.info.showInfo('La nota máxima es 100%');
+    } else if (score < 0) {
+      score = 0;
+      event.target.value = 0;
+    }
+
+    const payload = {
+      userId: student.userId,
+      courseId: student.courseId,
+      type: 'questionnaire',
+      itemId: item._id,
+      completed: true,
+      score: score
+    };
+
+    this.http.patch<any>(`${environment.apiUrl}/courseProgress/manual-update`, payload).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          const details = this.studentProgressDetails()[student.userId];
+          if (details) {
+            const found = details.questionnaires.find((i: any) => i._id === item._id);
+            if (found) {
+              found.score = score;
+              found.completed = true;
+            }
+          }
+           // Actualizar alumno en la lista
+           const updatedProgress = response.data;
+           this.students.update(current => current.map(s => {
+             if (s.userId === student.userId && s.courseId === student.courseId) {
+               return { ...s, progress: updatedProgress.overallProgress };
+             }
+             return s;
+           }));
+          this.info.showSuccess('Nota actualizada');
+        }
+      }
+    });
+  }
+
+  isItemLocked(items: any[], index: number): boolean {
+    const item = items[index];
+    if (!item.completed) {
+      // No se puede marcar si el ítem anterior no está completado
+      return index > 0 && !items[index - 1].completed;
+    } else {
+      // No se puede desmarcar si el ítem siguiente ya está completado
+      return index < items.length - 1 && items[index + 1].completed;
+    }
   }
 
   formatDate(date: Date | string | undefined): string {
