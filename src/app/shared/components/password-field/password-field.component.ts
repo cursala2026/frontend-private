@@ -27,6 +27,7 @@ import { FormsModule, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/f
         autocomplete="current-password"
         [class.password-hidden]="useManualMask && !showPassword()"
         class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-3 pl-10 pr-10 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+        placeholder="Ingresa tu contraseña"
         />
 
       <button type="button" (click)="toggle()" aria-label="Mostrar contraseña" class="absolute inset-y-0 right-0 cursor-pointer flex items-center pr-3 text-brand-tertiary-lighten hover:text-brand-tertiary">
