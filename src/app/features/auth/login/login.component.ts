@@ -108,13 +108,13 @@ export class LoginComponent {
         // Manejar diferentes tipos de errores
         if (error.status === 401) {
           this.errorMessage.set('Usuario o contraseña incorrectos.');
-          this.info.showError('Usuario o contraseña incorrectos.');
+          //this.info.showError('Usuario o contraseña incorrectos.');
         } else if (error.status === 429) {
           this.errorMessage.set('Demasiados intentos. Por favor, intenta más tarde.');
-          this.info.showError('Demasiados intentos. Por favor, intenta más tarde.');
+          //this.info.showError('Demasiados intentos. Por favor, intenta más tarde.');
         } else {
           this.errorMessage.set('Error al iniciar sesión. Por favor, intenta nuevamente.');
-          this.info.showError('Error al iniciar sesión. Por favor, intenta nuevamente.');
+          //this.info.showError('Error al iniciar sesión. Por favor, intenta nuevamente.');
         }
       }
     });
