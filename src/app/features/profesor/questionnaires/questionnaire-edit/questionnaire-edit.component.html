@@ -71,8 +71,24 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder:text-brand-tertiary-lighten placeholder:italic"
             ></textarea>
           </div>
-
-          <!-- Status -->
+          <div class="md:col-span-2 flex items-start mt-4 mb-4">
+            <div class="flex items-center h-5">
+              <input 
+                id="isSurvey" 
+                type="checkbox" 
+                formControlName="isSurvey"
+                class="w-5 h-5 text-brand-primary bg-white border-gray-300 rounded focus:ring-brand-primary focus:ring-2 cursor-pointer"
+              >
+            </div>
+            <div class="ml-3">
+              <label for="isSurvey" class="block text-base font-bold text-brand-tertiary cursor-pointer">
+                Marcar como Encuesta de Satisfacción
+              </label>
+              <p class="text-sm text-gray-500 mt-1">
+                Las encuestas no evalúan respuestas correctas y otorgan 100% de puntuación automáticamente.
+              </p>
+            </div>
+          </div>  
           <div class="mb-4">
             <label for="status" class="block text-base font-bold text-brand-tertiary mb-2">
               Estado
