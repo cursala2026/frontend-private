@@ -476,7 +476,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
         if (response.success) {
           const details = this.studentProgressDetails()[student.userId];
           if (details) {
-            const found = details.questionnaires.find((i: any) => i._id === item._id);
+            const found = details.items.find((i: any) => i._id === item._id);
             if (found) {
               found.score = score;
               found.completed = true;

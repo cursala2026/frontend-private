@@ -116,7 +116,8 @@ export class QuestionnaireResultsComponent implements OnInit {
           entry.allSubmissions.push(submission);
           entry.attemptCount = entry.allSubmissions.length;
 
-          const score = submission.finalScore || submission.autoGradedScore || 0;
+          // Usar ?? en lugar de || para que finalScore=0 no caiga al autoGradedScore
+          const score = submission.finalScore ?? submission.autoGradedScore ?? 0;
           if (entry.bestScore === null || score > entry.bestScore) {
             entry.bestScore = score;
           }
@@ -175,8 +176,9 @@ export class QuestionnaireResultsComponent implements OnInit {
         const submissions = response?.data || [];
         if (submissions.length > 0) {
           const bestSubmission = submissions.reduce((best: QuestionnaireSubmission, current: QuestionnaireSubmission) => {
-            const currentScore = current.finalScore || current.autoGradedScore || 0;
-            const bestScore = best.finalScore || best.autoGradedScore || 0;
+            // Usar ?? para que finalScore=0 no sea tratado como falsy
+            const currentScore = current.finalScore ?? current.autoGradedScore ?? 0;
+            const bestScore = best.finalScore ?? best.autoGradedScore ?? 0;
             return currentScore > bestScore ? current : best;
           });
           this.openGradingModal(bestSubmission);

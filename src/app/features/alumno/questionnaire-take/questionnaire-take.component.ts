@@ -633,7 +633,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const questionnaire = this.questionnaire();
     if (!questionnaire) return;
 
-    const score = submission.finalScore || submission.autoGradedScore || 0;
+    // Usar ?? en lugar de || para que un puntaje de 0 no sea tratado como falsy
+    const score = submission.finalScore ?? submission.autoGradedScore ?? 0;
     const passed = questionnaire.passingScore ? score >= questionnaire.passingScore : true;
 
     // debug log removed
