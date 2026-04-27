@@ -1,0 +1,266 @@
+<div class="p-6">
+
+  <!-- Header + Stats -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Reportes de soporte</h1>
+    <p class="text-sm text-gray-500 mt-1">Gestión de reportes enviados por alumnos y profesores.</p>
+  </div>
+
+  <!-- Stats cards -->
+  @if (stats(); as s) {
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-xs">
+        <p class="text-2xl font-bold text-gray-900">{{ s.total }}</p>
+        <p class="text-xs text-gray-500 mt-1">Total</p>
+      </div>
+      <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 text-center shadow-xs">
+        <p class="text-2xl font-bold text-yellow-700">{{ s.pending }}</p>
+        <p class="text-xs text-yellow-600 mt-1">Pendientes</p>
+      </div>
+      <div class="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center shadow-xs">
+        <p class="text-2xl font-bold text-blue-700">{{ s.inProgress }}</p>
+        <p class="text-xs text-blue-600 mt-1">Leídos</p>
+      </div>
+      <div class="bg-green-50 rounded-xl border border-green-200 p-4 text-center shadow-xs">
+        <p class="text-2xl font-bold text-green-700">{{ s.resolved }}</p>
+        <p class="text-xs text-green-600 mt-1">Resueltos</p>
+      </div>
+    </div>
+  }
+
+  <!-- Filtro -->
+  <div class="flex items-center gap-3 mb-4">
+    <label class="text-sm font-medium text-gray-700">Filtrar por estado:</label>
+    <select
+      [(ngModel)]="filterStatus"
+      (ngModelChange)="onFilterChange()"
+      class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary"
+    >
+      <option value="">Todos</option>
+      <option [value]="TicketStatus.PENDING">Pendientes</option>
+      <option [value]="TicketStatus.IN_PROGRESS">Leídos</option>
+      <option [value]="TicketStatus.RESOLVED">Resueltos</option>
+    </select>
+    <span class="text-xs text-gray-400 ml-auto">{{ totalTickets() }} reporte(s)</span>
+  </div>
+
+  <!-- Error -->
+  @if (errorMessage()) {
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <svg class="animate-spin h-8 w-8 text-brand-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+      </svg>
+    </div>
+  } @else if (tickets().length === 0) {
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+      <svg class="mx-auto h-10 w-10 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <p class="text-gray-500 text-sm">No hay reportes en este estado.</p>
+    </div>
+  } @else {
+    <!-- Tabla -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Usuario</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Asunto</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Estado</th>
+            <th class="px-4 py-3 text-left font-semibold text-gray-600">Fecha</th>
+            <th class="px-4 py-3 text-center font-semibold text-gray-600">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          @for (ticket of tickets(); track trackById($index, ticket)) {
+            <tr
+              class="hover:bg-gray-50 transition-colors cursor-pointer"
+              (click)="openTicket(ticket)"
+            >
+              <td class="px-4 py-3">
+                <p class="font-medium text-gray-900 truncate max-w-[160px]">{{ ticket.userName }}</p>
+                <p class="text-xs text-gray-400 truncate max-w-[160px]">{{ ticket.userEmail }}</p>
+              </td>
+              <td class="px-4 py-3">
+                <p class="text-gray-800 truncate max-w-[220px]">{{ ticket.subject }}</p>
+                @if (ticket.imageUrl) {
+                  <span class="inline-flex items-center gap-1 text-xs text-indigo-500 mt-0.5">
+                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Con imagen
+                  </span>
+                }
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="statusClasses(ticket.status)"
+                >
+                  {{ statusLabel(ticket.status) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                {{ ticket.createdAt | date:'dd/MM/yy HH:mm' }}
+              </td>
+              <td class="px-4 py-3 text-center" (click)="$event.stopPropagation()">
+                <button
+                  (click)="deleteTicket(ticket)"
+                  class="text-red-400 hover:text-red-600 transition-colors p-1"
+                  title="Eliminar"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    @if (totalPages() > 1) {
+      <div class="flex justify-center items-center gap-2 mt-4">
+        <button
+          (click)="goToPage(currentPage() - 1)"
+          [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+        >Anterior</button>
+        <span class="text-sm text-gray-600">{{ currentPage() }} / {{ totalPages() }}</span>
+        <button
+          (click)="goToPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages()"
+          class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
+        >Siguiente</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- Drawer de detalle -->
+@if (selectedTicket(); as ticket) {
+  <div class="fixed inset-0 z-50 flex" (click)="closeDetail()">
+    <div class="flex-1 bg-black/30"></div>
+    <div
+      class="w-full max-w-lg bg-white h-full shadow-xl overflow-y-auto flex flex-col"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Drawer header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+        <h2 class="text-lg font-semibold text-gray-900">Detalle del reporte</h2>
+        <button (click)="closeDetail()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Drawer body -->
+      <div class="p-6 space-y-5 flex-1">
+
+        <!-- Estado y acciones rápidas -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <span
+            class="px-3 py-1 rounded-full text-sm font-medium"
+            [ngClass]="statusClasses(ticket.status)"
+          >
+            {{ statusLabel(ticket.status) }}
+          </span>
+
+          @if (ticket.status === TicketStatus.PENDING) {
+            <button
+              (click)="markAsRead(ticket)"
+              [disabled]="updatingStatus()"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-60 transition-colors"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              Marcar como leído
+            </button>
+          }
+
+          @if (ticket.status !== TicketStatus.RESOLVED) {
+            <button
+              (click)="markAsResolved(ticket)"
+              [disabled]="updatingStatus()"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-green-300 text-green-700 rounded-lg hover:bg-green-50 disabled:opacity-60 transition-colors"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Marcar como resuelto
+            </button>
+          }
+        </div>
+
+        <!-- Info del usuario -->
+        <div class="bg-gray-50 rounded-lg p-4 space-y-1">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Usuario</p>
+          <p class="text-sm font-medium text-gray-900">{{ ticket.userName }}</p>
+          <p class="text-sm text-gray-500">{{ ticket.userEmail }}</p>
+          <p class="text-xs text-gray-400">Enviado: {{ ticket.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+
+        <!-- Asunto y mensaje -->
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Asunto</p>
+          <p class="text-sm font-medium text-gray-900">{{ ticket.subject }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Descripción</p>
+          <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ ticket.message }}</p>
+        </div>
+
+        <!-- Imagen adjunta -->
+        @if (ticket.imageUrl) {
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Imagen adjunta</p>
+            <a [href]="ticket.imageUrl" target="_blank" rel="noopener noreferrer">
+              <img
+                [src]="ticket.imageUrl"
+                alt="Imagen del reporte"
+                class="max-h-64 rounded-lg border border-gray-200 object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+              />
+            </a>
+          </div>
+        }
+
+        <!-- Notas de admin -->
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Notas internas</p>
+          <textarea
+            [(ngModel)]="adminNotesInput"
+            rows="3"
+            maxlength="1000"
+            placeholder="Agregá notas internas sobre este reporte..."
+            class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary resize-none"
+          ></textarea>
+          <div class="flex justify-between items-center mt-1">
+            <span class="text-xs text-gray-400">{{ adminNotesInput.length }}/1000</span>
+            <button
+              (click)="saveNotes(ticket)"
+              [disabled]="savingNotes() || !adminNotesInput.trim()"
+              class="text-xs px-3 py-1 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {{ savingNotes() ? 'Guardando...' : 'Guardar notas' }}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+}

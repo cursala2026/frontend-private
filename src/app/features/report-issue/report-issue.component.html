@@ -1,0 +1,154 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4">
+  <div class="max-w-2xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-6">
+      <button
+        (click)="goBack()"
+        class="flex items-center text-sm text-gray-500 hover:text-brand-primary transition-colors mb-4"
+      >
+        <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver
+      </button>
+      <h1 class="text-2xl font-bold text-gray-900">Reportar un problema</h1>
+      <p class="text-sm text-gray-500 mt-1">Describí el inconveniente y te responderemos a la brevedad.</p>
+    </div>
+
+    <!-- Success state -->
+    @if (submitSuccess()) {
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
+          <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">¡Reporte enviado!</h2>
+        <p class="text-gray-500 mb-6">Tu reporte fue recibido correctamente. El equipo de soporte lo revisará pronto.</p>
+        <button
+          (click)="goBack()"
+          class="inline-flex items-center px-5 py-2.5 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-primary/90 transition-colors"
+        >
+          Volver al inicio
+        </button>
+      </div>
+    } @else {
+      <!-- Form -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
+        <!-- Error alert -->
+        @if (errorMessage()) {
+          <div class="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+            <svg class="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Asunto -->
+        <div class="mb-5">
+          <label for="subject" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Asunto <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="subject"
+            type="text"
+            [(ngModel)]="subject"
+            maxlength="200"
+            placeholder="Ej: No puedo acceder al curso de JavaScript"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary transition"
+          />
+          <p class="text-xs text-gray-400 mt-1 text-right">{{ subject.length }}/200</p>
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-5">
+          <label for="message" class="block text-sm font-medium text-gray-700 mb-1.5">
+            Descripción del problema <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="message"
+            [(ngModel)]="message"
+            maxlength="2000"
+            rows="6"
+            placeholder="Describí con detalle qué está pasando, cuándo ocurre y qué pasos seguiste..."
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary transition resize-none"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1 text-right">{{ message.length }}/2000</p>
+        </div>
+
+        <!-- Imagen adjunta -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">
+            Imagen adjunta <span class="text-gray-400 font-normal">(opcional)</span>
+          </label>
+
+          @if (!previewUrl) {
+            <label
+              for="imageFile"
+              class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-primary hover:bg-brand-primary/5 transition-colors"
+            >
+              <svg class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="text-sm text-gray-500">Hacé clic para adjuntar una captura de pantalla</span>
+              <span class="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WebP · máx. 5 MB</span>
+              <input
+                id="imageFile"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                (change)="onFileSelected($event)"
+              />
+            </label>
+          } @else {
+            <div class="relative inline-block">
+              <img
+                [src]="previewUrl"
+                alt="Preview"
+                class="max-h-48 rounded-lg border border-gray-200 object-cover"
+              />
+              <button
+                type="button"
+                (click)="removeFile()"
+                class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow"
+                title="Quitar imagen"
+              >
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">{{ selectedFile?.name }}</p>
+          }
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-end">
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="isSubmitting()"
+            class="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-primary/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            @if (isSubmitting()) {
+              <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              </svg>
+              Enviando...
+            } @else {
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+              Enviar reporte
+            }
+          </button>
+        </div>
+
+      </div>
+    }
+  </div>
+</div>

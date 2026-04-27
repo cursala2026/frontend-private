@@ -52,6 +52,11 @@ export class StudentLayoutComponent {
     this.closeUserMenu();
   }
 
+  goToReportIssue(): void {
+    this.router.navigate(['/alumno/report-issue']);
+    this.closeUserMenu();
+  }
+
   logout(): void {
     this.authService.logout();
     this.closeUserMenu();

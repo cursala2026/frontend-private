@@ -130,6 +130,16 @@
                       Perfil
                     </button>
                     <button
+                      (click)="goToReportIssue()"
+                      class="cursor-pointer w-full text-left px-4 py-2 text-sm text-brand-tertiary hover:bg-gray-100 flex items-center"
+                      role="menuitem"
+                    >
+                      <svg class="h-4 w-4 mr-2 text-brand-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Reportar problema
+                    </button>
+                    <button
                       (click)="logout()"
                       class="cursor-pointer w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
                       role="menuitem"
