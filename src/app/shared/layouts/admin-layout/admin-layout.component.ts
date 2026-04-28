@@ -112,7 +112,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     },
     {
       label: 'Reportes',
-      icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+      icon: 'M12 1C7.03 1 3 5.03 3 10v3c0 1.1.9 2 2 2h1v-5H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-1v5h1c1.1 0 2-.9 2-2v-3c0-4.97-4.03-9-9-9zm-1 14h2v-2h-2v2zm4-8H9c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v2h4v-2h1c.55 0 1-.45 1-1V8c0-.55-.45-1-1-1z',
       route: '/admin/support-tickets'
     },
   ];

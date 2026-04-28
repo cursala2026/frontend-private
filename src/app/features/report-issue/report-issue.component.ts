@@ -1,8 +1,8 @@
 import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SupportTicketService } from '../../../core/services/support-ticket.service';
+import { SupportTicketService } from '../../core/services/support-ticket.service';
 
 @Component({
   selector: 'app-report-issue',
@@ -13,6 +13,7 @@ import { SupportTicketService } from '../../../core/services/support-ticket.serv
 export class ReportIssueComponent {
   private supportTicketService = inject(SupportTicketService);
   private router = inject(Router);
+  private location = inject(Location);
 
   subject = '';
   message = '';
@@ -71,7 +72,7 @@ export class ReportIssueComponent {
           this.isSubmitting.set(false);
           this.submitSuccess.set(true);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.isSubmitting.set(false);
           this.errorMessage.set(err?.error?.message || 'Ocurrió un error al enviar el reporte. Intenta nuevamente.');
         },
@@ -79,6 +80,6 @@ export class ReportIssueComponent {
   }
 
   goBack(): void {
-    this.router.back ? (this.router as any).back() : window.history.back();
+    this.location.back();
   }
 }

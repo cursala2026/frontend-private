@@ -6,11 +6,13 @@ import {
   SupportTicket,
   TicketStatus,
 } from '../../../core/services/support-ticket.service';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { PaginationData, TableConfig } from '../../../shared/models/table.interface';
 
 @Component({
   selector: 'app-support-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DataTableComponent],
   templateUrl: './support-tickets.component.html',
 })
 export class SupportTicketsComponent implements OnInit {
@@ -26,6 +28,13 @@ export class SupportTicketsComponent implements OnInit {
   totalTickets = signal(0);
   readonly pageSize = 20;
 
+  pagination = computed<PaginationData>(() => ({
+    page: this.currentPage(),
+    total: this.totalTickets(),
+    totalPages: this.totalPages(),
+    page_size: this.pageSize
+  }));
+
   // Filtro
   filterStatus = signal<TicketStatus | ''>('');
 
@@ -33,12 +42,61 @@ export class SupportTicketsComponent implements OnInit {
   stats = signal<{ total: number; pending: number; inProgress: number; resolved: number } | null>(null);
 
   // Detalle
-  selectedTicket = signal<SupportTicket | null>(null);
+  selectedTicket: SupportTicket | null = null;
   adminNotesInput = '';
   savingNotes = signal(false);
   updatingStatus = signal(false);
 
   TicketStatus = TicketStatus;
+
+  tableConfig: TableConfig = {
+    columns: [
+      {
+        key: 'userName',
+        label: 'Usuario',
+        sortable: true,
+      },
+      {
+        key: 'subject',
+        label: 'Asunto',
+        sortable: true,
+      },
+      {
+        key: 'imageUrl',
+        label: 'Imagen',
+        type: 'badge',
+        formatter: (val) => val ? 'Sí' : 'No',
+      },
+      {
+        key: 'status',
+        label: 'Estado',
+        type: 'badge',
+        formatter: (val: TicketStatus) => this.statusLabel(val),
+      },
+      {
+        key: 'createdAt',
+        label: 'Fecha',
+        type: 'date',
+        sortable: true
+      }
+    ],
+    actions: [
+      {
+        label: 'Ver detalle',
+        iconSvg: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
+        handler: (row) => this.openTicket(row)
+      },
+      {
+        label: 'Eliminar',
+        iconSvg: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+        class: 'text-red-600',
+        requireConfirm: true,
+        confirmTitle: 'Eliminar reporte',
+        confirmMessage: (row) => `¿Está seguro de que desea eliminar el reporte "${row.subject}"? Esta acción no se puede deshacer.`,
+        handler: (row) => this.deleteTicket(row)
+      }
+    ]
+  };
 
   ngOnInit(): void {
     this.loadStats();
@@ -79,19 +137,32 @@ export class SupportTicketsComponent implements OnInit {
     this.loadTickets();
   }
 
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages()) return;
+  onPageChange(page: number): void {
     this.currentPage.set(page);
     this.loadTickets();
   }
 
+  onSortChange(event: { column: string; direction: 'ASC' | 'DESC' }): void {
+    // Implementar si el backend soporta ordenamiento
+    // Por ahora solo recargamos
+    this.loadTickets();
+  }
+
+  onActionClick(event: { action: string; row: SupportTicket }): void {
+    if (event.action === 'Ver detalle') {
+      this.openTicket(event.row);
+    } else if (event.action === 'Eliminar') {
+      this.deleteTicket(event.row);
+    }
+  }
+
   openTicket(ticket: SupportTicket): void {
-    this.selectedTicket.set(ticket);
+    this.selectedTicket = ticket;
     this.adminNotesInput = ticket.adminNotes || '';
   }
 
   closeDetail(): void {
-    this.selectedTicket.set(null);
+    this.selectedTicket = null;
     this.adminNotesInput = '';
   }
 
@@ -133,11 +204,10 @@ export class SupportTicketsComponent implements OnInit {
   }
 
   deleteTicket(ticket: SupportTicket): void {
-    if (!confirm(`¿Eliminár el reporte "${ticket.subject}"? Esta acción no se puede deshacer.`)) return;
     this.supportTicketService.deleteTicket(ticket._id).subscribe({
       next: () => {
         this.tickets.update((list) => list.filter((t) => t._id !== ticket._id));
-        if (this.selectedTicket()?._id === ticket._id) this.closeDetail();
+        if (this.selectedTicket?._id === ticket._id) this.closeDetail();
         this.loadStats();
       },
       error: () => {},
@@ -148,8 +218,8 @@ export class SupportTicketsComponent implements OnInit {
     this.tickets.update((list) =>
       list.map((t) => (t._id === updated._id ? { ...t, ...updated } : t))
     );
-    if (this.selectedTicket()?._id === updated._id) {
-      this.selectedTicket.set({ ...this.selectedTicket()!, ...updated });
+    if (this.selectedTicket?._id === updated._id) {
+      this.selectedTicket = { ...this.selectedTicket!, ...updated };
     }
   }
 
