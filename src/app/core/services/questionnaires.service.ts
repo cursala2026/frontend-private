@@ -34,6 +34,7 @@ export interface Questionnaire {
   courseId: string;
   title: string;
   description?: string;
+  isSurvey: boolean; 
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
   position: QuestionnairePosition;
   questions: Question[];

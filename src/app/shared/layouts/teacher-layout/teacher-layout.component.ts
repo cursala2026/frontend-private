@@ -151,6 +151,11 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
     this.closeUserMenu();
   }
 
+  goToReportIssue(): void {
+    this.router.navigate(['/profesor/report-issue']);
+    this.closeUserMenu();
+  }
+
   switchToAdminMode(): void {
     this.viewModeService.setViewMode('admin');
     this.router.navigate(['/admin']);

@@ -172,9 +172,11 @@
                     <h4 class="text-lg font-bold text-brand-primary">
                       {{ i + 1 }}. {{ question.questionText }}
                     </h4>
-                    <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
-                      {{ question.points }} pts
-                    </span>
+                    @if (!questionnaire()?.isSurvey) {
+                      <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
+                        {{ question.points }} pts
+                      </span>
+                    }
                   </div>
 
                   <!-- Media Section (Image or Video) in Results -->
@@ -341,9 +343,9 @@
             @if (questionnaire()?.timeLimitMinutes) {
               <li>• Tienes {{ questionnaire()?.timeLimitMinutes }} minutos para completar el cuestionario</li>
             }
-            @if (questionnaire()?.passingScore) {
+            @if (questionnaire()?.passingScore && !questionnaire()?.isSurvey) {
               <li>• Nota mínima para aprobar: {{ questionnaire()?.passingScore }}%</li>
-            }
+      }
             @if (questionnaire()?.allowRetries) {
               @if (questionnaire()?.maxRetries) {
                 <li>• Puedes realizar hasta {{ questionnaire()?.maxRetries }} intentos</li>
