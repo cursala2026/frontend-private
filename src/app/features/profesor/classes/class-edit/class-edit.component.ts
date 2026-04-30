@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, signal, inject, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -17,7 +17,7 @@ import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/co
 @Component({
   selector: 'app-teacher-class-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, ConfirmModalComponent],
+  imports: [ReactiveFormsModule, RouterModule, ConfirmModalComponent],
   templateUrl: './class-edit.component.html'
 })
 export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewInit {

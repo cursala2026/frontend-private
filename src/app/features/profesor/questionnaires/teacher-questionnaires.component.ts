@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { QuestionnairesService, Questionnaire } from '../../../core/services/questionnaires.service';
@@ -18,7 +18,7 @@ interface Course {
 @Component({
   selector: 'app-teacher-questionnaires',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [FormsModule, ConfirmModalComponent],
   templateUrl: './teacher-questionnaires.component.html',
 })
 export class TeacherQuestionnairesComponent implements OnInit {

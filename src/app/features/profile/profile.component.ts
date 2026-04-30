@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { InfoService } from '../../core/services/info.service';
@@ -12,7 +12,7 @@ import { SignatureCropperComponent } from '../../shared/components/signature-cro
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent, SignatureCropperComponent],
+  imports: [ReactiveFormsModule, ConfirmModalComponent, SignatureCropperComponent],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent {

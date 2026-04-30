@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import {
@@ -23,7 +23,7 @@ interface ClassData {
 @Component({
   selector: 'app-questionnaire-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, QuestionItemComponent, GradingHelpModalComponent],
+  imports: [ReactiveFormsModule, QuestionItemComponent, GradingHelpModalComponent],
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {

@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, RouterModule } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig } from '../../../shared/components/modal-data-table/modal-data-table.component';
@@ -18,7 +18,7 @@ import { PublicDataService, PublicData } from '../../../core/services/public-dat
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent],
+  imports: [RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { PublicDataService, PublicData } from '../../../../core/services/public-data.service';
 import { InfoService } from '../../../../core/services/info.service';
 
@@ -10,7 +10,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 @Component({
   selector: 'app-certificate-logos-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './certificate-logos-modal.component.html',
 })
 export class CertificateLogosModalComponent {

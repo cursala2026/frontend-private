@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
@@ -9,7 +9,7 @@ import { UserRole } from '../../../core/models/user-role.enum';
 @Component({
   selector: 'app-teacher-courses',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './teacher-courses.component.html',
 })
 export class TeacherCoursesComponent implements OnInit {

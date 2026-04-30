@@ -1,5 +1,5 @@
 import { Component, inject, input, output, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { PromotionalCodesService } from '../../../core/services/promotional-codes.service';
 import { InfoService } from '../../../core/services/info.service';
@@ -8,7 +8,7 @@ import { BankAccountService } from '../../../core/services/bank-account.service'
 @Component({
   selector: 'app-transfer-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './transfer-modal.component.html'
 })
 export class TransferModalComponent implements OnInit {

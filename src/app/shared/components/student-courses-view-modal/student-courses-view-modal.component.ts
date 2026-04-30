@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter, signal, effect, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { CoursesService } from '../../../core/services/courses.service';
 
 @Component({
   selector: 'app-student-courses-view-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     @if (isOpen()) {
       <div class="fixed inset-0 z-50 overflow-y-auto">

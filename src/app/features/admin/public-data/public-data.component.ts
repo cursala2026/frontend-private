@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PublicDataService, PublicData } from '../../../core/services/public-data.service';
 import { InfoService } from '../../../core/services/info.service';
@@ -7,7 +7,7 @@ import { InfoService } from '../../../core/services/info.service';
 @Component({
   selector: 'app-public-data',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './public-data.component.html'
 })
 export class PublicDataComponent implements OnInit {

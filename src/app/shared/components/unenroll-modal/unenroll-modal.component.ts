@@ -1,10 +1,10 @@
 import { Component, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-unenroll-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './unenroll-modal.component.html'
 })
 export class UnenrollModalComponent {

@@ -1,5 +1,5 @@
 import { Component, signal, inject, HostListener, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { interval, Subscription, filter } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
@@ -27,7 +27,7 @@ interface PendingExam {
 @Component({
   selector: 'app-teacher-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './teacher-layout.component.html',
   
 })

@@ -1,5 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { ModalDataTableComponent, ModalConfig, ModalField } from '../../../shared/components/modal-data-table/modal-data-table.component';
@@ -11,7 +11,7 @@ import { InfoService } from '../../../core/services/info.service';
 @Component({
   selector: 'app-promotional-codes',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalDataTableComponent],
+  imports: [FormsModule, DataTableComponent, ModalDataTableComponent],
   templateUrl: './promotional-codes.component.html'
 })
 export class PromotionalCodesComponent {

@@ -1,5 +1,5 @@
 import { Component, inject, input, output, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { PurchasePaymentService } from '../../../core/services/purchase-payment.service';
 import { PromotionalCodesService } from '../../../core/services/promotional-codes.service';
@@ -9,7 +9,7 @@ import { InfoService } from '../../../core/services/info.service';
 @Component({
   selector: 'app-purchase-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './purchase-modal.component.html'
 })
 export class PurchaseModalComponent {
