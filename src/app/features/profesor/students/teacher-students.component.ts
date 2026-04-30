@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -47,7 +47,7 @@ interface PendingExam {
 @Component({
   selector: 'app-teacher-students',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [FormsModule, ConfirmModalComponent],
   templateUrl: './teacher-students.component.html',
 })
 export class TeacherStudentsComponent implements OnInit, OnDestroy {

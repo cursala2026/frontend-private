@@ -1,5 +1,5 @@
 import { Component, signal, inject } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupportTicketService } from '../../core/services/support-ticket.service';
@@ -7,7 +7,7 @@ import { SupportTicketService } from '../../core/services/support-ticket.service
 @Component({
   selector: 'app-report-issue',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './report-issue.component.html',
 })
 export class ReportIssueComponent {

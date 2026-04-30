@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ClassesService } from '../../../core/services/classes.service';
@@ -13,7 +13,7 @@ import { Subject, interval, takeUntil } from 'rxjs';
 @Component({
   selector: 'app-class-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './class-detail.component.html',
 })
 export class ClassDetailComponent implements OnInit, OnDestroy, AfterViewInit {

@@ -37,85 +37,88 @@
               (input)="onCourseInputFocus()"
               (blur)="onCourseInputBlur()"
               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-            />
-            <button
-              *ngIf="courseFilter || selectedCourseId"
-              type="button"
-              (click)="clearCourseFilter(); $event.stopPropagation()"
-              (mousedown)="$event.preventDefault()"
-              title="Limpiar búsqueda"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div *ngIf="showCourseDropdown" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-              <ul id="course-list" role="listbox">
-                <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
-                  <strong>Todos los cursos</strong>
-                </li>
-                @for (course of filteredCourses(); track course._id) {
-                  <li
-                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
-                    (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
-                    role="option"
-                    [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+              />
+              @if (courseFilter || selectedCourseId) {
+                <button
+                  type="button"
+                  (click)="clearCourseFilter(); $event.stopPropagation()"
+                  (mousedown)="$event.preventDefault()"
+                  title="Limpiar búsqueda"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    <span>{{ course.name }}</span>
-                    @if (selectedCourseId === course._id) {
-                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              }
+              @if (showCourseDropdown) {
+                <div class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <ul id="course-list" role="listbox">
+                    <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
+                      <strong>Todos los cursos</strong>
+                    </li>
+                    @for (course of filteredCourses(); track course._id) {
+                      <li
+                        class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
+                        (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
+                        role="option"
+                        [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+                        >
+                        <span>{{ course.name }}</span>
+                        @if (selectedCourseId === course._id) {
+                          <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        }
+                      </li>
                     }
-                  </li>
-                }
-              </ul>
+                  </ul>
+                </div>
+              }
             </div>
           </div>
+
+          <!-- course name shown in header instead of as a separate field -->
+
+          @if (selectedCourseId) {
+            <div class="flex items-end">
+              <button
+                (click)="openQuestionnaireEdit()"
+                class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+                >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo Cuestionario
+              </button>
+            </div>
+          }
         </div>
+      }
+    </div>
 
-        <!-- course name shown in header instead of as a separate field -->
 
-        @if (selectedCourseId) {
-          <div class="flex items-end">
-            <button
-              (click)="openQuestionnaireEdit()"
-              class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
-            >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Nuevo Cuestionario
-            </button>
+    <!-- Loading State -->
+    @if (loadingQuestionnaires()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for (item of [1, 2, 3]; track item) {
+          <div class="bg-white rounded-lg shadow-md p-6 animate-pulse">
+            <div class="h-6 bg-gray-200 rounded mb-4"></div>
+            <div class="h-4 bg-gray-200 rounded mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
           </div>
         }
       </div>
     }
-  </div>
-  
 
-  <!-- Loading State -->
-  @if (loadingQuestionnaires()) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (item of [1, 2, 3]; track item) {
-        <div class="bg-white rounded-lg shadow-md p-6 animate-pulse">
-          <div class="h-6 bg-gray-200 rounded mb-4"></div>
-          <div class="h-4 bg-gray-200 rounded mb-2"></div>
-          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- Questionnaires List -->
-  @else if (questionnaires().length > 0) {
+    <!-- Questionnaires List -->
+    @else if (questionnaires().length > 0) {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (questionnaire of questionnaires(); track questionnaire._id) {
         <div
           class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group"
           (click)="openQuestionnaireEdit(questionnaire)"
-        >
+          >
           <!-- Header -->
           <div class="bg-linear-to-tr from-[#0c94d9] to-[#0c94d9] p-4">
             <div class="flex items-start justify-between mb-1">
@@ -125,7 +128,7 @@
               <span
                 [class]="getStatusBadgeClass(questionnaire.status)"
                 class="px-2 py-1 text-xs font-semibold rounded"
-              >
+                >
                 {{ getStatusText(questionnaire.status) }}
               </span>
             </div>
@@ -198,7 +201,7 @@
               <button
                 (click)="viewResults(questionnaire); $event.stopPropagation()"
                 class="cursor-pointer flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
-              >
+                >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -209,7 +212,7 @@
                 (click)="confirmDelete($event, questionnaire)"
                 class="px-4 py-2 cursor-pointer text-sm bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors duration-200"
                 title="Eliminar cuestionario"
-              >
+                >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -222,32 +225,32 @@
   }
 
   <!-- Empty State -->
-  
-  @else if (!selectedCourseId) {
-    <div class="bg-white rounded-lg shadow-sm p-12 text-center">
-      <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-      <h3 class="mt-2 text-base font-bold text-brand-tertiary">Selecciona un curso</h3>
-      <p class="mt-1 text-sm text-brand-tertiary">Elige un curso para ver sus cuestionarios</p>
-    </div>
-  }
 
-  @else {
-    <div class="bg-white rounded-lg shadow-sm p-12 text-center">
-      <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-      <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay cuestionarios</h3>
-      <p class="mt-1 text-sm text-brand-tertiary">Este curso aún no tiene cuestionarios creados</p>
-      <button
-        (click)="openQuestionnaireEdit()"
-        class="group mt-6 w-auto relative flex justify-center mx-auto items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white active:ring-[#dcab07]"
-      >
-        Crear Primer Cuestionario
-      </button>
-    </div>
-  }
+  @else if (!selectedCourseId) {
+  <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+    <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+    <h3 class="mt-2 text-base font-bold text-brand-tertiary">Selecciona un curso</h3>
+    <p class="mt-1 text-sm text-brand-tertiary">Elige un curso para ver sus cuestionarios</p>
+  </div>
+}
+
+@else {
+<div class="bg-white rounded-lg shadow-sm p-12 text-center">
+  <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>
+  <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay cuestionarios</h3>
+  <p class="mt-1 text-sm text-brand-tertiary">Este curso aún no tiene cuestionarios creados</p>
+  <button
+    (click)="openQuestionnaireEdit()"
+    class="group mt-6 w-auto relative flex justify-center mx-auto items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white active:ring-[#dcab07]"
+    >
+    Crear Primer Cuestionario
+  </button>
+</div>
+}
 </div>
 
 <!-- Delete Confirmation Modal -->

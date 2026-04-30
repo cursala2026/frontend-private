@@ -1,12 +1,12 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MercadoPagoPaymentService } from '../../../core/services/mercadopago-payment.service';
 
 @Component({
   selector: 'app-payment-success',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './payment-success.component.html'
 })
 export class PaymentSuccessComponent implements OnInit, OnDestroy {

@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectorRef, computed } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -17,7 +17,7 @@ import { UserRole } from '../../../core/models/user-role.enum';
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, ModalDataTableComponent, StudentCoursesModalComponent],
+  imports: [FormsModule, DataTableComponent, ModalDataTableComponent, StudentCoursesModalComponent],
   templateUrl: './users.component.html'
 })
 export class UsersComponent implements OnInit {

@@ -1,12 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router } from '@angular/router';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 
 @Component({
   selector: 'app-student-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './student-courses.component.html'
 })
 export class StudentCoursesComponent implements OnInit {

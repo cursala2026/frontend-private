@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -17,7 +17,7 @@ interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
 @Component({
   selector: 'app-teacher-classes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './teacher-classes.component.html',
 })
 export class TeacherClassesComponent implements OnInit, OnDestroy {

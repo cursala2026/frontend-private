@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ChangeDetectorRef, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -12,7 +12,7 @@ import { UserRole } from '../../../core/models/user-role.enum';
 @Component({
   selector: 'app-vendedor-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataTableComponent, StudentCoursesViewModalComponent],
+  imports: [FormsModule, DataTableComponent, StudentCoursesViewModalComponent],
   templateUrl: './vendedor-users.component.html'
 })
 export class VendedorUsersComponent implements OnInit {

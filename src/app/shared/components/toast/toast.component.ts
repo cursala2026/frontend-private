@@ -1,12 +1,12 @@
 import { Component, OnDestroy, signal, WritableSignal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { InfoService, InfoMessage } from '../../../core/services/info.service';
 import { Subscription, timer } from 'rxjs';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.css']
 })

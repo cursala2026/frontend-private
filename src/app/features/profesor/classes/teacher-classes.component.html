@@ -27,181 +27,184 @@
             (input)="onCourseInputFocus()"
             (blur)="onCourseInputBlur()"
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-          <button
-            *ngIf="courseFilter || selectedCourseId"
-            type="button"
-            (click)="clearCourseFilter(); $event.stopPropagation()"
-            (mousedown)="$event.preventDefault()"
-            title="Limpiar búsqueda"
-            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div *ngIf="showCourseDropdown" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-            <ul id="course-list" role="listbox">
-              <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
-                <strong>Todos los cursos</strong>
-              </li>
-              @for (course of filteredCourses(); track course._id) {
-                <li
-                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
-                  (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
-                  role="option"
-                  [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+            />
+            @if (courseFilter || selectedCourseId) {
+              <button
+                type="button"
+                (click)="clearCourseFilter(); $event.stopPropagation()"
+                (mousedown)="$event.preventDefault()"
+                title="Limpiar búsqueda"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
-                  <span>{{ course.name }}</span>
-                  @if (selectedCourseId === course._id) {
-                    <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            }
+            @if (showCourseDropdown) {
+              <div class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                <ul id="course-list" role="listbox">
+                  <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
+                    <strong>Todos los cursos</strong>
+                  </li>
+                  @for (course of filteredCourses(); track course._id) {
+                    <li
+                      class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
+                      (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
+                      role="option"
+                      [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+                      >
+                      <span>{{ course.name }}</span>
+                      @if (selectedCourseId === course._id) {
+                        <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      }
+                    </li>
                   }
-                </li>
-              }
-            </ul>
+                </ul>
+              </div>
+            }
           </div>
         </div>
+        @if (selectedCourseId) {
+          <button
+            (click)="openClassCreate()"
+            class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+            >
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva Clase
+          </button>
+        }
       </div>
-      @if (selectedCourseId) {
-        <button
-          (click)="openClassCreate()"
-          class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
-        >
-          <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </div>
+
+    <!-- Classes Section -->
+    <div>
+      @if (!selectedCourseId) {
+        <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+          <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
-          Nueva Clase
-        </button>
+          <h3 class="mt-2 text-base font-bold text-brand-tertiary">Selecciona un curso</h3>
+          <p class="mt-1 text-sm text-brand-tertiary">Elige un curso de la lista para ver sus clases</p>
+        </div>
+      } @else if (loadingClasses()) {
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          @for (item of [1,2,3,4,5,6]; track item) {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+              <div class="h-48 bg-gray-200"></div>
+              <div class="p-6">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div class="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                <div class="h-3 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (classes().length === 0) {
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+          <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay clases en este curso</h3>
+          <p class="mt-1 text-sm text-brand-tertiary mb-4">Este curso aún no tiene clases creadas.</p>
+          <button
+            (click)="openClassCreate()"
+            class="group mt-4 md:mt-8 w-auto mx-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+            >
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Primera Clase
+          </button>
+        </div>
+      } @else {
+        <!-- Course Info -->
+        <div class="mb-4 bg-white px-6 py-6 rounded-lg shadow-md">
+          <h2 class="text-2xl font-bold text-brand-primary">{{ getSelectedCourseName() }}</h2>
+          <p class="text-sm text-brand-primary/80 mt-1">{{ classes().length }} {{ classes().length === 1 ? 'clase' : 'clases' }} en este curso</p>
+        </div>
+
+        <!-- Classes Grid -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          @for (classItem of classes(); track classItem._id; let i = $index) {
+            @let theme = getCardTheme(i);
+            <div
+              (click)="openClassEdit(classItem)"
+              class="rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group border {{ theme.bg }} {{ theme.border }}"
+              >
+              <div class="p-6 relative">
+                <!-- Actions & Reorder -->
+                <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+                  <div class="flex flex-col gap-1">
+                    @if (i > 0) {
+                      <button
+                        (click)="moveClassUp(i); $event.stopPropagation()"
+                        class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
+                        title="Mover arriba"
+                        >
+                        <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                    }
+
+                    @if (i < classes().length - 1) {
+                      <button
+                        (click)="moveClassDown(i); $event.stopPropagation()"
+                        class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
+                        title="Mover abajo"
+                        >
+                        <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Class Info -->
+                <h3 class="font-bold text-xl mb-2 pr-24 line-clamp-2 leading-tight {{ theme.title }}">{{ classItem.name }}</h3>
+
+                <div class="flex items-center gap-2 mb-6">
+                  <!-- Status Badge -->
+                  @if (classItem.status === 'ACTIVE') {
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">
+                      Activa
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+                      Inactiva
+                    </span>
+                  }
+
+                  <!-- Video Icon -->
+                  @if (classItem.videoUrl) {
+                    <span
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold {{ theme.badge }}"
+                      title="{{ classItem.videoOriginalName || 'Tiene video' }}"
+                      >
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Video
+                    </span>
+                  }
+                </div>
+
+                <div class="text-sm font-bold inline-flex items-center border transition-all py-2 rounded-full px-4 ring-1 active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07] {{ theme.title }} {{ theme.border }} group-hover:bg-white/50">
+                  Editar clase
+                  <svg class="w-5 h-5 ml-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       }
     </div>
   </div>
-
-  <!-- Classes Section -->
-  <div>
-    @if (!selectedCourseId) {
-      <div class="bg-white rounded-lg shadow-sm p-12 text-center">
-        <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <h3 class="mt-2 text-base font-bold text-brand-tertiary">Selecciona un curso</h3>
-        <p class="mt-1 text-sm text-brand-tertiary">Elige un curso de la lista para ver sus clases</p>
-      </div>
-    } @else if (loadingClasses()) {
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @for (item of [1,2,3,4,5,6]; track item) {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-            <div class="h-48 bg-gray-200"></div>
-            <div class="p-6">
-              <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div class="h-3 bg-gray-200 rounded w-full mb-2"></div>
-              <div class="h-3 bg-gray-200 rounded w-5/6"></div>
-            </div>
-          </div>
-        }
-      </div>
-    } @else if (classes().length === 0) {
-      <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <svg class="mx-auto h-14 w-14 text-brand-tertiary-lighten" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <h3 class="mt-2 text-base font-bold text-brand-tertiary">No hay clases en este curso</h3>
-        <p class="mt-1 text-sm text-brand-tertiary mb-4">Este curso aún no tiene clases creadas.</p>
-        <button
-          (click)="openClassCreate()"
-          class="group mt-4 md:mt-8 w-auto mx-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
-        >
-          <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Crear Primera Clase
-        </button>
-      </div>
-    } @else {
-      <!-- Course Info -->
-      <div class="mb-4 bg-white px-6 py-6 rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-brand-primary">{{ getSelectedCourseName() }}</h2>
-        <p class="text-sm text-brand-primary/80 mt-1">{{ classes().length }} {{ classes().length === 1 ? 'clase' : 'clases' }} en este curso</p>
-      </div>
-
-      <!-- Classes Grid -->
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @for (classItem of classes(); track classItem._id; let i = $index) {
-          @let theme = getCardTheme(i);
-          <div 
-            (click)="openClassEdit(classItem)"
-            class="rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 group border {{ theme.bg }} {{ theme.border }}"
-          >
-            <div class="p-6 relative">
-              <!-- Actions & Reorder -->
-              <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
-                <div class="flex flex-col gap-1">
-                  @if (i > 0) {
-                    <button
-                      (click)="moveClassUp(i); $event.stopPropagation()"
-                      class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
-                      title="Mover arriba"
-                    >
-                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                  }
-                  
-                  @if (i < classes().length - 1) {
-                    <button
-                      (click)="moveClassDown(i); $event.stopPropagation()"
-                      class="cursor-pointer bg-white/60 hover:bg-white p-1.5 rounded-full transition-colors duration-200 shadow-sm"
-                      title="Mover abajo"
-                    >
-                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <!-- Class Info -->
-              <h3 class="font-bold text-xl mb-2 pr-24 line-clamp-2 leading-tight {{ theme.title }}">{{ classItem.name }}</h3>
-
-              <div class="flex items-center gap-2 mb-6">
-                <!-- Status Badge -->
-                @if (classItem.status === 'ACTIVE') {
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">
-                    Activa
-                  </span>
-                } @else {
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
-                    Inactiva
-                  </span>
-                }
-
-                <!-- Video Icon -->
-                @if (classItem.videoUrl) {
-                  <span 
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold {{ theme.badge }}"
-                    title="{{ classItem.videoOriginalName || 'Tiene video' }}"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Video
-                  </span>
-                }
-              </div>
-              
-              <div class="text-sm font-bold inline-flex items-center border transition-all py-2 rounded-full px-4 ring-1 active:bg-brand-tertiary active:text-white active:ring-[#dcab07] active:border-[#dcab07] {{ theme.title }} {{ theme.border }} group-hover:bg-white/50">
-                Editar clase
-                <svg class="w-5 h-5 ml-2 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-    }
-  </div>
-</div>

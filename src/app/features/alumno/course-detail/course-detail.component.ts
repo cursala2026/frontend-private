@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -23,7 +23,7 @@ interface CourseItem {
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, EnrollModalComponent, UnenrollModalComponent, PurchaseModalComponent, TransferModalComponent],
+  imports: [RouterModule, EnrollModalComponent, UnenrollModalComponent, PurchaseModalComponent, TransferModalComponent],
   templateUrl: './course-detail.component.html',
 })
 export class CourseDetailComponent implements OnInit, OnDestroy {

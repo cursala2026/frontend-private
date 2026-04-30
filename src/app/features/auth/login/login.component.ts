@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { PasswordFieldComponent } from '../../../shared/components/password-field/password-field.component';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +10,7 @@ import { environment } from '../../../core/config/environment';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage, PasswordFieldComponent],
+  imports: [ReactiveFormsModule, RouterModule, NgOptimizedImage, PasswordFieldComponent],
   templateUrl: './login.component.html',
   
 })

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { CertificateService, Certificate } from '../../../core/services/certificate.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,7 +8,7 @@ import { InfoService } from '../../../core/services/info.service';
 @Component({
   selector: 'app-student-certificates',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './student-certificates.component.html',
 })
 export class StudentCertificatesComponent implements OnInit {

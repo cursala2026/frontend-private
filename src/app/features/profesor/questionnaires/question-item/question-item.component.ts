@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { inject } from '@angular/core';
 import { InfoService } from '../../../../core/services/info.service';
@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-question-item',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './question-item.component.html'
 })
 export class QuestionItemComponent implements OnDestroy {

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { InfoService } from '../../../core/services/info.service';
 import { MercadoPagoPaymentService } from '../../../core/services/mercadopago-payment.service';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
@@ -9,7 +9,7 @@ import { TableComponent, TableColumn, TableAction } from '../../../shared/compon
 @Component({
   selector: 'app-bank-accounts',
   standalone: true,
-  imports: [CommonModule, ConfirmModalComponent, ModalBankAccountsComponent, TableComponent],
+  imports: [ConfirmModalComponent, ModalBankAccountsComponent, TableComponent],
   templateUrl: './bank-accounts.component.html'
 })
 export class BankAccountsComponent implements OnInit {

@@ -15,405 +15,408 @@
     </div>
   </div>
 
-    <!-- Course selector (always visible) -->
-    <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
-      <div class="mb-6 flex flex-col sm:flex-row gap-4">
-        <div class="flex-1 relative">
-          <label for="courseCombobox" class="block text-base font-bold text-brand-tertiary mb-2">Seleccionar curso</label>
+  <!-- Course selector (always visible) -->
+  <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
+    <div class="mb-6 flex flex-col sm:flex-row gap-4">
+      <div class="flex-1 relative">
+        <label for="courseCombobox" class="block text-base font-bold text-brand-tertiary mb-2">Seleccionar curso</label>
 
-          <div class="relative">
-            <input
-              id="courseCombobox"
-              type="text"
-              role="combobox"
-              aria-expanded="{{ showCourseDropdown() ? 'true' : 'false' }}"
-              aria-controls="course-list"
-              placeholder="Escribe para buscar cursos..."
-              [(ngModel)]="courseFilter"
-              (focus)="onCourseInputFocus()"
-              (input)="onCourseInputFocus()"
-              (blur)="onCourseInputBlur()"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+        <div class="relative">
+          <input
+            id="courseCombobox"
+            type="text"
+            role="combobox"
+            aria-expanded="{{ showCourseDropdown() ? 'true' : 'false' }}"
+            aria-controls="course-list"
+            placeholder="Escribe para buscar cursos..."
+            [(ngModel)]="courseFilter"
+            (focus)="onCourseInputFocus()"
+            (input)="onCourseInputFocus()"
+            (blur)="onCourseInputBlur()"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             />
-                <button
-                  *ngIf="courseFilter"
-              type="button"
-              (click)="clearCourseFilter(); $event.stopPropagation()"
-              (mousedown)="$event.preventDefault()"
-              title="Limpiar búsqueda"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            @if (courseFilter) {
+              <button
+                type="button"
+                (click)="clearCourseFilter(); $event.stopPropagation()"
+                (mousedown)="$event.preventDefault()"
+                title="Limpiar búsqueda"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            }
 
-            <div *ngIf="showCourseDropdown()" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-              <ul id="course-list" role="listbox">
-                <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
-                  <strong>Todos los cursos</strong>
-                </li>
-                @for (course of filteredCourses(); track course._id) {
-                  <li
-                    class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
-                    (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
-                    role="option"
-                    [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
-                  >
-                    <span>{{ course.name }}</span>
-                    @if (selectedCourseId === course._id) {
-                      <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    }
+            @if (showCourseDropdown()) {
+              <div class="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                <ul id="course-list" role="listbox">
+                  <li class="px-3 py-2 cursor-pointer hover:bg-gray-100" (mousedown)="selectCourse('', ''); $event.preventDefault()">
+                    <strong>Todos los cursos</strong>
                   </li>
-                }
-              </ul>
-            </div>
+                  @for (course of filteredCourses(); track course._id) {
+                    <li
+                      class="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between"
+                      (mousedown)="selectCourse(course._id, course.name); $event.preventDefault()"
+                      role="option"
+                      [attr.aria-selected]="selectedCourseId === course._id ? 'true' : 'false'"
+                      >
+                      <span>{{ course.name }}</span>
+                      @if (selectedCourseId === course._id) {
+                        <svg class="w-4 h-4 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
           </div>
         </div>
       </div>
     </div>
 
     <!-- Students Section -->
-  <div>
-    @if (loading()) {
-      <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-tertiary mx-auto"></div>
-        <p class="mt-4 text-gray-500">Cargando alumnos...</p>
-      </div>
-    } @else if (students().length === 0) {
-      <div class="bg-white rounded-lg shadow-md p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No tienes alumnos asignados</h3>
-        <p class="mt-1 text-sm text-gray-500">Los alumnos aparecerán aquí cuando se asignen a tus cursos.</p>
-      </div>
-    } @else {
-      <div class="space-y-6">
-        @for (group of getFilteredGroupedStudentsArray(); track group.courseId) {
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            
-            
-            <!-- Course Header -->
-            <div class="bg-white px-6 py-4 border-b border-brand-tertiary-lighten/50">
-              <div class="flex flex-col items-start md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h2 class="text-xl md:text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
-                      <p class="text-sm text-brand-primary/80">{{ group.students.length }} {{ group.students.length === 1 ? 'alumno' : 'alumnos' }}</p>
-                    </div>
-                    <div class="mt-3 md:mt-0 md:ml-4 w-full md:w-1/3">
-                      <label for="search-{{ group.courseId }}" class="sr-only">Buscar alumno</label>
-                      <input
-                        id="search-{{ group.courseId }}"
-                        type="text"
-                        placeholder="Buscar alumno por nombre o email"
-                        [ngModel]="searchTerms()[group.courseId] || ''"
-                        (ngModelChange)="onCourseSearchChange(group.courseId, $event)"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+    <div>
+      @if (loading()) {
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-tertiary mx-auto"></div>
+          <p class="mt-4 text-gray-500">Cargando alumnos...</p>
+        </div>
+      } @else if (students().length === 0) {
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No tienes alumnos asignados</h3>
+          <p class="mt-1 text-sm text-gray-500">Los alumnos aparecerán aquí cuando se asignen a tus cursos.</p>
+        </div>
+      } @else {
+        <div class="space-y-6">
+          @for (group of getFilteredGroupedStudentsArray(); track group.courseId) {
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+
+
+              <!-- Course Header -->
+              <div class="bg-white px-6 py-4 border-b border-brand-tertiary-lighten/50">
+                <div class="flex flex-col items-start md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-brand-primary">{{ group.courseName }}</h2>
+                    <p class="text-sm text-brand-primary/80">{{ group.students.length }} {{ group.students.length === 1 ? 'alumno' : 'alumnos' }}</p>
+                  </div>
+                  <div class="mt-3 md:mt-0 md:ml-4 w-full md:w-1/3">
+                    <label for="search-{{ group.courseId }}" class="sr-only">Buscar alumno</label>
+                    <input
+                      id="search-{{ group.courseId }}"
+                      type="text"
+                      placeholder="Buscar alumno por nombre o email"
+                      [ngModel]="searchTerms()[group.courseId] || ''"
+                      (ngModelChange)="onCourseSearchChange(group.courseId, $event)"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       />
                     </div>
-                <div class="text-right text-sm text-brand-primary px-2 py-1 mt-2 md:mt-0 bg-brand-primary/10">
-                  <span class="font-medium">{{ group.students[0]?.totalClasses || 0 }} clases</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Students List -->
-            <div class="divide-y divide-gray-200">
-              @if (group.students.length === 0) {
-                <div class="px-6 py-8 text-center">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 class="mt-2 text-sm font-medium text-gray-900">No se encontraron alumnos</h3>
-                  <p class="mt-1 text-sm text-gray-500">Prueba otra búsqueda para este curso.</p>
-                </div>
-              }
-              @for (student of group.students; track student.userId) {
-                <div 
-                  class="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                  (click)="toggleStudentDetails(student)"
-                >
-                  <div class="flex flex-col md:flex-row items-center justify-between">
-                    <!-- Left: Avatar + Name + Email -->
-                    <div class="flex flex-col md:items-center gap-3 min-w-0 md:flex-row w-full">
-                      <!-- Profile Image --> 
-                      <div class="shrink-0">
-                        @if (getStudentImageUrl(student.profilePhotoUrl)) {
-                          <img
-                            [src]="getStudentImageUrl(student.profilePhotoUrl)"
-                            [alt]="student.firstName + ' ' + student.lastName"
-                            class="h-10 w-10 rounded-full object-cover border border-gray-200"
-                            (error)="handleImageError($event)"
-                          />
-                        } @else {
-                          <div class="h-10 w-10 rounded-full bg-brand-primary uppercase font-bold flex items-center justify-center text-white text-sm">
-                            {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
-                          </div>
-                        }
-                      </div>
-
-                      <!-- Name and Email in one line -->
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm text-gray-900 truncate">
-                          <span class="font-medium">{{ student.firstName }} {{ student.lastName }}</span>
-                          <span class="text-brand-tertiary mx-2">·</span>
-                          <span class="text-brand-tertiary-light">{{ student.email }}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    
-                    <div class="flex flex-col md:flex-row md:items-center w-full md:w-auto mt-4 md:mt-0 gap-6 md:ml-4">
-                      
-                      @if (hasPendingExams(student.userId)) {
-                        @let exams = getPendingExamsForStudent(student.userId);
-                        <div class="flex flex-col items-end gap-1">
-                          <button
-                            (click)="goToExam(exams[0])"
-                            class="relative inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                            [title]="exams.length === 1 ? '1 examen pendiente de corregir' : exams.length + ' exámenes pendientes de corregir'"
-                          >
-                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span>{{ exams.length }}</span>
-                            <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                            </span>
-                          </button>
-                          @if (exams.length > 1) {
-                            <p class="text-xs text-gray-500">Click para corregir</p>
-                          }
-                        </div>
-                      }
-                      
-                      <!-- Progress Bar -->
-                      <div class="min-w-[200px] md:min-w-[400px] max-w-[300px] flex flex-col gap-2">
-                        <!-- Videos Progress -->
-                        <div class="flex flex-col gap-1">
-                          <div class="flex items-center justify-between text-xs">
-                            <div class="flex items-center gap-1 text-gray-600">
-                              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                              </svg>
-                              <span class="font-medium">Videos</span>
-                            </div>
-                            <span class="font-semibold" [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'text-green-600' : 'text-gray-700'">
-                              {{ student.completedClasses }}/{{ student.totalClasses }}
-                            </span>
-                          </div>
-                          <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              class="h-2 rounded-full transition-all duration-300"
-                              [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'bg-green-500' : 'bg-brand-primary'"
-                              [style.width.%]="student.totalClasses > 0 ? (student.completedClasses / student.totalClasses * 100) : 0">
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Questionnaires Progress -->
-                        <div class="flex flex-col gap-1">
-                          <div class="flex items-center justify-between text-xs">
-                            <div class="flex items-center gap-1 text-gray-600">
-                              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                              </svg>
-                              <span class="font-medium">Cuestionarios</span>
-                            </div>
-                            <span class="font-semibold" [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'text-green-600' : 'text-gray-700'">
-                              {{ student.completedQuestionnaires }}/{{ student.totalQuestionnaires }}
-                            </span>
-                          </div>
-                          <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              class="h-2 rounded-full transition-all duration-300"
-                              [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'bg-green-500' : 'bg-brand-primary'"
-                              [style.width.%]="student.totalQuestionnaires > 0 ? (student.completedQuestionnaires / student.totalQuestionnaires * 100) : 0">
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Overall Progress Percentage -->
-                        <div class="text-right">
-                          <span class="text-xs font-semibold" [class]="student.progress === 100 ? 'text-green-600' : 'text-brand-tertiary-light'">
-                            Progreso total: {{ student.progress }}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <!-- Action Buttons -->
-                      <div class="md:ml-4 flex w-full flex-wrap items-center gap-2 mb-2">
-                        <!-- Generate Certificate Button -->
-                        <button
-                          (click)="openCertificateModal(student); $event.stopPropagation()"
-                          [disabled]="generatingCertificate()"
-                          class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                          title="Generar certificado manualmente"
-                        >
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span>Certificado</span>
-                        </button>
-
-                        <!-- Reset Progress Button -->
-                        <button
-                          (click)="openResetProgressModal(student); $event.stopPropagation()"
-                          [disabled]="resettingProgress()"
-                          class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                          title="Resetear progreso del alumno"
-                        >
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          <span>Resetear</span>
-                        </button>
-
-                        <!-- Unenroll Student Button -->
-                        <button
-                          (click)="openUnenrollModal(student); $event.stopPropagation()"
-                          [disabled]="unenrollingStudent()"
-                          class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                          title="Desasociar alumno del curso"
-                        >
-                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
-                          </svg>
-                          <span>Desasociar</span>
-                        </button>
-                      </div>
+                    <div class="text-right text-sm text-brand-primary px-2 py-1 mt-2 md:mt-0 bg-brand-primary/10">
+                      <span class="font-medium">{{ group.students[0]?.totalClasses || 0 }} clases</span>
                     </div>
                   </div>
-                  
-                  <!-- Progress Details (Expandable) -->
-                  @if (expandedStudentId() === student.userId) {
-                    <div class="mt-4 p-4 bg-gray-100 rounded-lg border-l-4 border-brand-primary" (click)="$event.stopPropagation()">
-                      <!-- Cabecera con leyenda -->
-                      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <h4 class="text-sm font-bold text-brand-primary">Gestión de Progreso Manual</h4>
-                        <div class="flex items-center gap-2 text-[10px] text-gray-600">
-                          <span class="flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-100 rounded">
-                            <svg class="w-3 h-3 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
-                            Clase / Video
-                          </span>
-                          <span class="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded border-l-2 border-l-brand-primary">
-                            <svg class="w-3 h-3 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-                            Cuestionario
-                          </span>
-                        </div>
-                      </div>
-                      
-                      @if (loadingDetails()) {
-                        <div class="flex justify-center p-4">
-                          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary"></div>
-                        </div>
-                      } @else if (studentProgressDetails()[student.userId]) {
-                        <ul class="space-y-1.5 max-h-80 overflow-y-auto pr-1">
-                          @for (item of studentProgressDetails()[student.userId].items; track item._id; let i = $index) {
-                            @let locked = isItemLocked(studentProgressDetails()[student.userId].items, i);
-                            <!-- Clase / Video -->
-                            @if (item.type === 'class') {
-                              <li class="flex items-center justify-between px-3 py-2 bg-green-50 border border-green-100 rounded text-xs" [class.opacity-50]="locked">
-                                <div class="flex items-center gap-2 min-w-0">
-                                  @if (locked) {
-                                    <svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                                  } @else {
-                                    <svg class="w-3.5 h-3.5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                                    </svg>
-                                  }
-                                  <span class="truncate" [class.text-gray-400]="locked" title="{{ item.name }}">{{ item.name }}</span>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  [(ngModel)]="item.completed"
-                                  (change)="updateManualProgress(student, item, 'class', $event)"
-                                  [disabled]="locked"
-                                  class="w-4 h-4 shrink-0 text-brand-primary rounded border-gray-300 focus:ring-brand-primary"
-                                  [class.cursor-not-allowed]="locked"
-                                  [class.cursor-pointer]="!locked"
-                                />
-                              </li>
-                            }
-                            <!-- Cuestionario -->
-                            @if (item.type === 'questionnaire') {
-                              <li class="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded text-xs border-l-2 border-l-brand-primary" [class.opacity-50]="locked">
-                                <div class="flex flex-col min-w-0">
-                                  <div class="flex items-center gap-2">
-                                    @if (locked) {
-                                      <svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
-                                    } @else {
-                                      <svg class="w-3.5 h-3.5 shrink-0 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                                      </svg>
-                                    }
-                                    <span class="truncate font-medium" [class.text-gray-400]="locked" title="{{ item.name }}">{{ item.name }}</span>
-                                  </div>
-                                  @if (item.completed) {
-                                    <div class="flex items-center gap-1 mt-1 ml-5">
-                                      <span class="text-[10px] text-gray-500">Nota:</span>
-                                      <input
-                                        type="number"
-                                        min="0" max="100"
-                                        [(ngModel)]="item.score"
-                                        (blur)="updateManualScore(student, item, $event)"
-                                        class="w-10 px-1 border border-gray-200 rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-brand-primary"
-                                      />
-                                      <span class="text-[10px]">%</span>
-                                    </div>
-                                  }
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  [(ngModel)]="item.completed"
-                                  (change)="updateManualProgress(student, item, 'questionnaire', $event)"
-                                  [disabled]="locked"
-                                  class="w-4 h-4 shrink-0 text-brand-primary rounded border-gray-300 focus:ring-brand-primary"
-                                  [class.cursor-not-allowed]="locked"
-                                  [class.cursor-pointer]="!locked"
-                                />
-                              </li>
-                            }
-                          }
-                        </ul>
-                      }
+                </div>
+
+                <!-- Students List -->
+                <div class="divide-y divide-gray-200">
+                  @if (group.students.length === 0) {
+                    <div class="px-6 py-8 text-center">
+                      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 class="mt-2 text-sm font-medium text-gray-900">No se encontraron alumnos</h3>
+                      <p class="mt-1 text-sm text-gray-500">Prueba otra búsqueda para este curso.</p>
                     </div>
                   }
-                </div>
-              }
+                  @for (student of group.students; track student.userId) {
+                    <div
+                      class="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                      (click)="toggleStudentDetails(student)"
+                      >
+                      <div class="flex flex-col md:flex-row items-center justify-between">
+                        <!-- Left: Avatar + Name + Email -->
+                        <div class="flex flex-col md:items-center gap-3 min-w-0 md:flex-row w-full">
+                          <!-- Profile Image -->
+                          <div class="shrink-0">
+                            @if (getStudentImageUrl(student.profilePhotoUrl)) {
+                              <img
+                                [src]="getStudentImageUrl(student.profilePhotoUrl)"
+                                [alt]="student.firstName + ' ' + student.lastName"
+                                class="h-10 w-10 rounded-full object-cover border border-gray-200"
+                                (error)="handleImageError($event)"
+                                />
+                              } @else {
+                                <div class="h-10 w-10 rounded-full bg-brand-primary uppercase font-bold flex items-center justify-center text-white text-sm">
+                                  {{ student.firstName.charAt(0) }}{{ student.lastName.charAt(0) }}
+                                </div>
+                              }
+                            </div>
+
+                            <!-- Name and Email in one line -->
+                            <div class="min-w-0 flex-1">
+                              <p class="text-sm text-gray-900 truncate">
+                                <span class="font-medium">{{ student.firstName }} {{ student.lastName }}</span>
+                                <span class="text-brand-tertiary mx-2">·</span>
+                                <span class="text-brand-tertiary-light">{{ student.email }}</span>
+                              </p>
+                            </div>
+                          </div>
+
+
+                          <div class="flex flex-col md:flex-row md:items-center w-full md:w-auto mt-4 md:mt-0 gap-6 md:ml-4">
+
+                            @if (hasPendingExams(student.userId)) {
+                              @let exams = getPendingExamsForStudent(student.userId);
+                              <div class="flex flex-col items-end gap-1">
+                                <button
+                                  (click)="goToExam(exams[0])"
+                                  class="relative inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                  [title]="exams.length === 1 ? '1 examen pendiente de corregir' : exams.length + ' exámenes pendientes de corregir'"
+                                  >
+                                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span>{{ exams.length }}</span>
+                                  <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                  </span>
+                                </button>
+                                @if (exams.length > 1) {
+                                  <p class="text-xs text-gray-500">Click para corregir</p>
+                                }
+                              </div>
+                            }
+
+                            <!-- Progress Bar -->
+                            <div class="min-w-[200px] md:min-w-[400px] max-w-[300px] flex flex-col gap-2">
+                              <!-- Videos Progress -->
+                              <div class="flex flex-col gap-1">
+                                <div class="flex items-center justify-between text-xs">
+                                  <div class="flex items-center gap-1 text-gray-600">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                                    </svg>
+                                    <span class="font-medium">Videos</span>
+                                  </div>
+                                  <span class="font-semibold" [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'text-green-600' : 'text-gray-700'">
+                                    {{ student.completedClasses }}/{{ student.totalClasses }}
+                                  </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    class="h-2 rounded-full transition-all duration-300"
+                                    [class]="student.completedClasses === student.totalClasses && student.totalClasses > 0 ? 'bg-green-500' : 'bg-brand-primary'"
+                                    [style.width.%]="student.totalClasses > 0 ? (student.completedClasses / student.totalClasses * 100) : 0">
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Questionnaires Progress -->
+                              <div class="flex flex-col gap-1">
+                                <div class="flex items-center justify-between text-xs">
+                                  <div class="flex items-center gap-1 text-gray-600">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span class="font-medium">Cuestionarios</span>
+                                  </div>
+                                  <span class="font-semibold" [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'text-green-600' : 'text-gray-700'">
+                                    {{ student.completedQuestionnaires }}/{{ student.totalQuestionnaires }}
+                                  </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    class="h-2 rounded-full transition-all duration-300"
+                                    [class]="student.completedQuestionnaires === student.totalQuestionnaires && student.totalQuestionnaires > 0 ? 'bg-green-500' : 'bg-brand-primary'"
+                                    [style.width.%]="student.totalQuestionnaires > 0 ? (student.completedQuestionnaires / student.totalQuestionnaires * 100) : 0">
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Overall Progress Percentage -->
+                              <div class="text-right">
+                                <span class="text-xs font-semibold" [class]="student.progress === 100 ? 'text-green-600' : 'text-brand-tertiary-light'">
+                                  Progreso total: {{ student.progress }}%
+                                </span>
+                              </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="md:ml-4 flex w-full flex-wrap items-center gap-2 mb-2">
+                              <!-- Generate Certificate Button -->
+                              <button
+                                (click)="openCertificateModal(student); $event.stopPropagation()"
+                                [disabled]="generatingCertificate()"
+                                class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                title="Generar certificado manualmente"
+                                >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Certificado</span>
+                              </button>
+
+                              <!-- Reset Progress Button -->
+                              <button
+                                (click)="openResetProgressModal(student); $event.stopPropagation()"
+                                [disabled]="resettingProgress()"
+                                class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                title="Resetear progreso del alumno"
+                                >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Resetear</span>
+                              </button>
+
+                              <!-- Unenroll Student Button -->
+                              <button
+                                (click)="openUnenrollModal(student); $event.stopPropagation()"
+                                [disabled]="unenrollingStudent()"
+                                class="cursor-pointer w-32 justify-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                title="Desasociar alumno del curso"
+                                >
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                                </svg>
+                                <span>Desasociar</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Progress Details (Expandable) -->
+                        @if (expandedStudentId() === student.userId) {
+                          <div class="mt-4 p-4 bg-gray-100 rounded-lg border-l-4 border-brand-primary" (click)="$event.stopPropagation()">
+                            <!-- Cabecera con leyenda -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                              <h4 class="text-sm font-bold text-brand-primary">Gestión de Progreso Manual</h4>
+                              <div class="flex items-center gap-2 text-[10px] text-gray-600">
+                                <span class="flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-100 rounded">
+                                  <svg class="w-3 h-3 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
+                                  Clase / Video
+                                </span>
+                                <span class="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded border-l-2 border-l-brand-primary">
+                                  <svg class="w-3 h-3 text-brand-primary shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                                  Cuestionario
+                                </span>
+                              </div>
+                            </div>
+
+                            @if (loadingDetails()) {
+                              <div class="flex justify-center p-4">
+                                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary"></div>
+                              </div>
+                            } @else if (studentProgressDetails()[student.userId]) {
+                              <ul class="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                                @for (item of studentProgressDetails()[student.userId].items; track item._id; let i = $index) {
+                                  @let locked = isItemLocked(studentProgressDetails()[student.userId].items, i);
+                                  <!-- Clase / Video -->
+                                  @if (item.type === 'class') {
+                                    <li class="flex items-center justify-between px-3 py-2 bg-green-50 border border-green-100 rounded text-xs" [class.opacity-50]="locked">
+                                      <div class="flex items-center gap-2 min-w-0">
+                                        @if (locked) {
+                                          <svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                        } @else {
+                                          <svg class="w-3.5 h-3.5 shrink-0 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                                          </svg>
+                                        }
+                                        <span class="truncate" [class.text-gray-400]="locked" title="{{ item.name }}">{{ item.name }}</span>
+                                      </div>
+                                      <input
+                                        type="checkbox"
+                                        [(ngModel)]="item.completed"
+                                        (change)="updateManualProgress(student, item, 'class', $event)"
+                                        [disabled]="locked"
+                                        class="w-4 h-4 shrink-0 text-brand-primary rounded border-gray-300 focus:ring-brand-primary"
+                                        [class.cursor-not-allowed]="locked"
+                                        [class.cursor-pointer]="!locked"
+                                        />
+                                      </li>
+                                    }
+                                    <!-- Cuestionario -->
+                                    @if (item.type === 'questionnaire') {
+                                      <li class="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded text-xs border-l-2 border-l-brand-primary" [class.opacity-50]="locked">
+                                        <div class="flex flex-col min-w-0">
+                                          <div class="flex items-center gap-2">
+                                            @if (locked) {
+                                              <svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                            } @else {
+                                              <svg class="w-3.5 h-3.5 shrink-0 text-brand-primary" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                                              </svg>
+                                            }
+                                            <span class="truncate font-medium" [class.text-gray-400]="locked" title="{{ item.name }}">{{ item.name }}</span>
+                                          </div>
+                                          @if (item.completed) {
+                                            <div class="flex items-center gap-1 mt-1 ml-5">
+                                              <span class="text-[10px] text-gray-500">Nota:</span>
+                                              <input
+                                                type="number"
+                                                min="0" max="100"
+                                                [(ngModel)]="item.score"
+                                                (blur)="updateManualScore(student, item, $event)"
+                                                class="w-10 px-1 border border-gray-200 rounded text-[10px] focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                                                />
+                                                <span class="text-[10px]">%</span>
+                                              </div>
+                                            }
+                                          </div>
+                                          <input
+                                            type="checkbox"
+                                            [(ngModel)]="item.completed"
+                                            (change)="updateManualProgress(student, item, 'questionnaire', $event)"
+                                            [disabled]="locked"
+                                            class="w-4 h-4 shrink-0 text-brand-primary rounded border-gray-300 focus:ring-brand-primary"
+                                            [class.cursor-not-allowed]="locked"
+                                            [class.cursor-pointer]="!locked"
+                                            />
+                                          </li>
+                                        }
+                                      }
+                                    </ul>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Modal de confirmación para resetear progreso -->
+              <app-confirm-modal
+                [isOpen]="showResetModal"
+                [config]="resetModalConfig"
+                (confirm)="confirmResetProgress()"
+                (cancel)="cancelResetProgress()"
+              ></app-confirm-modal>
+
+              <!-- Modal de confirmación para desasociar alumno -->
+              <app-confirm-modal
+                [isOpen]="showUnenrollModal"
+                [config]="unenrollModalConfig"
+                (confirm)="confirmUnenrollStudent()"
+                (cancel)="cancelUnenrollStudent()"
+              ></app-confirm-modal>
+
+              <!-- Modal de confirmación para generar certificado -->
+              <app-confirm-modal
+                [isOpen]="showCertificateModal"
+                [config]="certificateModalConfig"
+                (confirm)="confirmGenerateCertificate()"
+                (cancel)="cancelCertificate()"
+              ></app-confirm-modal>
             </div>
-          </div>
-        }
-      </div>
-    }
-  </div>
-
-  <!-- Modal de confirmación para resetear progreso -->
-  <app-confirm-modal
-    [isOpen]="showResetModal"
-    [config]="resetModalConfig"
-    (confirm)="confirmResetProgress()"
-    (cancel)="cancelResetProgress()"
-  ></app-confirm-modal>
-
-  <!-- Modal de confirmación para desasociar alumno -->
-  <app-confirm-modal
-    [isOpen]="showUnenrollModal"
-    [config]="unenrollModalConfig"
-    (confirm)="confirmUnenrollStudent()"
-    (cancel)="cancelUnenrollStudent()"
-  ></app-confirm-modal>
-
-  <!-- Modal de confirmación para generar certificado -->
-  <app-confirm-modal
-    [isOpen]="showCertificateModal"
-    [config]="certificateModalConfig"
-    (confirm)="confirmGenerateCertificate()"
-    (cancel)="cancelCertificate()"
-  ></app-confirm-modal>
-</div>
 
