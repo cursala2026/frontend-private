@@ -5,7 +5,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ModalDataTableComponent, ModalConfig } from '../../../shared/components/modal-data-table/modal-data-table.component';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { TableConfig, PaginationData } from '../../../shared/models/table.interface';
-import { CoursesService, Course } from '../../../core/services/courses.service';
+import { CoursesService,CourseListResponse, Course } from '../../../core/services/courses.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { CategoriesService } from '../../../core/services/categories.service';
@@ -13,12 +13,13 @@ import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
 import { TeacherAssignmentModalComponent } from '../../../shared/components/teacher-assignment-modal/teacher-assignment-modal.component';
 import { CertificateLogosModalComponent } from './certificate-logos-modal/certificate-logos-modal.component';
+import { CalendarioModalComponent } from './calendario-modal/calendario-modal.component';
 import { PublicDataService, PublicData } from '../../../core/services/public-data.service';
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent],
+  imports: [CommonModule, RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent, CalendarioModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
@@ -35,8 +36,10 @@ export class CoursesComponent implements OnInit {
   isModalOpen = signal<boolean>(false);
   isTeacherAssignmentModalOpen = signal<boolean>(false);
   showDuplicateModal = signal<boolean>(false);
+  isCalendarioModalOpen = signal<boolean>(false);
   isCertificateLogosModalOpen = signal<boolean>(false);
   companyData = signal<PublicData | null>(null);
+  selectedDate = signal<Date | null>(null);
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
   duplicateModalConfig: ConfirmModalConfig = {
@@ -186,6 +189,10 @@ export class CoursesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.coursesService.getCourses().subscribe((res: CourseListResponse) => {
+      this.courses.set(res.data); // acá cargás los cursos
+      console.log("Cursos cargados:", this.courses());
+    });
     this.loadCourses();
     this.loadTeachers();
     this.loadCategories();
@@ -212,6 +219,19 @@ export class CoursesComponent implements OnInit {
 
   onCertificateLogosDataUpdated(updated: PublicData): void {
     this.companyData.set(updated);
+  }
+
+  openCalendarioModal(courses: any): void {
+    this.selectedCourse = courses;
+    this.isCalendarioModalOpen.set(true);
+  }
+
+  onCalendarioModalClose(): void {
+    this.isCalendarioModalOpen.set(false);
+  }
+
+  onCalendarioDateSelected(date: Date): void {
+    this.selectedDate.set(date);
   }
 
   loadCategories(): void {
