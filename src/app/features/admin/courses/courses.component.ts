@@ -189,10 +189,6 @@ export class CoursesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.coursesService.getCourses().subscribe((res: CourseListResponse) => {
-      this.courses.set(res.data); // acá cargás los cursos
-      console.log("Cursos cargados:", this.courses());
-    });
     this.loadCourses();
     this.loadTeachers();
     this.loadCategories();
@@ -221,8 +217,8 @@ export class CoursesComponent implements OnInit {
     this.companyData.set(updated);
   }
 
-  openCalendarioModal(courses: any): void {
-    this.selectedCourse = courses;
+  openCalendarioModal(): void {
+    this.selectedCourse = this.courses();
     this.isCalendarioModalOpen.set(true);
   }
 
