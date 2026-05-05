@@ -1,10 +1,10 @@
 import { Component, signal, inject, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-enroll-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './enroll-modal.component.html'
 })
 export class EnrollModalComponent {

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
@@ -16,7 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-questionnaire-take',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './questionnaire-take.component.html',
 })
 export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
@@ -633,7 +633,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     const questionnaire = this.questionnaire();
     if (!questionnaire) return;
 
-    const score = submission.finalScore || submission.autoGradedScore || 0;
+    // Usar ?? en lugar de || para que un puntaje de 0 no sea tratado como falsy
+    const score = submission.finalScore ?? submission.autoGradedScore ?? 0;
     const passed = questionnaire.passingScore ? score >= questionnaire.passingScore : true;
 
     // debug log removed

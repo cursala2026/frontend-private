@@ -1,10 +1,10 @@
 import { Component, input, output, effect, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-grading-help-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './grading-help-modal.component.html'
 })
 export class GradingHelpModalComponent implements OnDestroy {

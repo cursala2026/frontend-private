@@ -81,6 +81,10 @@ export const routes: Routes = [
       {
         path: 'roles',
         loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+      },
+      {
+        path: 'support-tickets',
+        loadComponent: () => import('./features/admin/support-tickets/support-tickets.component').then(m => m.SupportTicketsComponent)
       }
     ]
   },
@@ -160,6 +164,10 @@ export const routes: Routes = [
       {
         path: 'questionnaires/:id/results',
         loadComponent: () => import('./features/profesor/questionnaires/questionnaire-results/questionnaire-results.component').then(m => m.QuestionnaireResultsComponent)
+      },
+      {
+        path: 'report-issue',
+        loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
       }
     ]
   },
@@ -209,6 +217,10 @@ export const routes: Routes = [
       {
         path: 'payment/pending',
         loadComponent: () => import('./features/alumno/payment-pending/payment-pending.component').then(m => m.PaymentPendingComponent)
+      },
+      {
+        path: 'report-issue',
+        loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
       }
     ]
   },

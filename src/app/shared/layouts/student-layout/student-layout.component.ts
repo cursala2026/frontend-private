@@ -1,5 +1,5 @@
 import { Component, signal, inject, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -11,7 +11,7 @@ interface MenuItem {
 @Component({
   selector: 'app-student-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './student-layout.component.html',
   
 })
@@ -49,6 +49,11 @@ export class StudentLayoutComponent {
 
   goToProfile(): void {
     this.router.navigate(['/alumno/profile']);
+    this.closeUserMenu();
+  }
+
+  goToReportIssue(): void {
+    this.router.navigate(['/alumno/report-issue']);
     this.closeUserMenu();
   }
 

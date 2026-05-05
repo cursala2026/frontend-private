@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CoursesService, Course } from '../../../../core/services/courses.service';
@@ -8,7 +8,7 @@ import { InfoService } from '../../../../core/services/info.service';
 @Component({
   selector: 'app-course-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './course-edit.component.html',
 })
 export class CourseEditComponent implements OnInit {

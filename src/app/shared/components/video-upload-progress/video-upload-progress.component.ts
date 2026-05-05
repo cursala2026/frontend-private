@@ -1,5 +1,5 @@
 import { Component, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { VideoUploadManagerService } from '../../../core/services/video-upload-manager.service';
 import { QuestionMediaUploadManagerService } from '../../../core/services/question-media-upload-manager.service';
 import { Subscription } from 'rxjs';
@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-video-upload-progress',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     @if (uploads().length > 0 || queued().length > 0 || mediaUploads().length > 0 || mediaQueued().length > 0) {
       <div class="fixed right-4 bottom-4 w-80 z-50 space-y-3">

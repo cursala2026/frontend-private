@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,7 +9,7 @@ import { CourseProgressService, CourseProgress } from '../../../core/services/co
 @Component({
   selector: 'app-alumno-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './alumno-dashboard.component.html',
   
 })

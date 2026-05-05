@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,7 +8,7 @@ import { InfoService } from '../../../core/services/info.service';
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, NgOptimizedImage],
+  imports: [ReactiveFormsModule, RouterModule, NgOptimizedImage],
   templateUrl: './forgot-password.component.html'
 })
 export class ForgotPasswordComponent {

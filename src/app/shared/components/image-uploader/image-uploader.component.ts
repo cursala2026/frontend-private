@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
 import { SignatureCropperComponent } from '../signature-cropper/signature-cropper.component';
@@ -7,7 +7,7 @@ import { SignatureCropperComponent } from '../signature-cropper/signature-croppe
 @Component({
   selector: 'app-image-uploader',
   standalone: true,
-  imports: [CommonModule, SignatureCropperComponent],
+  imports: [SignatureCropperComponent],
   template: `
     <div class="space-y-4">
       <!-- Vista previa actual -->

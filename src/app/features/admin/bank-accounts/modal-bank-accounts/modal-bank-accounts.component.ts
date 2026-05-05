@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, inject, signal, effect, Signal, WritableSignal, Injector, runInInjectionContext } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { BankAccountService, BankAccount, UpdateBankAccountDto } from '../../../../core/services/bank-account.service';
 import { InfoService } from '../../../../core/services/info.service';
@@ -7,7 +7,7 @@ import { InfoService } from '../../../../core/services/info.service';
 @Component({
   selector: 'app-modal-bank-accounts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './modal-bank-accounts.component.html'
 })
 export class ModalBankAccountsComponent {

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import {
@@ -23,7 +23,7 @@ interface ClassData {
 @Component({
   selector: 'app-questionnaire-edit',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, QuestionItemComponent, GradingHelpModalComponent],
+  imports: [ReactiveFormsModule, QuestionItemComponent, GradingHelpModalComponent],
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {
@@ -141,6 +141,7 @@ export class QuestionnaireEditComponent implements OnInit {
       courseId: ['', Validators.required],
       title: ['', [Validators.required, Validators.maxLength(200)]],
       description: ['', Validators.maxLength(1000)],
+      isSurvey: [false],
       status: ['ACTIVE', Validators.required],
       positionType: ['BETWEEN_CLASSES', Validators.required],
       afterClassId: [''],
@@ -277,6 +278,7 @@ export class QuestionnaireEditComponent implements OnInit {
       courseId: questionnaire.courseId,
       title: questionnaire.title,
       description: questionnaire.description || '',
+      isSurvey: questionnaire.isSurvey || false,
       status: questionnaire.status,
       positionType: questionnaire.position.type,
       afterClassId: questionnaire.position.afterClassId || '',
