@@ -1,0 +1,33 @@
+/* Estilos para fechas ocupadas y disponibles en el calendario */
+.occupied-date .mat-calendar-body-cell-content {
+  position: relative;
+}
+
+.occupied-date .mat-calendar-body-cell-content::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left:35%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #facc15;
+  box-shadow: 10px 0 #facc15;
+}
+
+.available-date .mat-calendar-body-cell-content {
+  position: relative;
+}
+
+.available-date .mat-calendar-body-cell-content::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 3.2px;
+  background-color: #4e68ba;
+  border-radius: 0;
+}

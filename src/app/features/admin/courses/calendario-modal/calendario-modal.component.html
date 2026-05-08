@@ -1,0 +1,74 @@
+<style>
+  .mat-calendar-body-label {
+    display: none;
+  }
+  .calendario-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+</style>
+@if (isOpen) {
+  <!-- Overlay -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+    (click)="onClose()"
+  >
+    <!-- Modal panel -->
+    <div
+      class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="bg-white px-6 py-4 flex items-center justify-between">
+        <div class="w-full text-center">
+          <h2 id="modal-title" class="text-2xl font-bold" style="color: #253466;">Calendario</h2>
+        </div>
+        <button
+          type="button"
+          (click)="onClose()"
+          class="text-gray-500 hover:text-gray-700 transition p-1 rounded-lg hover:bg-gray-200"
+          aria-label="Cerrar"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Contenido -->
+      <div class="grid grid-cols-2 gap-6 p-6">
+        <!-- Cursos -->
+        <div class="calendario-container">
+          <h3 class="text-lg text-center">Cursos</h3>
+          @if (selectedCourses.length > 0) {
+              <div *ngFor="let course of selectedCourses" class="mb-4">
+                <p class="text-center">{{ course.name }}</p>
+                <img [src]="course.imageUrl?.startsWith('http') ? course.imageUrl : 'https://cursala.b-cdn.net/course-images/' + course.imageUrl" alt="Imagen delcurso" class="rounded-lg shadow-md">
+              </div>
+          } 
+          @else {
+              <p class="text-center text-gray-400">No hay cursos para este día.</p>
+          }
+        </div>
+
+        <!-- Calendario -->
+        <div>
+          <h3 class="text-lg text-center">Fechas</h3>
+            <mat-calendar [(selected)]="selectedDate" [dateClass]="dateClass" startView="month" (selectedChange)="onDateSelected($event)"></mat-calendar>
+          <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+            <span class="flex items-center gap-1">
+              <span class="w-3 h-1" style="background-color: #4e68ba;"></span> Disponibles
+            </span>
+            <span class="flex items-center gap-4">
+              <span class="w-2 h-2 rounded-full bg-yellow-400" style="box-shadow: 10px 0 #facc15;"></span> Ocupadas
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

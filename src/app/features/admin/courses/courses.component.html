@@ -1,3 +1,11 @@
+<style>
+  .btn {
+    background-color: #253466
+  }
+  .btn:hover{
+    background-color: #364780
+  }
+</style>
 <div class="h-full flex flex-col">
   <div class="flex-1 flex flex-col max-w-full pt-4">
     <!-- Header -->
@@ -8,6 +16,15 @@
           <p class="text-white/90 text-sm">Administra los cursos del sistema</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+          <button
+            (click)="openCalendarioModal()"
+            class="btn inline-flex items-center gap-2 px-4 py-2.5 text-white text-sm font-medium rounded-lg focus:ring-4 focus:ring-white/20 transition-all shadow-md whitespace-nowrap cursor-pointer"
+            >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 0 1 1 1v1h10V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v2H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1zm15 8H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10zM7 14a1 1 0 0 1 2 0v2a1 1 0 1 1-2 0v-2zm4 0a1 1 0 0 1 2 0v2a1 1 0 1 1-2 0v-2zm4 0a1 1 0 0 1 2 0v2a1 1 0 1 1-2 0v-2z" clip-rule="evenodd"/>
+            </svg>
+            Calendario
+          </button>
           <button
             (click)="openCertificateLogosModal()"
             class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 text-white text-sm font-medium rounded-lg hover:bg-white/25 focus:ring-4 focus:ring-white/20 transition-all shadow-md hover:shadow-lg whitespace-nowrap cursor-pointer"
@@ -90,3 +107,10 @@
   (dataUpdated)="onCertificateLogosDataUpdated($event)"
 />
 
+<!-- Modal de calendario -->
+<app-calendario-modal
+  [isOpen]="isCalendarioModalOpen()"
+  [courses]="selectedCourse"
+  (close)="onCalendarioModalClose()"
+  (dateSelected)="onCalendarioDateSelected($event)"
+/>
