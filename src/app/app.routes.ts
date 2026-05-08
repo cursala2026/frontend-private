@@ -166,6 +166,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profesor/questionnaires/questionnaire-results/questionnaire-results.component').then(m => m.QuestionnaireResultsComponent)
       },
       {
+        path: 'course-interests',
+        loadComponent: () => import('./modules/alumno/components/course-interests/course-interests')
+          .then(m => m.CourseInterestsComponent)
+      },
+      {
         path: 'report-issue',
         loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
       }

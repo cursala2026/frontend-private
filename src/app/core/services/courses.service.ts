@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../config/environment';
-
 export interface TeacherInfo {
   teacherId: string;
   teacherName: string;
@@ -125,6 +124,10 @@ export interface UpdateCourseDto {
   showOnHome?: boolean;
   deleteImage?: boolean;
   teachers?: string[]; // Array de IDs de profesores (1-3)
+}
+export interface SaveInterestsDto {
+  courseIds: string[];
+  suggestions: string;
 }
 
 @Injectable({
@@ -324,5 +327,12 @@ export class CoursesService {
 
   duplicateCourse(courseId: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${courseId}/duplicate`, {});
+  }
+  getAvailableInterests(): Observable<Course[]> {
+    return this.http.get<Course[]>(`${this.apiUrl}/active`);
+  }
+
+  saveUserInterests(payload: SaveInterestsDto): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/interests`, payload);
   }
 }
