@@ -36,5 +36,7 @@ export interface IUser {
   professionalDescription?: string;
   profilePhotoUrl?: string;
   professionalSignatureUrl?: string;
-  hasCompletedInterestsForm?: boolean; // ← agregá esta línea
+  hasCompletedInterestsForm?: boolean;
+  interests?: any[];           
+  interestSuggestions?: string; 
 }
