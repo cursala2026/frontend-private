@@ -40,10 +40,10 @@
       </div>
 
       <!-- Contenido -->
-      <div class="grid grid-cols-2 gap-6 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
         <!-- Cursos -->
-        <div class="calendario-container">
-          <h3 class="text-lg text-center">Cursos</h3>
+        <div class="calendario-container order-2 md:order-1">
+          <h3 class="text-lg font-semibold text-center mb-4" style="color: #253466;">Cursos</h3>
           @if (selectedCourses.length > 0) {
               <div *ngFor="let course of selectedCourses" class="mb-4">
                 <p class="text-center">{{ course.name }}</p>
@@ -56,10 +56,10 @@
         </div>
 
         <!-- Calendario -->
-        <div>
-          <h3 class="text-lg text-center">Fechas</h3>
+        <div class="order-1 md:order-2">
+          <h3 class="text-lg font-semibold text-center mb-4" style="color: #253466;">Fechas</h3>
             <mat-calendar [(selected)]="selectedDate" [dateClass]="dateClass" startView="month" (selectedChange)="onDateSelected($event)"></mat-calendar>
-          <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+          <div class="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
             <span class="flex items-center gap-1">
               <span class="w-3 h-1" style="background-color: #4e68ba;"></span> Disponibles
             </span>

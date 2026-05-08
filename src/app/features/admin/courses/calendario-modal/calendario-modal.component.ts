@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, Output, ViewEncapsulation  } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCalendar, MatCalendarCellClassFunction } from '@angular/material/datepicker';
+import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { ModalConfig } from '../../../../shared/components/modal-data-table/modal-data-table.component';
 
 @Component({
   selector: 'app-calendario-modal',
   standalone: true,
-  imports: [CommonModule, MatCalendar],
+  imports: [CommonModule, MatCalendar, MatDatepickerModule, MatNativeDateModule],
   templateUrl: './calendario-modal.component.html',
   styleUrls: ['./calendario-modal.component.scss'],
   encapsulation: ViewEncapsulation.None
@@ -90,7 +91,7 @@ export class CalendarioModalComponent {
           d1.getDate() === d2.getDate();
   }
 
-  dateClass: MatCalendarCellClassFunction<Date> = (cellDate, view) => {
+  dateClass: MatCalendarCellClassFunction<Date> = (cellDate: Date, view: string) => {
     if (view === 'month') {
       const normalizedCell = this.normalizeDate(cellDate);
       if (this.occupiedDates.some(o => this.isSameDay(o.date, normalizedCell))) {

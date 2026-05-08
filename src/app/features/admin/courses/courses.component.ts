@@ -19,7 +19,7 @@ import { PublicDataService, PublicData } from '../../../core/services/public-dat
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent],
+  imports: [RouterModule, DataTableComponent, ModalDataTableComponent, TeacherAssignmentModalComponent, ConfirmModalComponent, CertificateLogosModalComponent, CalendarioModalComponent],
   templateUrl: './courses.component.html'
 })
 export class CoursesComponent implements OnInit {
