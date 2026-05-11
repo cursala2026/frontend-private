@@ -67,7 +67,14 @@ export class CourseEditComponent implements OnInit {
       next: (response: any) => {
         const courseData = response?.data || response;
         this.course.set(courseData);
-        
+
+        // Actualizar estado del programa
+        if (courseData.pdfSynced === true){
+          this.programStatus.set('sincronizado');
+        } else {
+          this.programStatus.set(courseData.pdfSyncError ? 'error' : 'pendiente');
+        }
+
         // Convertir days de array a string si es necesario
         const daysValue = courseData.days && Array.isArray(courseData.days) 
           ? courseData.days.join(', ') 
