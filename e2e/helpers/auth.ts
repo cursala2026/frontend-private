@@ -9,11 +9,6 @@ const SUBMISSION_ID = 'ffffffffffffffffffffffff';
 
 export { COURSE_ID, QUESTIONNAIRE_ID, CLASS_ID, STUDENT_USER_ID, PROFESOR_USER_ID, SUBMISSION_ID };
 
-/**
- * Genera un token JWT fake con exp muy lejano (año 2286).
- * El frontend sólo decodifica el payload para verificar expiración —
- * no valida la firma— así que esto funciona para tests E2E.
- */
 function makeFakeJwt(payload: object): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -22,7 +17,6 @@ function makeFakeJwt(payload: object): string {
   return `${header}.${body}.fakesignature`;
 }
 
-/** Inyecta sesión de ALUMNO en localStorage via addInitScript (corre antes de Angular). */
 export async function injectAlumnoAuth(page: Page): Promise<void> {
   const user = {
     _id: STUDENT_USER_ID,
@@ -43,7 +37,6 @@ export async function injectAlumnoAuth(page: Page): Promise<void> {
   );
 }
 
-/** Inyecta sesión de PROFESOR en localStorage via addInitScript (corre antes de Angular). */
 export async function injectProfesorAuth(page: Page): Promise<void> {
   const user = {
     _id: PROFESOR_USER_ID,

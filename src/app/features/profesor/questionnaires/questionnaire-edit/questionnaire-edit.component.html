@@ -153,6 +153,7 @@
       </div>
 
       <!-- Configuration Card -->
+    @if (!questionnaireForm.get('isSurvey')?.value) {
       <div class="bg-white rounded-lg shadow-md p-6">
         <!-- Header Section -->
         <div class="border-b-2 border-b-brand-primary pb-2 mb-4">
@@ -243,6 +244,7 @@
           </div>
         </div>
       </div>
+    }
 
       <!-- Questions Card -->
       <div class="bg-white rounded-lg shadow-md p-6">
