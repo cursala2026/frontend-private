@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-
+import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CoursesService, Course } from '../../../../core/services/courses.service';
@@ -8,7 +8,7 @@ import { InfoService } from '../../../../core/services/info.service';
 @Component({
   selector: 'app-course-edit',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './course-edit.component.html',
 })
 export class CourseEditComponent implements OnInit {
@@ -27,6 +27,7 @@ export class CourseEditComponent implements OnInit {
   selectedImageFile: File | null = null;
   deleteImage: boolean = false;
   originalImageUrl: string | null = null;
+  programStatus = signal<'sincronizado' | 'pendiente' | 'error'>('pendiente');
 
   ngOnInit(): void {
     this.courseId = this.route.snapshot.paramMap.get('courseId');

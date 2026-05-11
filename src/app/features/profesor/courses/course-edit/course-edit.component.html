@@ -249,8 +249,33 @@
         </div>
       </div>
 
-      
+      <!-- Programa del Curso -->
+      <div class="mt-10 border-b-2 border-b-brand-primary pb-2">
+        <h2 class="text-xl font-bold flex items-center text-brand-primary">
+          <span class="min-w-6 rounded-full w-6 h-6 bg-brand-primary flex items-center justify-center text-white mr-3 text-base">
+            3
+          </span>
+          Programa del Curso
+        </h2>
+      </div>
 
+      <div class="bg-brand-tertiary-lighten/20 rounded-lg p-6 mt-4">
+        <!-- Estado -->
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold"
+          [ngClass]="{
+            'bg-green-100 text-green-700': programStatus() === 'sincronizado',
+            'bg-yellow-100 text-yellow-700': programStatus() === 'pendiente',
+            'bg-red-100 text-red-700': programStatus() === 'error'
+          }">
+          {{ programStatus() | titlecase }}
+        </span>
+
+        <!-- Mensaje informativo -->
+        <p class="mt-3 text-gray-700 text-sm">
+          El sistema mantiene actualizado el Programa del Curso en Bunny.
+          Cualquier cambio en las clases o el horario regenerará automáticamente el documento.
+        </p>
+      </div>
       
       <!-- Submit Button -->
       <div class="flex justify-center space-x-4 py-8 bg-brand-tertiary-lighten/20 border-t border-gray-400 rounded-bl-lg rounded-br-lg">
