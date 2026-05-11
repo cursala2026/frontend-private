@@ -37,6 +37,7 @@
           {{ config.confirmText || 'Confirmar' }}
         </button>
         <button type="button" (click)="onCancel()"
+          [ngClass]="config.cancelButtonClass || ''"
           class="cursor-pointer text-sm bg-transparent font-bold inline-flex items-center border transition-all py-2 rounded-full px-4"
           style="color: var(--color-brand-tertiary); border-color: var(--color-brand-tertiary-lighten);">
           {{ config.cancelText || 'Cancelar' }}
