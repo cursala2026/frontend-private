@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard, vendedorGuard, profesorGuard, alumnoGuard, profesorOrAdminInProfesorModeGuard } from './core/guards/role.guard';
-
+import { interestsFormGuard } from './core/guards/interests-form.guard';
 export const routes: Routes = [
   // Ruta raíz - redirige al login
   {
@@ -166,6 +166,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profesor/questionnaires/questionnaire-results/questionnaire-results.component').then(m => m.QuestionnaireResultsComponent)
       },
       {
+        path: 'course-interests',
+        loadComponent: () => import('./modules/alumno/components/course-interests/course-interests')
+          .then(m => m.CourseInterestsComponent)
+      },
+      {
         path: 'report-issue',
         loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
       }
@@ -174,55 +179,19 @@ export const routes: Routes = [
 
   // Rutas de Alumno (con navbar layout)
   {
-    path: 'alumno',
-    canActivate: [authGuard, alumnoGuard],
-    loadComponent: () => import('./shared/layouts/student-layout/student-layout.component').then(m => m.StudentLayoutComponent),
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
-      },
-      {
-        path: 'courses',
-        loadComponent: () => import('./features/alumno/student-courses/student-courses.component').then(m => m.StudentCoursesComponent)
-      },
-      {
-        path: 'course-detail/:courseId',
-        loadComponent: () => import('./features/alumno/course-detail/course-detail.component').then(m => m.CourseDetailComponent)
-      },
-      {
-        path: 'course-detail/:courseId/class/:classId',
-        loadComponent: () => import('./features/alumno/class-detail/class-detail.component').then(m => m.ClassDetailComponent)
-      },
-      {
-        path: 'course-detail/:courseId/questionnaire/:questionnaireId',
-        loadComponent: () => import('./features/alumno/questionnaire-take/questionnaire-take.component').then(m => m.QuestionnaireTakeComponent)
-      },
-      {
-        path: 'profile',
-        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
-      },
-      {
-        path: 'certificates',
-        loadComponent: () => import('./features/alumno/certificates/student-certificates.component').then(m => m.StudentCertificatesComponent)
-      },
-      {
-        path: 'payment/success',
-        loadComponent: () => import('./features/alumno/payment-success/payment-success.component').then(m => m.PaymentSuccessComponent)
-      },
-      {
-        path: 'payment/failure',
-        loadComponent: () => import('./features/alumno/payment-failure/payment-failure.component').then(m => m.PaymentFailureComponent)
-      },
-      {
-        path: 'payment/pending',
-        loadComponent: () => import('./features/alumno/payment-pending/payment-pending.component').then(m => m.PaymentPendingComponent)
-      },
-      {
-        path: 'report-issue',
-        loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
-      }
-    ]
+  path: 'alumno',
+  canActivate: [authGuard, alumnoGuard],
+  loadComponent: () => import('./shared/layouts/student-layout/student-layout.component')
+    .then(m => m.StudentLayoutComponent),
+  children: [
+    {
+      path: '',
+      canActivate: [interestsFormGuard], // ← agregá esto
+      loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component')
+        .then(m => m.AlumnoDashboardComponent)
+    },
+    // ... resto de rutas
+  ]
   },
 
   // Ruta wildcard - redirige al login si no encuentra la ruta

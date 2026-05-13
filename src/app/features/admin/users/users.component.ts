@@ -719,23 +719,55 @@ export class UsersComponent implements OnInit {
     this.selectedUser = user;
     
     let fields: ModalField[] = [
-      { key: 'profilePhotoUrl', label: 'URL Foto de Perfil', type: 'text' },
-      { key: 'email', label: 'Email', type: 'email' },
-      { key: 'username', label: 'Nombre de Usuario', type: 'text' },
-      { key: 'firstName', label: 'Nombre', type: 'text' },
-      { key: 'lastName', label: 'Apellido', type: 'text' },
-      { key: 'dni', label: 'DNI', type: 'text' },
-      { key: 'phone', label: 'Teléfono', type: 'text' },
-      { key: 'birthDate', label: 'Fecha de Nacimiento', type: 'date' },
-      { key: 'professionalDescription', label: 'Descripción Profesional', type: 'textarea' },
-      { key: 'roles', label: 'Roles', type: 'text' },
-      { key: 'createdAt', label: 'Fecha de Registro', type: 'date' },
-      { key: 'lastConnection', label: 'Última Conexión', type: 'date' }
+      { key: 'profilePhotoUrl', label: 'URL Foto de Perfil', type: 'text', section: 'Información Personal' },
+      { key: 'email', label: 'Email', type: 'email', section: 'Información Personal' },
+      { key: 'username', label: 'Nombre de Usuario', type: 'text', section: 'Información Personal' },
+      { key: 'firstName', label: 'Nombre', type: 'text', section: 'Información Personal' },
+      { key: 'lastName', label: 'Apellido', type: 'text', section: 'Información Personal' },
+      { key: 'dni', label: 'DNI', type: 'text', section: 'Información Personal' },
+      { key: 'phone', label: 'Teléfono', type: 'text', section: 'Información Personal' },
+      { key: 'birthDate', label: 'Fecha de Nacimiento', type: 'date', section: 'Información Personal' },
+      { key: 'professionalDescription', label: 'Descripción Profesional', type: 'textarea', section: 'Información Personal' },
+      { key: 'roles', label: 'Roles', type: 'text', section: 'Información Personal' },
+      { key: 'createdAt', label: 'Fecha de Registro', type: 'date', section: 'Información Personal' },
+      { key: 'lastConnection', label: 'Última Conexión', type: 'date', section: 'Información Personal' }
     ];
 
     // Agregar firma solo para profesores y admins
     if (user.roles?.includes('PROFESOR') || user.roles?.includes('ADMIN')) {
-      fields.push({ key: 'professionalSignatureUrl', label: 'Firma Digital', type: 'image' });
+      fields.push({ key: 'professionalSignatureUrl', label: 'Firma Digital', type: 'image', section: 'Información Personal' });
+    }
+
+    // Sección de intereses (solo para alumnos)
+    if (user.roles?.includes('ALUMNO')) {
+      // Nombres de los cursos de interés
+      const courseNames = Array.isArray(user.interests)
+        ? user.interests.map((c: any) => c.name || c.title || c).join(', ') || 'Sin intereses registrados'
+        : 'Sin intereses registrados';
+
+      fields.push({
+        key: '_interestCourses',
+        label: 'Cursos de Interés',
+        type: 'textarea',
+        section: 'Intereses y Sugerencias',
+        value: courseNames
+      });
+
+      fields.push({
+        key: '_interestSuggestions',
+        label: 'Sugerencias',
+        type: 'textarea',
+        section: 'Intereses y Sugerencias',
+        value: user.interestSuggestions || 'Sin sugerencias registradas'
+      });
+
+      fields.push({
+        key: 'hasCompletedInterestsForm',
+        label: 'Formulario completado',
+        type: 'checkbox',
+        section: 'Intereses y Sugerencias',
+        value: user.hasCompletedInterestsForm ?? false
+      });
     }
 
     this.modalConfig = {
