@@ -7,6 +7,7 @@ export interface ConfirmModalConfig {
   confirmText?: string;
   cancelText?: string;
   confirmButtonClass?: string;
+  cancelButtonClass?: string;
   icon?: 'warning' | 'danger' | 'info' | 'success';
 }
 

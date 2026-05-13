@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
-
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -86,6 +85,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     confirmText: 'Generar',
     cancelText: 'Cancelar',
     confirmButtonClass: 'bg-green-600 hover:bg-green-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
     icon: 'info'
   };
   generatingCertificate = signal<boolean>(false);
@@ -99,6 +99,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     confirmText: 'Resetear',
     cancelText: 'Cancelar',
     confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
     icon: 'danger'
   };
   resettingProgress = signal<boolean>(false);
@@ -112,6 +113,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     confirmText: 'Desasociar',
     cancelText: 'Cancelar',
     confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
     icon: 'danger'
   };
   unenrollingStudent = signal<boolean>(false);
