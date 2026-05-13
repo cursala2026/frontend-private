@@ -437,52 +437,48 @@ export class QuestionnaireEditComponent implements OnInit {
   }
 
   // Validator for each question group
-  private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
-    const type = control.get('type')?.value;
-    const options = control.get('options') as FormArray | null;
-    const errors: any = {};
+private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
+  const type = control.get('type')?.value;
+  const options = control.get('options') as FormArray | null;
+  const errors: any = {};
 
-    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-      if (!options || options.length < 2) {
-        errors.optionsCount = 'Debe haber al menos 2 opciones';
-      }
+  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+    if (!options || options.length < 2) {
+      errors.optionsCount = 'Debe haber al menos 2 opciones';
+    }
 
-      // Ensure every option has text
-      if (options) {
-        const emptyIndexes: number[] = [];
-        for (let i = 0; i < options.length; i++) {
-          const txtCtrl = options.at(i).get('text');
-          const txtVal = txtCtrl?.value;
-          if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
-            emptyIndexes.push(i);
-            // mark control as touched so template shows per-option error
-            try { txtCtrl?.markAsTouched(); } catch {}
-            // explicitly set required error so control.invalid becomes true
-            try { txtCtrl?.setErrors({ required: true }); } catch {}
-          }
-        }
-        if (emptyIndexes.length) {
-          errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
+    if (options) {
+      const emptyIndexes: number[] = [];
+      for (let i = 0; i < options.length; i++) {
+        const txtCtrl = options.at(i).get('text');
+        const txtVal = txtCtrl?.value;
+        // ✅ Solo evaluar el valor real, sin tocar ni setear errores en el control hijo
+        if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
+          emptyIndexes.push(i);
         }
       }
-
-      if (type === 'MULTIPLE_CHOICE') {
-        const correct = control.get('correctOptionId')?.value;
-        if (correct === null || correct === undefined || correct === '') {
-          errors.noCorrect = 'Selecciona una opción correcta';
-        }
-      }
-
-      if (type === 'MULTIPLE_SELECT') {
-        const corrects = control.get('correctOptionIds')?.value || [];
-        if (!Array.isArray(corrects) || corrects.length === 0) {
-          errors.noCorrect = 'Selecciona al menos una opción correcta';
-        }
+      if (emptyIndexes.length) {
+        errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
       }
     }
 
-    return Object.keys(errors).length ? errors : null;
+    if (type === 'MULTIPLE_CHOICE') {
+      const correct = control.get('correctOptionId')?.value;
+      if (correct === null || correct === undefined || correct === '') {
+        errors.noCorrect = 'Selecciona una opción correcta';
+      }
+    }
+
+    if (type === 'MULTIPLE_SELECT') {
+      const corrects = control.get('correctOptionIds')?.value || [];
+      if (!Array.isArray(corrects) || corrects.length === 0) {
+        errors.noCorrect = 'Selecciona al menos una opción correcta';
+      }
+    }
   }
+
+  return Object.keys(errors).length ? errors : null;
+}
 
   private updateAfterClassValidators(posType: string | null) {
     const afterClassControl = this.questionnaireForm.get('afterClassId');

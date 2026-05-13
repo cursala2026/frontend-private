@@ -67,22 +67,37 @@ export class QuestionItemComponent implements OnDestroy {
   }
 
   onQuestionTypeChange() {
-    const type = (this.question as FormGroup).get('type')?.value;
-    const optionsArray = this.options;
+  const type = (this.question as FormGroup).get('type')?.value;
+  const optionsArray = this.options;
 
+  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+    // Guardar los textos actuales antes de limpiar
+    const existingTexts: string[] = optionsArray.controls.map(
+      ctrl => ctrl.get('text')?.value || ''
+    );
+
+    // Limpiar opciones
     while (optionsArray.length) {
       optionsArray.removeAt(0);
     }
 
-    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-      for (let i = 0; i < 4; i++) {
-        optionsArray.push(this.createOptionGroup());
-      }
+    // Recrear 4 opciones preservando el texto que ya había
+    for (let i = 0; i < 4; i++) {
+      const group = this.createOptionGroup();
+      const savedText = existingTexts[i] ?? '';
+      group.patchValue({ text: savedText });
+      optionsArray.push(group);
     }
-
-    (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
-    (this.question as FormGroup).updateValueAndValidity();
+  } else {
+    // Si cambia a TEXT, limpiar opciones (no se necesitan)
+    while (optionsArray.length) {
+      optionsArray.removeAt(0);
+    }
   }
+
+  (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
+  (this.question as FormGroup).updateValueAndValidity();
+}
 
   onMediaSelected(event: Event) {
     const input = event.target as HTMLInputElement;
