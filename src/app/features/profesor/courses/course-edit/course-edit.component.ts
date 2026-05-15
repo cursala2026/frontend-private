@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-
+import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CoursesService, Course } from '../../../../core/services/courses.service';
@@ -8,7 +8,7 @@ import { InfoService } from '../../../../core/services/info.service';
 @Component({
   selector: 'app-course-edit',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './course-edit.component.html',
 })
 export class CourseEditComponent implements OnInit {
@@ -27,6 +27,7 @@ export class CourseEditComponent implements OnInit {
   selectedImageFile: File | null = null;
   deleteImage: boolean = false;
   originalImageUrl: string | null = null;
+  programStatus = signal<'sincronizado' | 'pendiente' | 'error'>('pendiente');
 
   ngOnInit(): void {
     this.courseId = this.route.snapshot.paramMap.get('courseId');
@@ -66,7 +67,14 @@ export class CourseEditComponent implements OnInit {
       next: (response: any) => {
         const courseData = response?.data || response;
         this.course.set(courseData);
-        
+
+        // Actualizar estado del programa
+        if (courseData.pdfSynced === true){
+          this.programStatus.set('sincronizado');
+        } else {
+          this.programStatus.set(courseData.pdfSyncError ? 'error' : 'pendiente');
+        }
+
         // Convertir days de array a string si es necesario
         const daysValue = courseData.days && Array.isArray(courseData.days) 
           ? courseData.days.join(', ') 
