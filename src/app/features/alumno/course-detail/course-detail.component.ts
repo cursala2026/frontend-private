@@ -73,7 +73,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Load course initially
-    const courseId = this.route.snapshot.paramMap.get('courseId');
+    const courseId = this.route.snapshot.paramMap.get('id');
     if (courseId) {
       this.loadCourse(courseId);
     } else {
@@ -87,7 +87,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       .subscribe((event: any) => {
         // Si volvimos al detalle del curso (sin estar dentro de una clase/cuestionario), recargar todo el curso
         if (event.url.includes('/alumno/course-detail/') && !event.url.includes('/class/') && !event.url.includes('/questionnaire/')) {
-          const currentCourseId = this.route.snapshot.paramMap.get('courseId');
+          const currentCourseId = this.route.snapshot.paramMap.get('id');
           if (currentCourseId) {
             // Recargar todo el curso (incluye orderedContent) para reflejar cambios en el backend
             this.loadCourse(currentCourseId);
@@ -98,7 +98,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     // Page Visibility API: actualizar al volver al tab
     this.visibilityHandler = () => {
       if (document.visibilityState === 'visible') {
-        const currentCourseId = this.route.snapshot.paramMap.get('courseId');
+        const currentCourseId = this.route.snapshot.paramMap.get('id');
         if (currentCourseId) {
           this.refreshProgress(currentCourseId);
         }
