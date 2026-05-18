@@ -166,11 +166,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profesor/questionnaires/questionnaire-results/questionnaire-results.component').then(m => m.QuestionnaireResultsComponent)
       },
       {
-        path: 'course-interests',
-        loadComponent: () => import('./modules/alumno/components/course-interests/course-interests')
-          .then(m => m.CourseInterestsComponent)
-      },
-      {
         path: 'report-issue',
         loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
       }
@@ -186,11 +181,35 @@ export const routes: Routes = [
   children: [
     {
       path: '',
-      canActivate: [interestsFormGuard], // ← agregá esto
+      canActivate: [interestsFormGuard],
       loadComponent: () => import('./features/alumno/dashboard/alumno-dashboard.component')
         .then(m => m.AlumnoDashboardComponent)
     },
-    // ... resto de rutas
+    {
+      path: 'course-interests',
+      loadComponent: () => import('./modules/alumno/components/course-interests/course-interests')
+        .then(m => m.CourseInterestsComponent)
+    },
+    {
+      path: 'certificates',
+      loadComponent: () => import('./features/alumno/certificates/student-certificates.component').then(m => m.StudentCertificatesComponent)
+    },
+    {
+      path: 'course-detail/:id',
+      loadComponent: () => import('./features/alumno/course-detail/course-detail.component').then(m => m.CourseDetailComponent)
+    },
+    {
+      path: 'course-content/:id',
+      loadComponent: () => import('./features/alumno/class-detail/class-detail.component').then(m => m.ClassDetailComponent)
+    },
+    {
+      path: 'profile',
+      loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
+    },
+    {
+      path: 'report-issue',
+      loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
+    }
   ]
   },
 

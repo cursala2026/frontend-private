@@ -328,11 +328,16 @@ export class CoursesService {
   duplicateCourse(courseId: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/${courseId}/duplicate`, {});
   }
-  getAvailableInterests(): Observable<Course[]> {
-    return this.http.get<Course[]>(`${this.apiUrl}/active`);
+  getAvailableInterests(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/published`);
   }
 
-  saveUserInterests(payload: SaveInterestsDto): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/users/interests`, payload);
+  saveUserInterests(userId: string, payload: SaveInterestsDto): Observable<any> {
+    // Revertimos al endpoint original updateUser ya que el backend ahora permite requireAdminOrSelf
+    return this.http.patch(`${environment.apiUrl}/user/updateUser/${userId}`, {
+      interests: payload.courseIds,
+      interestSuggestions: payload.suggestions,
+      hasCompletedInterestsForm: true
+    });
   }
 }

@@ -14,10 +14,15 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Guardar la URL intentada para redirigir después del login
-  router.navigate(['/login'], {
-    queryParams: { returnUrl: state.url }
-  });
+  // Si no está autenticado, redirigir al login solo si no estamos ya en una ruta de auth
+  const isAuthRoute = state.url.includes('/login') || state.url.includes('/register') || state.url.includes('/reset-password');
+  
+  if (!isAuthRoute) {
+    // Guardar la URL intentada para redirigir después del login
+    router.navigate(['/login'], {
+      queryParams: { returnUrl: state.url }
+    });
+  }
 
   return false;
 };

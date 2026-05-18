@@ -15,9 +15,12 @@ export const createRoleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
 
     // Verificar autenticación primero
     if (!authService.isAuthenticated()) {
-      router.navigate(['/login'], {
-        queryParams: { returnUrl: state.url }
-      });
+      const isAuthRoute = state.url.includes('/login') || state.url.includes('/register') || state.url.includes('/reset-password');
+      if (!isAuthRoute) {
+        router.navigate(['/login'], {
+          queryParams: { returnUrl: state.url }
+        });
+      }
       return false;
     }
 
