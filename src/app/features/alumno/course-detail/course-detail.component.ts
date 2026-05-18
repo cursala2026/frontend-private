@@ -723,12 +723,12 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     for (const item of items) {
       if (item.type === 'class') {
         if (!this.isClassCompleted(item.data._id)) {
-          this.router.navigate(['/alumno/course-detail', courseData._id, 'class', item.data._id]);
+          this.router.navigate(['/alumno', 'course-detail', courseData._id, 'class', item.data._id]);
           return;
         }
       } else if (item.type === 'questionnaire') {
         if (!this.isQuestionnaireCompleted(item.data._id)) {
-          this.router.navigate(['/alumno/course-detail', courseData._id, 'questionnaire', item.data._id]);
+          this.router.navigate(['/alumno', 'course-detail', courseData._id, 'questionnaire', item.data._id]);
           return;
         }
       }
@@ -737,9 +737,9 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     // Si todo está completado, ir al primer item
     const firstItem = items[0];
     if (firstItem.type === 'class') {
-      this.router.navigate(['/alumno/course-detail', courseData._id, 'class', firstItem.data._id]);
+      this.router.navigate(['/alumno', 'course-detail', courseData._id, 'class', firstItem.data._id]);
     } else {
-      this.router.navigate(['/alumno/course-detail', courseData._id, 'questionnaire', firstItem.data._id]);
+      this.router.navigate(['/alumno', 'course-detail', courseData._id, 'questionnaire', firstItem.data._id]);
     }
   }
 
@@ -887,7 +887,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/alumno/course-detail', course._id, 'class', classId]);
+    this.router.navigate(['/alumno', 'course-detail', course._id, 'class', classId]);
   }
 
   /**
@@ -962,7 +962,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/alumno/course-detail', course._id, 'questionnaire', questionnaire._id]);
+    this.router.navigate(['/alumno', 'course-detail', course._id, 'questionnaire', questionnaire._id]);
   }
 
   /**

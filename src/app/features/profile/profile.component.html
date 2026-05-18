@@ -187,7 +187,7 @@
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <!-- Nombre -->
-                <div>
+                <div class="w-full">
                   <label class="block text-base font-bold text-brand-tertiary mb-2">
                     Nombre <span class="text-red-500">*</span>
                   </label>
@@ -197,7 +197,7 @@
                   </div>
 
                   <!-- Apellido -->
-                  <div>
+                  <div class="w-full">
                     <label class="block text-base font-bold text-brand-tertiary mb-2">
                       Apellido <span class="text-red-500">*</span>
                     </label>
@@ -207,7 +207,7 @@
                     </div>
 
                     <!-- Email -->
-                    <div>
+                    <div class="w-full">
                       <label class="block text-base font-bold text-brand-tertiary mb-2">
                         Correo Electrónico <span class="text-red-500">*</span>
                       </label>
@@ -217,7 +217,7 @@
                       </div>
 
                       <!-- Nombre de Usuario -->
-                      <div>
+                      <div class="w-full">
                         <label class="block text-base font-bold text-brand-tertiary mb-2">
                           Nombre de Usuario <span class="text-red-500">*</span>
                         </label>
@@ -227,7 +227,7 @@
                         </div>
 
                         <!-- Teléfono -->
-                        <div>
+                        <div class="w-full">
                           <label class="block text-base font-bold text-brand-tertiary mb-2">
                             Teléfono
                           </label>
@@ -237,7 +237,7 @@
                           </div>
 
                           <!-- DNI -->
-                          <div>
+                          <div class="w-full">
                             <label class="block text-base font-bold text-brand-tertiary mb-2">
                               DNI
                             </label>
@@ -247,7 +247,7 @@
                             </div>
 
                             <!-- Fecha de Nacimiento -->
-                            <div>
+                            <div class="w-full">
                               <label class="block text-base font-bold text-brand-tertiary mb-2">
                                 Fecha de Nacimiento
                               </label>
@@ -313,7 +313,7 @@
                             <!-- Botones de acción -->
                             <div class="flex flex-col sm:flex-row justify-end gap-3 mt-8">
                               <button type="button" (click)="onCancel()"
-                                class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
+                                class="group mt-2 w-full sm:w-auto relative flex justify-center items-center rounded-full text-white px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
                                 [disabled]="isSubmitting()">
                                 <span class="flex items-center justify-center gap-2">
                                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,7 +323,7 @@
                                 </span>
                               </button>
                               <button type="submit"
-                                class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+                                class="group mt-2 w-full sm:w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
                                 [disabled]="isSubmitting() || (!selectedProfileImage && !hasPendingChanges())">
                                 @if (isSubmitting()) {
                                   <span class="flex items-center justify-center gap-2">
