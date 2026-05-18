@@ -69,14 +69,12 @@ export class AuthService implements OnDestroy {
     if (token && user) {
       // Verificar si el token ya está expirado al iniciar
       if (this.isTokenExpired(token)) {
-        console.warn('AuthService: Token encontrado pero expirado en el inicio.');
         this.clearSession();
         return;
       }
       this.tokenSignal.set(token);
       this.userSignal.set(user);
     } else if (token || user) {
-      console.warn('AuthService: Sesión inconsistente detectada (falta token o usuario). Limpiando...');
       this.clearSession();
     }
   }
@@ -334,20 +332,32 @@ export class AuthService implements OnDestroy {
     const hasToken = !!localStorage.getItem(this.TOKEN_KEY);
     const hasUser = !!localStorage.getItem(this.USER_KEY);
     
-    // Evitar llamadas recurrentes si ya se está limpiando
-    if (!hasToken && !hasUser && !this.tokenSignal() && !this.userSignal()) {
-      return;
-    }
-
     if (hasToken) localStorage.removeItem(this.TOKEN_KEY);
     if (hasUser) localStorage.removeItem(this.USER_KEY);
 
-    if (this.tokenSignal()) this.tokenSignal.set(null);
-    if (this.userSignal()) this.userSignal.set(null);
+    this.tokenSignal.set(null);
+    this.userSignal.set(null);
 
-    // Redirigir al login solo si no estamos ya ahí
+    // Evitar llamadas recurrentes si ya se está limpiando
     const currentUrl = this.router.url;
-    if (!currentUrl.includes('/login') && !currentUrl.includes('/register') && !currentUrl.includes('/reset-password')) {
+    
+    // Si estamos en una ruta protegida sin sesión, redirigir al login
+    const isProtectedRoute = currentUrl.includes('/dashboard') || 
+                            currentUrl.includes('/admin') || 
+                            currentUrl.includes('/alumno') ||
+                            currentUrl.includes('/profesor') ||
+                            currentUrl.includes('/vendedor');
+
+    if (isProtectedRoute) {
+        this.router.navigate(['/login']);
+        return;
+    }
+
+    // Redirigir al login solo si no estamos ya ahí o en rutas públicas permitidas
+    if (!currentUrl.includes('/login') && 
+        !currentUrl.includes('/register') && 
+        !currentUrl.includes('/reset-password') &&
+        !currentUrl.includes('/forgot-password')) {
       this.router.navigate(['/login']);
     }
   }
@@ -362,13 +372,13 @@ export class AuthService implements OnDestroy {
     };
 
     // El backend envuelve la respuesta en { status, message, data }
-    // Extraemos `data` (que contiene { token, userInfo }) antes de setear la sesión
     return this.http.post<any>(`${this.apiUrl}/login`, loginData).pipe(
-      map((resp: any) => resp.data as LoginResponse),
+      map((resp: any) => {
+        // Si el backend devuelve data directamente o envuelto en un objeto
+        return (resp.data || resp) as LoginResponse;
+      }),
       switchMap((response: LoginResponse) => {
         this.setSession(response);
-        // Normalizar roles antes de resolver la observable para que la UI pueda redirigir por rol
-        // Después de normalizar (observable void) emitimos el `response` original.
         return this.normalizeRolesIfNeeded(response).pipe(
           map(() => response)
         );
@@ -489,14 +499,14 @@ export class AuthService implements OnDestroy {
    */
   hasRole(roleCode: UserRole): boolean {
     const user = this.currentUser();
-    if (!user || !user.roles) return false;
-
-    // Roles ahora son strings directamente (e.g., 'ADMIN', 'PROFESOR', 'ALUMNO')
-    return user.roles.some((role: any) => {
-      if (typeof role === 'string') {
-        return role.toUpperCase() === roleCode;
-      }
+    if (!user || !user.roles) {
       return false;
+    }
+
+    // Los roles pueden venir como strings directamente o como objetos con propiedad 'code' o 'roleCode'
+    return user.roles.some((role: any) => {
+      const actualRoleCode = (typeof role === 'string' ? role : role.code || role.roleCode || '').toUpperCase();
+      return actualRoleCode === roleCode.toUpperCase();
     });
   }
 

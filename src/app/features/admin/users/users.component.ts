@@ -128,7 +128,7 @@ export class UsersComponent implements OnInit {
         width: '20%',
         formatter: (value: any[]) => {
           if (!value || value.length === 0) return '<span class="text-gray-400 text-xs italic">Sin cursos</span>';
-          return `<div class="flex flex-wrap gap-1 max-h-[60px] overflow-y-auto pr-1">
+          return `<div class="flex flex-wrap gap-1 max-h-15 overflow-y-auto pr-1">
             ${value.map(c => `<span class="inline-block px-1.5 py-0.5 text-[10px] bg-brand-primary/10 text-brand-primary rounded-md font-medium border border-brand-primary/20" title="${c.name || c.title || ''}">${c.name || c.title || 'Curso'}</span>`).join('')}
           </div>`;
         }
@@ -676,7 +676,43 @@ export class UsersComponent implements OnInit {
         maxlength: 500,
         placeholder: 'Descripción de la experiencia profesional...',
         section: 'Información Profesional'
-      }
+      },
+      // Sección 4: Intereses (Solo Alumnos)
+      ...((user.roles?.includes('ALUMNO') || user.roles?.includes(UserRole.ALUMNO)) ? [
+        {
+          key: '_interestCourses',
+          label: 'Cursos de Interés',
+          type: 'textarea' as const,
+          placeholder: 'Cursos seleccionados por el alumno...',
+          section: 'Intereses y Sugerencias',
+          disabled: true,
+          value: Array.isArray(user.interests)
+            ? user.interests.map((c: any) => {
+                // Si es un objeto, intentar buscar por nombre/título
+                if (typeof c === 'object' && c !== null) {
+                  return c.name || c.title || c._id || c.id;
+                }
+                // Si es un ID (string), intentar encontrarlo en la lista global de cursos
+                const found = this.courses().find(course => String(course._id || course.id) === String(c));
+                return found ? (found.title || found.name) : `ID: ${c}`;
+              }).join(', ') || 'Sin intereses registrados'
+            : 'Sin intereses registrados'
+        },
+        {
+          key: 'interestSuggestions',
+          label: 'Sugerencias del Alumno',
+          type: 'textarea' as const,
+          placeholder: 'Sugerencias registradas...',
+          section: 'Intereses y Sugerencias',
+          disabled: true
+        },
+        {
+          key: 'hasCompletedInterestsForm',
+          label: '¿Completó el formulario?',
+          type: 'checkbox' as const,
+          section: 'Intereses y Sugerencias'
+        }
+      ] : [])
     ];
 
     // Agregar firma solo para profesores y admins
@@ -712,6 +748,19 @@ export class UsersComponent implements OnInit {
       
       // Regenerar la configuración del modal
       this.buildEditModal(tempUser, isCreate);
+    }
+
+    // Si se desmarca "Formulario completado", resetear intereses y sugerencias
+    if (event.key === 'hasCompletedInterestsForm' && event.value === false) {
+      if (this.selectedUser) {
+        this.selectedUser.interests = [];
+        this.selectedUser.interestSuggestions = '';
+        
+        // Regenerar el modal para que se vea reflejado el cambio en la UI
+        const isCreate = !this.selectedUser._id;
+        this.buildEditModal(this.selectedUser, isCreate);
+        this.infoService.showInfo('Se han reseteado los intereses del usuario al desmarcar la casilla.');
+      }
     }
   }
 
@@ -878,10 +927,19 @@ export class UsersComponent implements OnInit {
             return;
           }
           // Incluir el campo si tiene valor
-          if (value !== null && value !== undefined && value !== '') {
+          // NOTA: Para booleanos como hasCompletedInterestsForm, incluimos siempre el valor del evento para permitir actualizar a false
+          if (key === 'hasCompletedInterestsForm') {
+            updateData[key] = value;
+          } else if (value !== null && value !== undefined && value !== '') {
             updateData[key] = value;
           }
         });
+
+        // Asegurar que si vaciamos intereses/sugerencias localmente, se envíen vacíos al backend también
+        if (updateData.hasCompletedInterestsForm === false) {
+          updateData.interests = [];
+          updateData.interestSuggestions = '';
+        }
         
         // Eliminar password si está vacío
         if (!updateData.password) {

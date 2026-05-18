@@ -97,7 +97,9 @@ export class UsersService {
   updateUserData(id: string, formData: FormData): Observable<any> {
     return this.http.patch(`${this.apiUrl}/updateUserData/${id}`, formData);
   }
-
+  getInterestStatus(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/interest-status/${id}`);
+  }
   toggleUserStatus(id: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${id}/toggle-status`, {});
   }

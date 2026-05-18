@@ -32,15 +32,10 @@ export class LoginComponent {
   private courseId: string | null = null;
 
   constructor() {
-    // Si ya está autenticado, redirigir al dashboard
-    // Pero solo si el token NO ha expirado realmente
-    if (this.authService.isAuthenticated()) {
-      if (!this.authService.checkTokenExpired()) {
-        this.router.navigate(['/dashboard']);
-      } else {
-        // Si el token expiró, asegurar que se limpie la sesión
-        this.authService.logout();
-      }
+    // Si ya está autenticado y el token es válido, permitir que los guards manejen la navegación
+    // o el usuario decida. No redirigimos automáticamente aquí para evitar bucles.
+    if (this.authService.isAuthenticated() && this.authService.checkTokenExpired()) {
+      this.authService.logout();
     }
 
     // Obtener parámetros de los query params
@@ -114,13 +109,10 @@ export class LoginComponent {
         // Manejar diferentes tipos de errores
         if (error.status === 401) {
           this.errorMessage.set('Usuario o contraseña incorrectos.');
-          //this.info.showError('Usuario o contraseña incorrectos.');
         } else if (error.status === 429) {
           this.errorMessage.set('Demasiados intentos. Por favor, intenta más tarde.');
-          //this.info.showError('Demasiados intentos. Por favor, intenta más tarde.');
         } else {
-          this.errorMessage.set('Error al iniciar sesión. Por favor, intenta nuevamente.');
-          //this.info.showError('Error al iniciar sesión. Por favor, intenta nuevamente.');
+          this.errorMessage.set(`Error al iniciar sesión (${error.status || 'Conexión'}). Por favor, intenta nuevamente.`);
         }
       }
     });
@@ -130,21 +122,39 @@ export class LoginComponent {
    * Redirige al usuario según su rol
    */
   private redirectByRole(): void {
-    if (this.courseId && this.authService.isAlumno()) {
+    const isAdmin = this.authService.isAdmin();
+    const isVendedor = this.authService.hasRole(UserRole.VENDEDOR);
+    const isProfesor = this.authService.isProfesor();
+    const isAlumno = this.authService.isAlumno();
+    const roles = this.authService.getUserRoles();
+
+    if (this.courseId && isAlumno) {
       this.router.navigate(['/alumno/course-detail', this.courseId]);
       return;
     }
 
-    if (this.authService.isAdmin()) {
+    if (isAdmin) {
       this.router.navigate(['/admin']);
-    } else if (this.authService.hasRole(UserRole.VENDEDOR)) {
+    } else if (isVendedor) {
       this.router.navigate(['/vendedor']);
-    } else if (this.authService.isProfesor()) {
+    } else if (isProfesor) {
       this.router.navigate(['/profesor']);
-    } else if (this.authService.isAlumno()) {
+    } else if (isAlumno) {
       this.router.navigate(['/alumno']);
     } else {
-      this.router.navigate([this.returnUrl]);
+      this.redirectByFirstRole(roles);
+    }
+  }
+
+  /**
+   * Intenta redirigir al primer rol disponible
+   */
+  private redirectByFirstRole(roles: string[]): void {
+    if (roles && roles.length > 0) {
+      const firstRole = roles[0].toLowerCase();
+      this.router.navigate([`/${firstRole}`]);
+    } else {
+      this.router.navigate(['/dashboard']);
     }
   }
 
