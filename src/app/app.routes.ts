@@ -186,6 +186,11 @@ export const routes: Routes = [
         .then(m => m.AlumnoDashboardComponent)
     },
     {
+      path: 'courses',
+      loadComponent: () => import('./features/alumno/student-courses/student-courses.component')
+        .then(m => m.StudentCoursesComponent)
+    },
+    {
       path: 'course-interests',
       loadComponent: () => import('./modules/alumno/components/course-interests/course-interests')
         .then(m => m.CourseInterestsComponent)
