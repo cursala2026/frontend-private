@@ -69,11 +69,15 @@ export class AuthService implements OnDestroy {
     if (token && user) {
       // Verificar si el token ya está expirado al iniciar
       if (this.isTokenExpired(token)) {
+        console.warn('AuthService: Token encontrado pero expirado en el inicio.');
         this.clearSession();
         return;
       }
       this.tokenSignal.set(token);
       this.userSignal.set(user);
+    } else if (token || user) {
+      console.warn('AuthService: Sesión inconsistente detectada (falta token o usuario). Limpiando...');
+      this.clearSession();
     }
   }
 
@@ -268,7 +272,8 @@ export class AuthService implements OnDestroy {
       
       if (userActive) {
         // Usuario activo: mostrar aviso y luego limpiar
-        this.handleExpiredTokenWithWarning();
+        // Usamos un pequeño delay para evitar loops inmediatos si esto se llama en un ciclo
+        setTimeout(() => this.handleExpiredTokenWithWarning(), 100);
       } else {
         // Usuario inactivo: limpiar silenciosamente
         this.clearSession();
@@ -322,14 +327,19 @@ export class AuthService implements OnDestroy {
    * Limpia la sesión del usuario (localStorage y signals)
    */
   private clearSession(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    // Solo limpiar si hay algo que limpiar para evitar loops de redirección
+    const hasToken = !!localStorage.getItem(this.TOKEN_KEY);
+    const hasUser = !!localStorage.getItem(this.USER_KEY);
+    
+    if (hasToken) localStorage.removeItem(this.TOKEN_KEY);
+    if (hasUser) localStorage.removeItem(this.USER_KEY);
 
-    this.tokenSignal.set(null);
-    this.userSignal.set(null);
+    if (this.tokenSignal()) this.tokenSignal.set(null);
+    if (this.userSignal()) this.userSignal.set(null);
 
     // Redirigir al login solo si no estamos ya ahí
-    if (!this.router.url.includes('/login')) {
+    const currentUrl = this.router.url;
+    if (!currentUrl.includes('/login') && !currentUrl.includes('/register')) {
       this.router.navigate(['/login']);
     }
   }

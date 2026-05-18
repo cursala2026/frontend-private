@@ -16,7 +16,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     // Verificar si el token está expirado antes de hacer la petición
     if (authService.checkTokenExpired()) {
       // Token expirado, limpiar sesión
-      authService.logout();
+      // Usamos un pequeño delay para evitar que el interceptor bloquee el hilo actual
+      // y dar tiempo a que las signals se actualicen.
+      setTimeout(() => authService.logout(), 0);
       return throwError(() => new HttpErrorResponse({ 
         status: 401, 
         statusText: 'Token expired',
@@ -32,10 +34,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     
     return next(clonedRequest).pipe(
       catchError((error: HttpErrorResponse) => {
+        console.log('AuthInterceptor: Error detectado', error.status, error.error);
         // Si recibimos un 401 (Unauthorized), el token puede estar expirado
         if (error.status === 401) {
-          // Verificar si el error es por token expirado
+          // Verificar si el error es por token expirado/inválido
           if (isTokenExpiredError(error)) {
+            console.warn('AuthInterceptor: Token inválido o expirado. Cerrando sesión...');
             // Limpiar la sesión automáticamente
             authService.logout();
           }
@@ -61,6 +65,8 @@ function isTokenExpiredError(error: HttpErrorResponse): boolean {
     lowerMessage.includes('token expired') ||
     lowerMessage.includes('token expirado') ||
     lowerMessage.includes('unauthorized') ||
+    lowerMessage.includes('invalid signature') ||
+    lowerMessage.includes('jwt malformed') ||
     lowerMessage.includes('no autenticado')
   );
 }
