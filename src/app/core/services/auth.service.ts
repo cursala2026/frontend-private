@@ -270,12 +270,15 @@ export class AuthService implements OnDestroy {
       // Token expirado
       const userActive = this.isUserActive();
       
-      if (userActive) {
-        // Usuario activo: mostrar aviso y luego limpiar
+      const currentUrl = this.router.url;
+      const isAuthRoute = currentUrl.includes('/login') || currentUrl.includes('/register');
+
+      if (userActive && !isAuthRoute) {
+        // Usuario activo y no en login: mostrar aviso y luego limpiar
         // Usamos un pequeño delay para evitar loops inmediatos si esto se llama en un ciclo
         setTimeout(() => this.handleExpiredTokenWithWarning(), 100);
       } else {
-        // Usuario inactivo: limpiar silenciosamente
+        // Usuario inactivo o ya en login: limpiar silenciosamente
         this.clearSession();
       }
       return;
@@ -331,6 +334,11 @@ export class AuthService implements OnDestroy {
     const hasToken = !!localStorage.getItem(this.TOKEN_KEY);
     const hasUser = !!localStorage.getItem(this.USER_KEY);
     
+    // Evitar llamadas recurrentes si ya se está limpiando
+    if (!hasToken && !hasUser && !this.tokenSignal() && !this.userSignal()) {
+      return;
+    }
+
     if (hasToken) localStorage.removeItem(this.TOKEN_KEY);
     if (hasUser) localStorage.removeItem(this.USER_KEY);
 
@@ -339,7 +347,7 @@ export class AuthService implements OnDestroy {
 
     // Redirigir al login solo si no estamos ya ahí
     const currentUrl = this.router.url;
-    if (!currentUrl.includes('/login') && !currentUrl.includes('/register')) {
+    if (!currentUrl.includes('/login') && !currentUrl.includes('/register') && !currentUrl.includes('/reset-password')) {
       this.router.navigate(['/login']);
     }
   }
