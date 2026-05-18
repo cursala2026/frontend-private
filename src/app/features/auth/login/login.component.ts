@@ -33,8 +33,14 @@ export class LoginComponent {
 
   constructor() {
     // Si ya está autenticado, redirigir al dashboard
+    // Pero solo si el token NO ha expirado realmente
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      if (!this.authService.checkTokenExpired()) {
+        this.router.navigate(['/dashboard']);
+      } else {
+        // Si el token expiró, asegurar que se limpie la sesión
+        this.authService.logout();
+      }
     }
 
     // Obtener parámetros de los query params
