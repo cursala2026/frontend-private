@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - development
   workflow_dispatch:
 
 jobs:
@@ -31,13 +32,26 @@ jobs:
         id: repo_owner
         run: echo "owner_lowercase=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
+      - name: Set Build Configuration
+        id: config
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "dockerfile=./Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "dockerfile=./Dockerfile.dev" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ${{ steps.config.outputs.dockerfile }}
           push: true
-          tags: ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:latest
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:${{ steps.config.outputs.tag }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
