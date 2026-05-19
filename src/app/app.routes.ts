@@ -208,7 +208,7 @@ export const routes: Routes = [
       loadComponent: () => import('./features/alumno/class-detail/class-detail.component').then(m => m.ClassDetailComponent)
     },
     {
-      path: 'course-detail/:courseId/questionnaire/:id',
+      path: 'course-detail/:courseId/questionnaire/:questionnaireId',
       loadComponent: () => import('./features/alumno/questionnaire-take/questionnaire-take.component').then(m => m.QuestionnaireTakeComponent)
     },
     {
