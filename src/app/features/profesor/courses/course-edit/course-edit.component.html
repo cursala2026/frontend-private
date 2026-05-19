@@ -141,7 +141,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="col-span-2">
           <label for="modality" class="block text-base font-bold text-brand-tertiary mb-2">
-            Modalidad
+            Modalidad <span class="text-red-500">*</span>
           </label>
           <select
             id="modality"
@@ -153,6 +153,9 @@
             <option value="Online">Online</option>
             <option value="Híbrido">Híbrido</option>
           </select>
+          @if (courseForm.get('modality')?.invalid && courseForm.get('modality')?.touched) {
+            <p class="mt-1 text-sm text-red-600">La modalidad es requerida</p>
+          }
         </div>
       </div>
 
@@ -162,7 +165,7 @@
        
         <div>
           <label for="days" class="block text-base font-bold text-brand-tertiary mb-2">
-            Días de la Semana
+            Días de la Semana <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -171,11 +174,14 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="Lunes, Miércoles, Viernes"
           />
+          @if (courseForm.get('days')?.invalid && courseForm.get('days')?.touched) {
+            <p class="mt-1 text-sm text-red-600">Los días de la semana son requeridos</p>
+          }
         </div>
 
         <div>
           <label for="time" class="block text-base font-bold text-brand-tertiary mb-2">
-            Horario (HH:mm)
+            Horario (HH:mm) <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -184,6 +190,14 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="18:00"
           />
+          @if (courseForm.get('time')?.invalid && courseForm.get('time')?.touched) {
+            @if (courseForm.get('time')?.errors?.['required']) {
+              <p class="mt-1 text-sm text-red-600">El horario es requerido</p>
+            }
+            @if (courseForm.get('time')?.errors?.['pattern']) {
+              <p class="mt-1 text-sm text-red-600">El horario debe tener el formato HH:mm (ej. 18:00)</p>
+            }
+          }
         </div>
       </div>
 
@@ -194,7 +208,7 @@
         <!-- Fecha de Inicio -->
         <div>
           <label for="startDate" class="block text-base font-bold text-brand-tertiary mb-2">
-            Fecha de Inicio
+            Fecha de Inicio <span class="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -202,6 +216,9 @@
             formControlName="startDate"
             class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
           />
+          @if (courseForm.get('startDate')?.invalid && courseForm.get('startDate')?.touched) {
+            <p class="mt-1 text-sm text-red-600">La fecha de inicio es requerida</p>
+          }
         </div>
 
         <!-- Fecha de inscripción -->
@@ -222,7 +239,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label for="numberOfClasses" class="block text-base font-bold text-brand-tertiary mb-2">
-            Número de Clases
+            Número de Clases <span class="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -232,11 +249,19 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="0"
           />
+          @if (courseForm.get('numberOfClasses')?.invalid && courseForm.get('numberOfClasses')?.touched) {
+            @if (courseForm.get('numberOfClasses')?.errors?.['required']) {
+              <p class="mt-1 text-sm text-red-600">El número de clases es requerido</p>
+            }
+            @if (courseForm.get('numberOfClasses')?.errors?.['min']) {
+              <p class="mt-1 text-sm text-red-600">Debe ser al menos 1 clase</p>
+            }
+          }
         </div>
 
         <div>
           <label for="duration" class="block text-base font-bold text-brand-tertiary mb-2">
-            Duración (horas)
+            Duración (horas) <span class="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -246,6 +271,14 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
             placeholder="0"
           />
+          @if (courseForm.get('duration')?.invalid && courseForm.get('duration')?.touched) {
+            @if (courseForm.get('duration')?.errors?.['required']) {
+              <p class="mt-1 text-sm text-red-600">La duración es requerida</p>
+            }
+            @if (courseForm.get('duration')?.errors?.['min']) {
+              <p class="mt-1 text-sm text-red-600">Debe ser al menos 0.5 horas</p>
+            }
+          }
         </div>
       </div>
 

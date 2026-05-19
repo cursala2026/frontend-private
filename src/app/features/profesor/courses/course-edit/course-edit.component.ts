@@ -45,16 +45,16 @@ export class CourseEditComponent implements OnInit {
       name: ['', [Validators.required]],
       description: ['', [Validators.maxLength(350)]],
       longDescription: ['', [Validators.maxLength(850)]],
-      modality: [''],
+      modality: ['', [Validators.required]],
       price: [0],
       maxInstallments: [1],
       interestFree: [false],
-      days: [''],
-      time: [''],
-      startDate: [''],
+      days: ['', [Validators.required]],
+      time: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)]],
+      startDate: ['', [Validators.required]],
       registrationOpenDate: [''],
-      numberOfClasses: [0],
-      duration: [0],
+      numberOfClasses: [0, [Validators.required, Validators.min(1)]],
+      duration: [0, [Validators.required, Validators.min(0.5)]],
       imageFile: [null]
     });
   }
