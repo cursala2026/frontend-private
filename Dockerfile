@@ -14,15 +14,17 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copiar el código fuente
 COPY . .
 
-# Argumento para la URL del backend (con valor por defecto)
-ARG API_URL=https://app.cursala.com.ar/api/v1
+# Argumento para la configuración de build (production por defecto)
+ARG BUILD_CONFIG=production
 
-# Reemplazar la URL en el archivo de environment antes del build
-RUN sed -i "s|https://app.cursala.com.ar/api/v1|${API_URL}|g" src/app/core/config/environment.prod.ts
+# Argumento para la URL del backend (opcional, para sobrescribir en caliente)
+ARG API_URL
 
-# Build para producción (usa environment.prod.ts)
-ENV NODE_ENV=production
-RUN npm run build:prod
+# Si se proporciona API_URL, la reemplazamos en environment.prod.ts
+RUN if [ -n "$API_URL" ]; then sed -i "s|https://app.cursala.com.ar/api/v1|${API_URL}|g" src/app/core/config/environment.prod.ts; fi
+
+# Build según la configuración pasada
+RUN npx ng build --configuration ${BUILD_CONFIG}
 
 # Stage 2: Servidor Nginx para servir la aplicación
 FROM nginx:alpine

@@ -58,6 +58,17 @@
                 }
               ]
             },
+            "dev": {
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/config/environment.ts",
+                  "with": "src/app/core/config/environment.dev.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -71,6 +82,9 @@
           "configurations": {
             "production": {
               "buildTarget": "frontend-private:build:production"
+            },
+            "dev": {
+              "buildTarget": "frontend-private:build:dev"
             },
             "development": {
               "buildTarget": "frontend-private:build:development"

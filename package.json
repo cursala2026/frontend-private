@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:dev": "ng serve --configuration dev",
     "start:open": "ng serve --open",
     "dev": "ng serve",
     "check": "./check-requirements.sh",

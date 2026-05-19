@@ -37,8 +37,12 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "build_config=production" >> $GITHUB_OUTPUT
+            echo "api_url=https://app.cursala.com.ar/api/v1" >> $GITHUB_OUTPUT
           else
             echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "build_config=dev" >> $GITHUB_OUTPUT
+            echo "api_url=https://dev-app.cursala.com.ar/api/v1" >> $GITHUB_OUTPUT
           fi
           echo "dockerfile=./Dockerfile" >> $GITHUB_OUTPUT
 
@@ -54,7 +58,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            API_URL=https://app.cursala.com.ar/api/v1
+            BUILD_CONFIG=${{ steps.config.outputs.build_config }}
+            API_URL=${{ steps.config.outputs.api_url }}
 
       - name: Verify pushed manifests
         run: |
