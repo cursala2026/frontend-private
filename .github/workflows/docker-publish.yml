@@ -62,7 +62,7 @@ jobs:
           for t in "${{ steps.config.outputs.tag }}" "${{ github.sha }}"; do
             ok=false
             for i in 1 2 3 4 5; do
-              status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/cursala2026/frontend-cursala-private/manifests/$t")
+              status=$(curl -s -o /dev/null -w "%{http_code}" -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://ghcr.io/v2/cursala2026/frontend-cursala-private/manifests/$t")
               if [ "$status" = "200" ]; then
                 ok=true
                 break
