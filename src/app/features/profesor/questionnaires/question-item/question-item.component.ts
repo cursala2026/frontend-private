@@ -61,6 +61,37 @@ export class QuestionItemComponent implements OnDestroy {
     const options = this.options;
     if (options.length > 2) {
       options.removeAt(optionIndex);
+
+      // --- Actualizar correctOptionId (MULTIPLE_CHOICE) ---
+      const correctIdCtrl = (this.question as FormGroup).get('correctOptionId');
+      if (correctIdCtrl) {
+        const currentCorrect = correctIdCtrl.value;
+        if (currentCorrect !== null && currentCorrect !== '') {
+          const currentIdx = parseInt(currentCorrect, 10);
+          if (currentIdx === optionIndex) {
+            // La opción eliminada era la correcta → limpiar selección
+            correctIdCtrl.setValue('');
+          } else if (currentIdx > optionIndex) {
+            // El índice correcto estaba después de la opción eliminada → decrementar
+            correctIdCtrl.setValue((currentIdx - 1).toString());
+          }
+        }
+      }
+
+      // --- Actualizar correctOptionIds (MULTIPLE_SELECT) ---
+      const correctIdsCtrl = (this.question as FormGroup).get('correctOptionIds');
+      if (correctIdsCtrl) {
+        const arr: string[] = (correctIdsCtrl.value || []).slice();
+        const updated = arr
+          .filter(key => parseInt(key, 10) !== optionIndex) // eliminar el índice borrado
+          .map(key => {
+            const idx = parseInt(key, 10);
+            // decrementar los índices que estaban después de la opción eliminada
+            return idx > optionIndex ? (idx - 1).toString() : key;
+          });
+        correctIdsCtrl.setValue(updated);
+      }
+
       // update parent group validity when options change
       (this.question as FormGroup).updateValueAndValidity();
     }
