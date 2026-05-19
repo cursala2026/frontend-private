@@ -50,8 +50,8 @@ jobs:
           file: ${{ steps.config.outputs.dockerfile }}
           push: true
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:${{ steps.config.outputs.tag }}
-            ghcr.io/${{ steps.repo_owner.outputs.owner_lowercase }}/frontend-cursala-private:${{ github.sha }}
+            ghcr.io/cursala2026/frontend-cursala-private:${{ steps.config.outputs.tag }}
+            ghcr.io/cursala2026/frontend-cursala-private:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
