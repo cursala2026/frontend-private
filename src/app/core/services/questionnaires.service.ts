@@ -129,6 +129,13 @@ export class QuestionnairesService {
   }
 
   /**
+   * Check if a questionnaire has submissions
+   */
+  hasSubmissions(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}/has-submissions`);
+  }
+
+  /**
    * Listar cuestionarios de un curso
    */
   getQuestionnairesByCourse(courseId: string): Observable<any> {

@@ -59,6 +59,8 @@ export class QuestionnaireEditComponent implements OnInit {
   mediaPreviews = signal<{ [questionIndex: number]: string }>({});
   // Grading help modal visibility
   showGradingHelp = signal(false);
+  // Indica si el cuestionario ya tiene envíos
+  hasSubmissions = signal<boolean>(false);
   // pendingMediaFiles removed: each QuestionItem handles its own pending upload
 
   ngOnInit(): void {
@@ -244,6 +246,24 @@ export class QuestionnaireEditComponent implements OnInit {
         const questionnaire: Questionnaire = response?.data;
         this.populateForm(questionnaire);
 
+        // Consultar si ya existen envíos para este cuestionario
+        this.questionnairesService.hasSubmissions(this.questionnaireId).subscribe({
+          next: (resp) => {
+            // Normalmente el API devuelve { data: { hasSubmissions: true } }
+            // Aceptar también respuestas no estándar como fallback (cualquier payload no vacío)
+            let has = !!(resp?.data?.hasSubmissions || resp?.hasSubmissions);
+            if (!has && resp && typeof resp === 'object' && Object.keys(resp).length > 0) {
+              has = true;
+            }
+            this.hasSubmissions.set(has);
+          },
+          error: (err) => {
+            // No bloquear la edición si falla la comprobación; mostrar en consola
+            console.warn('No se pudo verificar si el cuestionario tiene envíos', err);
+            this.hasSubmissions.set(false);
+          }
+        });
+
         // If we don't have the course name yet, try to get it from the response
         if (!this.preselectedCourseName()) {
           const maybeName = (response?.data && ((response.data as any).courseName || (response.data as any).course?.name));
@@ -321,6 +341,7 @@ export class QuestionnaireEditComponent implements OnInit {
 
   createQuestionGroup(question?: Question): FormGroup {
     const group = this.fb.group({
+      _id: [question?._id || undefined],
       type: [question?.type || 'MULTIPLE_CHOICE', Validators.required],
       questionText: [question?.questionText || '', [Validators.required, Validators.maxLength(1000)]],
       points: [question?.points || 10, [Validators.required, Validators.min(1)]],
@@ -507,6 +528,10 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
   }
 
   addQuestion(): void {
+    if (this.isEditMode && this.hasSubmissions()) {
+      this.infoService.showError('Este cuestionario ya tiene envíos; no se puede agregar nuevas preguntas.');
+      return;
+    }
     this.questions.push(this.createQuestionGroup());
   }
 
@@ -515,6 +540,10 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
   }
 
   removeQuestion(index: number): void {
+    if (this.isEditMode && this.hasSubmissions()) {
+      this.infoService.showError('Este cuestionario ya tiene envíos; no se pueden eliminar preguntas.');
+      return;
+    }
     if (this.questions.length > 1) {
       this.questions.removeAt(index);
     } else {
@@ -574,6 +603,9 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       };
 
       if (q.type === 'MULTIPLE_CHOICE') {
+        if (q._id) {
+          question._id = q._id;
+        }
         question.options = q.options.map((opt: any, optIndex: number) => {
           const o: any = { text: opt.text, order: optIndex };
           if (opt._id) {
@@ -660,6 +692,9 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       }
 
       if (q.type === 'MULTIPLE_SELECT') {
+        if (q._id) {
+          question._id = q._id;
+        }
         question.options = q.options.map((opt: any, optIndex: number) => {
           const o: any = { text: opt.text, order: optIndex };
           if (opt._id) {

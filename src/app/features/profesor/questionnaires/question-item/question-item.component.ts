@@ -26,6 +26,7 @@ export class QuestionItemComponent implements OnDestroy {
 
   @Input() questionnaireId?: string;
   @Input() isEditMode = false;
+  @Input() hasSubmissions = false;
 
   private infoService = inject(InfoService);
   private uploadManager = inject(QuestionMediaUploadManagerService);
@@ -50,6 +51,10 @@ export class QuestionItemComponent implements OnDestroy {
   }
 
   addOption() {
+    if (this.isEditMode && this.hasSubmissions) {
+      this.infoService.showError('No es posible agregar opciones: el cuestionario ya tiene envíos.');
+      return;
+    }
     const options = this.options;
     // each option is a simple group with text and order
     options.push(this.createOptionGroup());
@@ -58,6 +63,10 @@ export class QuestionItemComponent implements OnDestroy {
   }
 
   removeOption(optionIndex: number) {
+    if (this.isEditMode && this.hasSubmissions) {
+      this.infoService.showError('No es posible eliminar opciones: el cuestionario ya tiene envíos.');
+      return;
+    }
     const options = this.options;
     if (options.length > 2) {
       options.removeAt(optionIndex);

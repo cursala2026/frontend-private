@@ -263,6 +263,15 @@
 
       
 
+        <div class="mb-4">
+          @if (hasSubmissions()) {
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-4">
+              <p class="text-yellow-800 font-semibold">Este cuestionario ya tiene envíos.</p>
+              <p class="text-sm text-yellow-800">Solo es posible editar texto de preguntas y opciones, y cambiar la respuesta correcta. No es posible cambiar tipo, puntos, orden ni la cantidad de opciones.</p>
+            </div>
+          }
+        </div>
+
         <div formArrayName="questions" class="space-y-6">
           @for (question of questions.controls; track $index; let i = $index) {
             <app-question-item
@@ -271,6 +280,7 @@
               [questionsLength]="questions.length"
               [questionnaireId]="questionnaireId"
               [isEditMode]="isEditMode"
+              [hasSubmissions]="hasSubmissions()"
               [mediaPreview]="getMediaPreview(i)"
               (remove)="removeQuestion($event)"
               (removeMedia)="removeMedia($event)"
@@ -281,6 +291,7 @@
           <button
             type="button"
             (click)="addQuestion()"
+            [disabled]="hasSubmissions()"
             class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-primary border-2 border-brand-primary hover:ring-[3px] hover:ring-brand-primary-dark hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
