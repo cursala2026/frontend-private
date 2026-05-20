@@ -11,8 +11,13 @@
     "build": "ng build",
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "lint": "ng lint"
+    "test": "ng test --no-watch --no-progress",
+    "test:watch": "ng test",
+    "test:coverage": "ng test --no-watch --no-progress --code-coverage",
+    "e2e": "npx playwright test",
+    "e2e:open": "npx playwright test --ui",
+    "pw:install": "npx playwright install --with-deps"
+    
   },
   "prettier": {
     "printWidth": 100,
@@ -35,6 +40,7 @@
     "@angular/forms": "^21.2.11",
     "@angular/material": "^21.2.10",
     "@angular/platform-browser": "^21.2.11",
+    "@angular/platform-browser-dynamic": "^21.2.11",
     "@angular/router": "^21.2.11",
     "axios": "^1.16.0",
     "exceljs": "^4.3.0",
@@ -48,17 +54,15 @@
     "@angular/compiler-cli": "^21.2.11",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/jasmine": "~5.1.0",
+    "@testing-library/angular": "^13.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
     "autoprefixer": "^10.4.22",
-    "jasmine-core": "~5.9.0",
-    "karma": "~6.4.0",
-    "karma-chrome-launcher": "~3.2.0",
-    "karma-coverage": "~2.2.0",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.1.0",
+    "jsdom": "^22.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3",
+    "vite": "^5.2.0",
+    "vitest": "^4.1.7",
     "zone.js": "^0.16.1"
   }
 }

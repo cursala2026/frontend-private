@@ -27,6 +27,8 @@ interface ClassData {
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {
+  // Expose last payload for tests
+  public lastSavePayload: any = null;
   private fb = inject(FormBuilder);
   private questionnairesService = inject(QuestionnairesService);
   private classesService = inject(ClassesService);
@@ -127,6 +129,18 @@ export class QuestionnaireEditComponent implements OnInit {
         this.loading.set(false);
       }
     });
+
+    // Listen for external resets so the edit form can be enabled again
+    try {
+      this.courseEvents.onQuestionnaireReset().subscribe((qid) => {
+        if (this.isEditMode && qid === this.questionnaireId) {
+          this.hasSubmissions.set(false);
+          try { this.cdr.detectChanges(); } catch (e) { /* ignore */ }
+        }
+      });
+    } catch (e) {
+      // ignore if subscription not available
+    }
   }
 
   openGradingHelp(): void {
@@ -250,12 +264,29 @@ export class QuestionnaireEditComponent implements OnInit {
         this.questionnairesService.hasSubmissions(this.questionnaireId).subscribe({
           next: (resp) => {
             // Normalmente el API devuelve { data: { hasSubmissions: true } }
-            // Aceptar también respuestas no estándar como fallback (cualquier payload no vacío)
-            let has = !!(resp?.data?.hasSubmissions || resp?.hasSubmissions);
-            if (!has && resp && typeof resp === 'object' && Object.keys(resp).length > 0) {
-              has = true;
+            // Ser estrictos: considerar `hasSubmissions` true solo cuando el API lo indica explícitamente
+            let has = false;
+
+            try {
+              if (typeof resp === 'boolean') {
+                has = resp;
+              } else if (resp && typeof resp === 'object') {
+                if (resp.data && typeof resp.data.hasSubmissions === 'boolean') {
+                  has = resp.data.hasSubmissions;
+                } else if (typeof resp.hasSubmissions === 'boolean') {
+                  has = resp.hasSubmissions;
+                } else if (resp.data && typeof resp.data.count === 'number') {
+                  has = resp.data.count > 0;
+                } else if (typeof resp.count === 'number') {
+                  has = resp.count > 0;
+                }
+              }
+            } catch (e) {
+              has = false;
             }
-            this.hasSubmissions.set(has);
+
+            // Guardar el resultado (por defecto false)
+            this.hasSubmissions.set(!!has);
           },
           error: (err) => {
             // No bloquear la edición si falla la comprobación; mostrar en consola
@@ -746,13 +777,23 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
         type: formValue.positionType,
         afterClassId: formValue.positionType === 'BETWEEN_CLASSES' ? formValue.afterClassId : undefined
       },
-      questions: cleanedQuestions,
+      // If questionnaire already has submissions, do NOT send `questions` payload (backend blocks it).
+      ...(this.isEditMode && this.hasSubmissions() ? {} : { questions: cleanedQuestions }),
       passingScore: formValue.passingScore,
       allowRetries: formValue.allowRetries,
       maxRetries: formValue.allowRetries ? formValue.maxRetries : undefined,
       showCorrectAnswers: formValue.showCorrectAnswers,
       timeLimitMinutes: formValue.timeLimitMinutes || undefined
     };
+
+    // Expose for tests
+    try { (this as any).lastSavePayload = questionnaireData; } catch (e) { /* ignore */ }
+
+    // DEBUG: log payload to help debug whether `questions` are sent when `hasSubmissions` is true
+    try {
+      console.log('Questionnaire save payload:', questionnaireData);
+      if (this.isEditMode && this.hasSubmissions()) console.log('hasSubmissions=true, questions omitted from payload');
+    } catch (e) { /* ignore */ }
 
     const request = this.isEditMode
       ? this.questionnairesService.updateQuestionnaire(this.questionnaireId, questionnaireData)

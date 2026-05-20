@@ -267,7 +267,7 @@
           @if (hasSubmissions()) {
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-4">
               <p class="text-yellow-800 font-semibold">Este cuestionario ya tiene envíos.</p>
-              <p class="text-sm text-yellow-800">Solo es posible editar texto de preguntas y opciones, y cambiar la respuesta correcta. No es posible cambiar tipo, puntos, orden ni la cantidad de opciones.</p>
+              <p class="text-sm text-yellow-800">No se permite modificar la estructura de las preguntas (tipo, opciones, orden, puntos). Las preguntas están bloqueadas para edición.</p>
             </div>
           }
         </div>
@@ -318,7 +318,7 @@
 
         <button
           type="submit"
-          [disabled]="saving() || questionnaireForm.invalid"
+          [disabled]="saving() || questionnaireForm.invalid || hasSubmissions()"
           class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
         >
           @if (saving()) {

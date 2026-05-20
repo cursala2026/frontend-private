@@ -1,5 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
+import { FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { QuestionItemComponent } from './question-item.component';
 import { InfoService } from '../../../../core/services/info.service';
 import { QuestionMediaUploadManagerService } from '../../../../core/services/question-media-upload-manager.service';
@@ -41,38 +40,34 @@ function createQuestionGroup(type: string = 'MULTIPLE_CHOICE'): FormGroup {
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
 const infoServiceMock = {
-  showError: jasmine.createSpy('showError'),
-  showInfo: jasmine.createSpy('showInfo'),
-  showSuccess: jasmine.createSpy('showSuccess')
+  showError: vi.fn(),
+  showInfo: vi.fn(),
+  showSuccess: vi.fn()
 };
 
 const uploadManagerMock = {
-  startUpload: jasmine.createSpy('startUpload').and.returnValue({ started: false }),
+  startUpload: vi.fn().mockReturnValue({ started: false }),
   uploadCompleted$: new Subject()
 };
 
 const questionnairesServiceMock = {
-  getQuestionnaireById: jasmine.createSpy('getQuestionnaireById')
+  getQuestionnaireById: vi.fn()
 };
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('QuestionItemComponent', () => {
-  let component: QuestionItemComponent;
-  let fixture: ComponentFixture<QuestionItemComponent>;
+  let component: any;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [QuestionItemComponent, ReactiveFormsModule],
-      providers: [
-        { provide: InfoService, useValue: infoServiceMock },
-        { provide: QuestionMediaUploadManagerService, useValue: uploadManagerMock },
-        { provide: QuestionnairesService, useValue: questionnairesServiceMock }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(QuestionItemComponent);
-    component = fixture.componentInstance;
+  beforeEach(() => {
+    // Crear una instancia basada en el prototipo para evitar Angular TestBed
+    component = Object.create(QuestionItemComponent.prototype);
+    // Asignar servicios y mocks que el componente espera vía `inject()`
+    component.infoService = infoServiceMock;
+    component.uploadManager = uploadManagerMock;
+    component.questionnairesService = questionnairesServiceMock;
+    component.isEditMode = false;
+    component.hasSubmissions = false;
   });
 
   // ── onQuestionTypeChange ────────────────────────────────────────────────
@@ -83,7 +78,6 @@ describe('QuestionItemComponent', () => {
       // Arrange: pregunta MULTIPLE_CHOICE con 4 opciones con texto
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       const textoEsperado = ['Alpha', 'Beta', 'Gamma', 'Delta'];
       const options = questionGroup.get('options') as FormArray;
@@ -96,8 +90,7 @@ describe('QuestionItemComponent', () => {
       // Assert: los textos se preservaron
       const optionsAfter = (component.question as FormGroup).get('options') as FormArray;
       textoEsperado.forEach((txt, i) => {
-        expect(optionsAfter.at(i).get('text')?.value).toBe(txt,
-          `La opción ${i + 1} debería conservar el texto "${txt}"`);
+        expect(optionsAfter.at(i).get('text')?.value).toBe(txt);
       });
     });
 
@@ -105,7 +98,6 @@ describe('QuestionItemComponent', () => {
       // Arrange
       const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       const textos = ['Opción A', 'Opción B', 'Opción C', 'Opción D'];
       const options = questionGroup.get('options') as FormArray;
@@ -127,7 +119,6 @@ describe('QuestionItemComponent', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       questionGroup.patchValue({ correctOptionId: '2', correctOptionIds: ['0', '1'] });
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       // Act
       questionGroup.get('type')?.setValue('MULTIPLE_SELECT');
@@ -142,7 +133,6 @@ describe('QuestionItemComponent', () => {
       // Arrange
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       // Act
       questionGroup.get('type')?.setValue('TEXT');
@@ -157,7 +147,6 @@ describe('QuestionItemComponent', () => {
       // Arrange — este es el caso exacto del bug report
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       // Completar todas las opciones
       const options = questionGroup.get('options') as FormArray;
@@ -171,15 +160,12 @@ describe('QuestionItemComponent', () => {
 
       // Assert: no debe haber error de optionTextEmpty
       const errors = questionGroup.errors;
-      expect(errors?.['optionTextEmpty']).toBeUndefined(
-        'No debería haber error de opciones vacías si todas tienen texto'
-      );
+      expect(errors?.['optionTextEmpty']).toBeUndefined();
     });
 
     it('debe crear exactamente 4 opciones al cambiar entre tipos de opción múltiple', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       questionGroup.get('type')?.setValue('MULTIPLE_SELECT');
       component.onQuestionTypeChange();
@@ -195,7 +181,6 @@ describe('QuestionItemComponent', () => {
       while (options.length) options.removeAt(0);
       options.push(createOptionGroup('Solo una opción'));
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       // Act
       questionGroup.get('type')?.setValue('MULTIPLE_CHOICE');
@@ -217,7 +202,6 @@ describe('QuestionItemComponent', () => {
     it('debe agregar una opción vacía al array', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       const beforeCount = component.options.length;
       component.addOption();
@@ -229,7 +213,6 @@ describe('QuestionItemComponent', () => {
     it('debe eliminar la opción en el índice indicado si hay más de 2', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       expect(component.options.length).toBe(4);
       component.removeOption(0);
@@ -241,7 +224,6 @@ describe('QuestionItemComponent', () => {
       const options = questionGroup.get('options') as FormArray;
       while (options.length > 2) options.removeAt(options.length - 1);
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       component.removeOption(0);
       expect(component.options.length).toBe(2);
@@ -254,7 +236,6 @@ describe('QuestionItemComponent', () => {
     it('debe agregar el índice a correctOptionIds si no estaba', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       component.toggleCorrectOption(1);
       expect(questionGroup.get('correctOptionIds')?.value).toContain('1');
@@ -264,7 +245,6 @@ describe('QuestionItemComponent', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
       questionGroup.patchValue({ correctOptionIds: ['0', '1'] });
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       component.toggleCorrectOption(1);
       expect(questionGroup.get('correctOptionIds')?.value).not.toContain('1');
@@ -277,7 +257,6 @@ describe('QuestionItemComponent', () => {
     it('debe actualizar el valor del control de texto en el índice correcto', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       component.onOptionTextChange('Nuevo texto', 2);
       const options = (component.question as FormGroup).get('options') as FormArray;
@@ -287,11 +266,10 @@ describe('QuestionItemComponent', () => {
     it('debe marcar el control como touched', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
-      fixture.detectChanges();
 
       component.onOptionTextChange('Algo', 0);
       const options = (component.question as FormGroup).get('options') as FormArray;
-      expect(options.at(0).get('text')?.touched).toBeTrue();
+      expect(options.at(0).get('text')?.touched).toBe(true);
     });
   });
 });

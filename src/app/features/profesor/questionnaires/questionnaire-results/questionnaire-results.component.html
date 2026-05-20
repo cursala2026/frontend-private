@@ -22,6 +22,16 @@
       </svg>
       Volver a Cuestionarios
     </button>
+      
+      <!-- Reset all attempts (visible when hay 1 o menos estudiantes en reporte) -->
+      @if (gradeReport().length > 0 && gradeReport().length <= 1) {
+        <button
+          (click)="openResetAllConfirm()"
+          class="ml-3 mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-4 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-red-600 border-2 border-red-600 hover:ring-[3px] hover:ring-red-600/30"
+        >
+          Resetear Cuestionario
+        </button>
+      }
     </div>
     
   </div>
@@ -497,6 +507,20 @@
             <span>Guardar Calificación</span>
           }
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reset All Confirm Modal -->
+@if (showResetAllConfirmModal()) {
+  <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" (click)="onCancelResetAll()">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-bold mb-4">Resetear todos los intentos</h3>
+      <p class="text-sm text-gray-600 mb-6">Esta acción eliminará todas las submissions del cuestionario y ajustará el progreso de los estudiantes. ¿Deseas continuar?</p>
+      <div class="flex justify-end gap-3">
+        <button (click)="onCancelResetAll()" class="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
+        <button (click)="onConfirmResetAll()" class="px-4 py-2 bg-red-600 text-white rounded">Resetear</button>
       </div>
     </div>
   </div>

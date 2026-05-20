@@ -21,29 +21,29 @@ describe('QuestionnaireTakeComponent', () => {
 
   beforeEach(async () => {
     mockQuestionnairesService = {
-      getQuestionnaireById: jasmine.createSpy('getQuestionnaireById'),
-      getStudentSubmissions: jasmine.createSpy('getStudentSubmissions').and.returnValue(of({ data: [] })),
+      getQuestionnaireById: vi.fn(),
+      getStudentSubmissions: vi.fn().mockReturnValue(of({ data: [] })),
     };
 
     mockInfoService = {
-      showError: jasmine.createSpy('showError'),
-      showSuccess: jasmine.createSpy('showSuccess'),
+      showError: vi.fn(),
+      showSuccess: vi.fn(),
     };
 
     mockAuthService = {
-      currentUser: jasmine.createSpy('currentUser').and.returnValue({ _id: 'user123' }),
+      currentUser: vi.fn().mockReturnValue({ _id: 'user123' }),
     };
 
     mockCoursesService = {
-      getCourseById: jasmine.createSpy('getCourseById').and.returnValue(of({ data: { _id: 'course123' } })),
+      getCourseById: vi.fn().mockReturnValue(of({ data: { _id: 'course123' } })),
     };
 
     mockProgressService = {
-      updateProgress: jasmine.createSpy('updateProgress'),
+      updateProgress: vi.fn(),
     };
 
     mockRouter = {
-      navigate: jasmine.createSpy('navigate'),
+      navigate: vi.fn(),
     };
 
     const mockActivatedRoute = {
@@ -70,7 +70,7 @@ describe('QuestionnaireTakeComponent', () => {
   });
 
   it('should create', () => {
-    mockQuestionnairesService.getQuestionnaireById.and.returnValue(of({ data: {} }));
+    mockQuestionnairesService.getQuestionnaireById.mockReturnValue(of({ data: {} }));
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
@@ -78,27 +78,27 @@ describe('QuestionnaireTakeComponent', () => {
   describe('loadQuestionnaire', () => {
     it('should handle API errors and call goBack and infoService.showError when getQuestionnaireById fails', () => {
       // Simulate API failure (e.g. 500 error or routing error as experienced in the bug)
-      mockQuestionnairesService.getQuestionnaireById.and.returnValue(
+      mockQuestionnairesService.getQuestionnaireById.mockReturnValue(
         throwError(() => new Error('Server Error'))
       );
 
       // We spy on console.error to avoid polluting test output
-      spyOn(console, 'error');
+      vi.spyOn(console, 'error');
       
       // Spy on goBack
-      spyOn(component as any, 'goBack');
+      vi.spyOn(component as any, 'goBack');
 
       fixture.detectChanges(); // triggers ngOnInit which calls loadQuestionnaire
 
       expect(mockQuestionnairesService.getQuestionnaireById).toHaveBeenCalledWith('q123');
-      expect(console.error).toHaveBeenCalledWith('[q-take] Error loading questionnaire:', jasmine.any(Error));
+      expect(console.error).toHaveBeenCalledWith('[q-take] Error loading questionnaire:', expect.any(Error));
       expect(mockInfoService.showError).toHaveBeenCalledWith('Error al cargar el cuestionario');
       expect((component as any).goBack).toHaveBeenCalled();
     });
 
     it('should set questionnaire data when getQuestionnaireById succeeds', () => {
       const mockQ = { _id: 'q123', title: 'Test Q', questions: [] };
-      mockQuestionnairesService.getQuestionnaireById.and.returnValue(of({ data: mockQ }));
+      mockQuestionnairesService.getQuestionnaireById.mockReturnValue(of({ data: mockQ }));
 
       fixture.detectChanges(); // triggers ngOnInit which calls loadQuestionnaire
 

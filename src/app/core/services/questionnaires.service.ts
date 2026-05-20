@@ -222,6 +222,13 @@ export class QuestionnairesService {
   }
 
   /**
+   * Resetear todos los intentos de un cuestionario (acción administrativa)
+   */
+  resetAllAttempts(questionnaireId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${questionnaireId}/submissions`);
+  }
+
+  /**
    * Subir imagen o video para una pregunta (async - retorna 202 inmediatamente)
    */
   uploadQuestionMedia(

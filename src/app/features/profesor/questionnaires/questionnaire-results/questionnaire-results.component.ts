@@ -9,6 +9,7 @@ import {
   GradeReportEntry
 } from '../../../../core/services/questionnaires.service';
 import { InfoService } from '../../../../core/services/info.service';
+import { CourseEventsService } from '../../../../core/services/course-events.service';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
@@ -20,6 +21,7 @@ import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/co
 export class QuestionnaireResultsComponent implements OnInit {
   private questionnairesService = inject(QuestionnairesService);
   private infoService = inject(InfoService);
+  private courseEvents = inject(CourseEventsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -52,6 +54,32 @@ export class QuestionnaireResultsComponent implements OnInit {
 
   // View state
   activeTab: 'report' | 'pending' = 'report';
+
+  // Confirmation modal for resetting ALL attempts of the questionnaire
+  showResetAllConfirmModal = signal<boolean>(false);
+
+  openResetAllConfirm(): void {
+    this.showResetAllConfirmModal.set(true);
+  }
+
+  onConfirmResetAll(): void {
+    this.questionnairesService.resetAllAttempts(this.questionnaireId).subscribe({
+      next: (response) => {
+        this.infoService.showSuccess('Todos los intentos del cuestionario fueron eliminados.');
+        this.loadGradeReport();
+        this.showResetAllConfirmModal.set(false);
+      },
+      error: (error) => {
+        console.error('Error resetting all attempts:', error);
+        this.infoService.showError('Error al resetear los intentos del cuestionario');
+        this.showResetAllConfirmModal.set(false);
+      }
+    });
+  }
+
+  onCancelResetAll(): void {
+    this.showResetAllConfirmModal.set(false);
+  }
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -378,6 +406,8 @@ export class QuestionnaireResultsComponent implements OnInit {
         this.infoService.showSuccess('Intentos del estudiante reseteados exitosamente');
         // Recargar los datos
         this.loadGradeReport();
+        // Notify other components that attempts for this questionnaire were reset
+        try { this.courseEvents.emitQuestionnaireReset(this.questionnaireId); } catch(e) { /* ignore */ }
         this.showResetConfirmModal.set(false);
         this.studentIdToReset = null;
       },
