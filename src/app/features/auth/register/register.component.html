@@ -6,7 +6,7 @@
         <!-- Logo -->
         <div class="text-center mb-1 sm:mb-2">
           <a routerLink="/" class="inline-block rounded-2xl p-2 sm:p-3">
-            <img ngSrc="/logo/cursala.svg" alt="Cursala Logo" width="250" height="47" priority class="mx-auto sm:w-[300px] sm:h-[57px]" style="color: transparent;" />
+            <img ngSrc="/logo/cursala.svg" alt="Cursala Logo" width="250" height="47" priority class="mx-auto sm:w-75 sm:h-14.25" style="color: transparent;" />
           </a>
         </div>
 
@@ -57,7 +57,7 @@
                 <label for="email" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Email</label>
                 <div class="mt-0.5 relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">email</span>
-                  <input id="email" formControlName="email" type="email" placeholder="email@ejemplo.com" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                  <input id="email" formControlName="email" type="email" autocomplete="email" placeholder="email@ejemplo.com" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-3 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                 </div>
                 @if (hasError('email','required')) {
                   <p class="text-sm text-red-600">El email es requerido</p>
@@ -82,7 +82,7 @@
                   <label for="password" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Contraseña</label>
                   <div class="mt-0.5 relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
-                    <input id="password" formControlName="password" [type]="showPassword() ? 'text' : 'password'" placeholder="Contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                    <input id="password" formControlName="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="new-password" placeholder="Contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                     <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowPassword()" aria-label="Mostrar contraseña">
                       <span class="material-icons text-[14px] sm:text-[16px]">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
                     </button>
@@ -100,7 +100,7 @@
                 <label for="confirmPassword" class="block text-xs sm:text-sm font-medium text-brand-tertiary mb-0.5">Confirmar contraseña</label>
                 <div class="mt-0.5 relative">
                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons text-[14px] sm:text-[20px]">lock</span>
-                  <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" placeholder="Confirmar contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
+                  <input id="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" autocomplete="new-password" placeholder="Confirmar contraseña" class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2.5 pl-14 sm:pl-12 pr-12 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary" />
                   <button type="button" class="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-gray-400" (click)="toggleShowConfirmPassword()" aria-label="Mostrar confirmar contraseña">
                       <span class="material-icons text-[14px] sm:text-[16px]">{{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}</span>
                   </button>

@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, signal, OnInit, OnChanges, Simp
 import { CommonModule } from '@angular/common';
 import { CoursesService } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 export interface StudentCourse {
   _id: string;
@@ -32,6 +33,7 @@ export class StudentCoursesModalComponent implements OnChanges {
 
   private coursesService = inject(CoursesService);
   private info = inject(InfoService);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   courses = signal<StudentCourse[]>([]);
   loading = signal<boolean>(false);
@@ -138,9 +140,7 @@ export class StudentCoursesModalComponent implements OnChanges {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `https://cursala.b-cdn.net/images/${imageUrl}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   onClose(): void {

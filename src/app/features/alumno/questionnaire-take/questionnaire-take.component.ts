@@ -921,7 +921,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
 
   getScore(): number {
     const submission = this.currentSubmission();
-    return submission?.finalScore || submission?.autoGradedScore || 0;
+    return submission?.finalScore ?? submission?.autoGradedScore ?? 0;
   }
 
   isPassed(): boolean {

@@ -1,7 +1,8 @@
-import { Component, signal, inject, HostListener } from '@angular/core';
+import { Component, signal, inject, HostListener, computed, effect } from '@angular/core';
 
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 interface MenuItem {
   label: string;
@@ -18,10 +19,20 @@ interface MenuItem {
 export class StudentLayoutComponent {
   protected authService = inject(AuthService);
   private router = inject(Router);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   isMobileMenuOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
+  imageError = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  constructor() {
+    // Resetear error al cambiar el usuario
+    effect(() => {
+      this.user();
+      this.imageError.set(false);
+    });
+  }
 
   menuItems: MenuItem[] = [
     {
@@ -66,27 +77,27 @@ export class StudentLayoutComponent {
     return this.router.url === route;
   }
 
-  // Getter para construir la URL completa de la imagen de perfil
-  get userProfileImageUrl(): string | null {
+  // URL computada robusta y genérica
+  userProfileImageUrl = computed(() => {
     const currentUser = this.user();
-    if (!currentUser?.profilePhotoUrl) return null;
-    
-    const photoUrl = currentUser.profilePhotoUrl;
-    
-    // Si ya es una URL completa, devolverla tal cual
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-      return photoUrl;
-    }
-    
-    // Si solo es el nombre del archivo, construir la URL de Bunny CDN
-    // Codificar el nombre del archivo para manejar caracteres especiales
-    const encodedFileName = encodeURIComponent(photoUrl);
-    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
-  }
+    return this.bunnyConfigService.convertStorageToCdnUrl(
+      currentUser?.profilePhotoUrl, 
+      currentUser?.updatedAt
+    );
+  });
 
   onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.style.display = 'none';
+    const url = this.userProfileImageUrl();
+    console.warn(`StudentLayout: Error cargando imagen de perfil (${url})`);
+    
+    // Solo reintentar una vez
+    if (!this.imageError()) {
+      setTimeout(() => {
+        this.imageError.set(false);
+      }, 1000);
+    }
+    
+    this.imageError.set(true);
   }
 
   @HostListener('document:click', ['$event'])

@@ -1,7 +1,7 @@
 <div class="flex h-screen bg-gray-100">
   <!-- Sidebar -->
   <aside
-    [class]="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    [class]="isSidebarOpen() ? 'translate-x-0' : '-translate-x-full'"
     class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 text-white transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0"
   >
     <!-- Logo -->
@@ -25,7 +25,7 @@
         routerLink="/vendedor/users"
         routerLinkActive="bg-gray-900"
         [routerLinkActiveOptions]="{exact: true}"
-        (click)="closeSidebarOnMobile()"
+        (click)="onMenuItemClick()"
         class="flex items-center px-4 py-3 mb-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
       >
         <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
@@ -37,7 +37,7 @@
       <a
         routerLink="/vendedor/profile"
         routerLinkActive="bg-gray-900"
-        (click)="closeSidebarOnMobile()"
+        (click)="onMenuItemClick()"
         class="flex items-center px-4 py-3 mb-2 text-sm rounded-lg hover:bg-gray-700 transition-colors"
       >
         <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
@@ -47,8 +47,28 @@
       </a>
     </nav>
 
-    <!-- Logout Button -->
+    <!-- User Info and Logout -->
     <div class="absolute bottom-0 w-full p-4 bg-gray-900">
+      @if (user(); as currentUser) {
+        <div class="flex items-center p-3 mb-4 rounded-lg bg-gray-800">
+           @if (userProfileImageUrl() && !imageError()) {
+              <img 
+                [src]="userProfileImageUrl()" 
+                alt="Foto de perfil"
+                class="h-10 w-10 rounded-full object-cover shrink-0 border-2 border-gray-700"
+                (error)="onImageError()"
+                referrerpolicy="no-referrer"
+              />
+            } @else {
+              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold shrink-0 uppercase">
+                {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+              </div>
+            }
+          <div class="ml-3 overflow-hidden">
+            <p class="text-xs font-medium text-gray-400 truncate">{{ currentUser.email }}</p>
+          </div>
+        </div>
+      }
       <button
         (click)="logout()"
         class="w-full flex items-center px-4 py-3 text-sm text-red-400 rounded-lg hover:bg-gray-700 transition-colors"
@@ -81,7 +101,7 @@
 </div>
 
 <!-- Overlay para cerrar sidebar en móvil -->
-@if (isSidebarOpen) {
+@if (isSidebarOpen()) {
   <div
     (click)="toggleSidebar()"
     class="fixed inset-0 z-20 bg-black/70 backdrop-blur-sm lg:hidden"

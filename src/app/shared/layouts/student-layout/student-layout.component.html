@@ -39,13 +39,12 @@
                 (click)="toggleUserMenu()"
                 class="cursor-pointer flex items-center space-x-2 px-2 py-2 rounded-lg hover:bg-gray-100  transition-colors duration-150"
               >
-                @if (userProfileImageUrl) {
+                @if (userProfileImageUrl() && !imageError()) {
                   <img 
-                    [src]="userProfileImageUrl" 
+                    [src]="userProfileImageUrl()" 
                     alt="Foto de perfil"
                     class="h-10 w-10 rounded-full object-cover border-2 border-brand-primary cursor-pointer"
-                    (error)="onImageError($event)"
-                  />
+                    (error)="onImageError($event)"                    referrerpolicy="no-referrer"                  />
                 } @else {
                   <div class="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold cursor-pointer uppercase">
                     {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
@@ -68,12 +67,13 @@
                   <!-- User Info Section -->
                   <div class="px-4 py-3 border-b border-gray-200 bg-white">
                     <div class="flex items-center space-x-3">
-                      @if (userProfileImageUrl) {
+                      @if (userProfileImageUrl() && !imageError()) {
                         <img 
-                          [src]="userProfileImageUrl" 
+                          [src]="userProfileImageUrl()" 
                           alt="Foto de perfil"
                           class="h-14 w-14 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-indigo-200"
                           (error)="onImageError($event)"
+                          referrerpolicy="no-referrer"
                         />
                       } @else {
                         <div class="h-14 w-14 rounded-full bg-brand-primary flex items-center justify-center text-white uppercase font-bold text-lg ">
@@ -190,12 +190,13 @@
         @if (user(); as currentUser) {
           <div class="pt-4 pb-3 border-t border-gray-200">
             <div class="flex items-center px-5 mb-2">
-              @if (userProfileImageUrl) {
+              @if (userProfileImageUrl() && !imageError()) {
                 <img 
-                  [src]="userProfileImageUrl" 
+                  [src]="userProfileImageUrl()" 
                   alt="Foto de perfil"
                   class="h-14 w-14 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-indigo-200"
                   (error)="onImageError($event)"
+                  referrerpolicy="no-referrer"
                 />
               } @else {
                 <div class="h-14 w-14 rounded-full bg-brand-primary flex items-center justify-center text-white uppercase font-bold text-lg ">

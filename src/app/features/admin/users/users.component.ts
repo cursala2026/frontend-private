@@ -13,6 +13,7 @@ import { CoursesService } from '../../../core/services/courses.service';
 import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserRole } from '../../../core/models/user-role.enum';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-users',
@@ -61,13 +62,13 @@ export class UsersComponent implements OnInit {
 
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+  private bunnyConfigService = inject(BunnyConfigService);
+  private usersService = inject(UsersService);
+  private infoService = inject(InfoService);
+  private coursesService = inject(CoursesService);
+  private authService = inject(AuthService);
 
-  constructor(
-    private usersService: UsersService,
-    private infoService: InfoService,
-    private coursesService: CoursesService,
-    private authService: AuthService
-  ) {}
+  constructor() {}
 
   tableConfig: TableConfig = {
     columns: [
@@ -77,7 +78,10 @@ export class UsersComponent implements OnInit {
         type: 'image',
         width: '60px',
         align: 'center',
-        formatter: (value: string) => value || 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'
+        formatter: (value: string, row: any) => {
+          return this.bunnyConfigService.convertStorageToCdnUrl(value, row.updatedAt) || 
+                 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff';
+        }
       },
       {
         key: 'firstName',
@@ -768,7 +772,7 @@ export class UsersComponent implements OnInit {
     this.selectedUser = user;
     
     let fields: ModalField[] = [
-      { key: 'profilePhotoUrl', label: 'URL Foto de Perfil', type: 'text', section: 'Información Personal' },
+      { key: 'profilePhotoUrl', label: 'Foto de Perfil', type: 'image', section: 'Información Personal' },
       { key: 'email', label: 'Email', type: 'email', section: 'Información Personal' },
       { key: 'username', label: 'Nombre de Usuario', type: 'text', section: 'Información Personal' },
       { key: 'firstName', label: 'Nombre', type: 'text', section: 'Información Personal' },

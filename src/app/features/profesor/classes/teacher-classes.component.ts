@@ -7,7 +7,7 @@ import { ClassesService, ClassData } from '../../../core/services/classes.servic
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { UserRole } from '../../../core/models/user-role.enum';
-// Los servicios de progreso de video ahora son gestionados por componentes/servicios globales
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 interface ClassWithCourse extends Omit<ClassData, 'courseId'> {
   courseName?: string;
@@ -25,6 +25,7 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
   private classesService = inject(ClassesService);
   private coursesService = inject(CoursesService);
   private viewModeService = inject(ViewModeService);
+  private bunnyConfigService = inject(BunnyConfigService);
   private route = inject(ActivatedRoute);
   // inyecciones de progreso eliminadas; el componente global maneja las subidas
   router = inject(Router);
@@ -224,11 +225,7 @@ export class TeacherClassesComponent implements OnInit, OnDestroy {
   }
 
   getClassImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/class-images/${encodeURIComponent(imageUrl)}`;
+    return this.bunnyConfigService.convertStorageToCdnUrl(imageUrl, undefined, 'class-images') || '';
   }
 
   handleImageError(event: Event): void {

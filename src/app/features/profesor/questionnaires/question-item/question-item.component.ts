@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnDestroy, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 
 import { ReactiveFormsModule, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { inject } from '@angular/core';
@@ -13,7 +13,7 @@ import { Subscription } from 'rxjs';
   imports: [ReactiveFormsModule],
   templateUrl: './question-item.component.html'
 })
-export class QuestionItemComponent implements OnDestroy {
+export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
   @Input() question!: AbstractControl;
   @Input() index = 0;
   @Input() questionsLength = 1;
@@ -40,6 +40,56 @@ export class QuestionItemComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.uploadCompletedSub?.unsubscribe();
+  }
+
+  ngOnInit(): void {
+    // Apply disabled state initially in case inputs were set before init
+    this.applyDisabledState();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isEditMode'] || changes['hasSubmissions']) {
+      this.applyDisabledState();
+    }
+  }
+
+  private applyDisabledState(): void {
+    try {
+      const shouldDisable = !!(this.isEditMode && this.hasSubmissions);
+      const group = this.question as FormGroup;
+      if (!group) return;
+
+      const toggle = (ctrl: AbstractControl | null | undefined) => {
+        if (!ctrl) return;
+        if (shouldDisable) {
+          ctrl.disable({ emitEvent: false });
+        } else {
+          ctrl.enable({ emitEvent: false });
+        }
+      };
+
+      // Top-level controls
+      toggle(group.get('type'));
+      toggle(group.get('points'));
+      toggle(group.get('questionText'));
+      toggle(group.get('required'));
+      toggle(group.get('correctOptionId'));
+      toggle(group.get('correctOptionIds'));
+      toggle(group.get('promptType'));
+      toggle(group.get('promptMediaUrl'));
+
+      // Options array: toggle each option's text control
+      const options = group.get('options') as FormArray | null;
+      if (options) {
+        for (let i = 0; i < options.length; i++) {
+          const optGroup = options.at(i) as FormGroup;
+          toggle(optGroup.get('text'));
+        }
+      }
+    } catch (e) {
+      // Silently ignore — defensivo para evitar romper la UI si el control cambia
+      console.warn('applyDisabledState error', e);
+    }
   }
 
   get options(): FormArray {

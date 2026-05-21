@@ -91,6 +91,7 @@ export interface CreateCourseDto {
   longDescription?: string;
   status?: string;
   order?: number;
+  categoryId?: string;
   imageFile: File;
   days?: string[] | string;
   time?: string;
@@ -109,6 +110,7 @@ export interface UpdateCourseDto {
   name?: string;
   description?: string;
   longDescription?: string;
+  categoryId?: string;
   days?: string[] | string;
   time?: string;
   startDate?: Date | string;
@@ -183,6 +185,7 @@ export class CoursesService {
     if (course.longDescription) formData.append('longDescription', course.longDescription);
     if (course.status) formData.append('status', course.status);
     if (course.order !== undefined) formData.append('order', course.order.toString());
+    if (course.categoryId) formData.append('categoryId', course.categoryId);
     if (course.imageFile) formData.append('imageFile', course.imageFile);
     if (course.days) {
       const daysStr = Array.isArray(course.days) ? course.days.join(',') : course.days;
@@ -216,6 +219,7 @@ export class CoursesService {
     if (course.name) formData.append('name', course.name);
     if (course.description !== undefined) formData.append('description', course.description);
     if (course.longDescription !== undefined) formData.append('longDescription', course.longDescription);
+    if (course.categoryId) formData.append('categoryId', course.categoryId);
     if (course.days) {
       const daysStr = Array.isArray(course.days) ? course.days.join(',') : course.days;
       formData.append('days', daysStr);
@@ -228,16 +232,16 @@ export class CoursesService {
     const regDateISO = this.toISOString(course.registrationOpenDate);
     if (regDateISO) formData.append('registrationOpenDate', regDateISO);
 
-    if (course.modality !== undefined) formData.append('modality', course.modality);
-    if (course.price !== undefined) formData.append('price', course.price.toString());
-    if (course.maxInstallments !== undefined) formData.append('maxInstallments', course.maxInstallments.toString());
-    if (course.interestFree !== undefined) formData.append('interestFree', course.interestFree.toString());
-    if (course.numberOfClasses !== undefined) formData.append('numberOfClasses', course.numberOfClasses.toString());
-    if (course.duration !== undefined) formData.append('duration', course.duration.toString());
-    if (course.imageFile) formData.append('imageFile', course.imageFile);
-    if (course.programFile) formData.append('programFile', course.programFile);
-    if (course.showOnHome !== undefined) formData.append('showOnHome', course.showOnHome.toString());
-    if (course.deleteImage !== undefined) formData.append('deleteImage', course.deleteImage.toString());
+    if (course.modality !== undefined && course.modality !== null) formData.append('modality', course.modality);
+    if (course.price !== undefined && course.price !== null) formData.append('price', course.price.toString());
+    if (course.maxInstallments !== undefined && course.maxInstallments !== null) formData.append('maxInstallments', course.maxInstallments.toString());
+    if (course.interestFree !== undefined && course.interestFree !== null) formData.append('interestFree', course.interestFree.toString());
+    if (course.numberOfClasses !== undefined && course.numberOfClasses !== null) formData.append('numberOfClasses', course.numberOfClasses.toString());
+    if (course.duration !== undefined && course.duration !== null) formData.append('duration', course.duration.toString());
+    if (course.imageFile instanceof File) formData.append('imageFile', course.imageFile);
+    if (course.programFile instanceof File) formData.append('programFile', course.programFile);
+    if (course.showOnHome !== undefined && course.showOnHome !== null) formData.append('showOnHome', course.showOnHome.toString());
+    if (course.deleteImage !== undefined && course.deleteImage !== null) formData.append('deleteImage', course.deleteImage.toString());
     if (course.teachers !== undefined) {
       if (Array.isArray(course.teachers) && course.teachers.length > 0) {
         // Enviar como array separado por comas

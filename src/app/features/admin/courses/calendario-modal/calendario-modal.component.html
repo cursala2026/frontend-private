@@ -47,7 +47,7 @@
           @if (selectedCourses.length > 0) {
               <div *ngFor="let course of selectedCourses" class="mb-4">
                 <p class="text-center">{{ course.name }}</p>
-                <img [src]="course.imageUrl?.startsWith('http') ? course.imageUrl : 'https://cursala.b-cdn.net/course-images/' + course.imageUrl" alt="Imagen delcurso" class="rounded-lg shadow-md">
+                <img [src]="bunnyConfigService.getCourseImageUrl(course.imageUrl)" alt="Imagen del curso" class="rounded-lg shadow-md">
               </div>
           } 
           @else {

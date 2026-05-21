@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CoursesService, Course } from '../../../../core/services/courses.service';
 import { InfoService } from '../../../../core/services/info.service';
+import { BunnyConfigService } from '../../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-course-edit',
@@ -17,6 +18,7 @@ export class CourseEditComponent implements OnInit {
   private fb = inject(FormBuilder);
   private coursesService = inject(CoursesService);
   private infoService = inject(InfoService);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   courseForm!: FormGroup;
   course = signal<Course | null>(null);
@@ -175,11 +177,7 @@ export class CourseEditComponent implements OnInit {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/course-images/${encodeURIComponent(imageUrl)}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   handleImageError(event: Event): void {

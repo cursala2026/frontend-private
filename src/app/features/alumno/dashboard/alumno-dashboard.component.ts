@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { CourseProgressService, CourseProgress } from '../../../core/services/course-progress.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-alumno-dashboard',
@@ -18,6 +19,7 @@ export class AlumnoDashboardComponent implements OnInit {
   private coursesService = inject(CoursesService);
   private progressService = inject(CourseProgressService);
   private router = inject(Router);
+  private bunnyConfigService = inject(BunnyConfigService);
   
   user = this.authService.currentUser;
   courses = signal<Course[]>([]);
@@ -121,11 +123,7 @@ export class AlumnoDashboardComponent implements OnInit {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/course-images/${imageUrl}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   formatPrice(price?: number): string {

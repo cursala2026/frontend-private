@@ -9,6 +9,7 @@ import { QuestionnairesService, Questionnaire } from '../../../core/services/que
 import { CertificateService } from '../../../core/services/certificate.service';
 import { InfoService } from '../../../core/services/info.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 import { EnrollModalComponent } from '../../../shared/components/enroll-modal/enroll-modal.component';
 import { UnenrollModalComponent } from '../../../shared/components/unenroll-modal/unenroll-modal.component';
 import { PurchaseModalComponent } from '../../../shared/components/purchase-modal/purchase-modal.component';
@@ -37,6 +38,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   private certificateService = inject(CertificateService);
   private info = inject(InfoService);
   private authService = inject(AuthService);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   course = signal<Course | null>(null);
   courseProgress = signal<CourseProgress | null>(null);
@@ -385,21 +387,11 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/course-images/${imageUrl}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   getTeacherImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    // Codificar el nombre del archivo para manejar caracteres especiales
-    const encodedFileName = encodeURIComponent(imageUrl);
-    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
+    return this.bunnyConfigService.convertStorageToCdnUrl(imageUrl) || '';
   }
 
   handleImageError(event: Event): void {

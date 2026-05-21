@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { ModalConfig } from '../../../../shared/components/modal-data-table/modal-data-table.component';
+import { BunnyConfigService } from '../../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-calendario-modal',
@@ -13,6 +14,7 @@ import { ModalConfig } from '../../../../shared/components/modal-data-table/moda
   encapsulation: ViewEncapsulation.None
 })
 export class CalendarioModalComponent {
+  constructor(public bunnyConfigService: BunnyConfigService) {}
   selectedDate : Date | null = null;
   @Input() config!: ModalConfig;
   @Input() courses: any[] = [];

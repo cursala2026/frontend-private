@@ -11,6 +11,7 @@ import { map } from 'rxjs/operators';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { InfoService } from '../../../core/services/info.service';
 import { UsersService } from '../../../core/services/users.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 import { TeacherAssignmentModalComponent } from '../../../shared/components/teacher-assignment-modal/teacher-assignment-modal.component';
 import { CertificateLogosModalComponent } from './certificate-logos-modal/certificate-logos-modal.component';
 import { CalendarioModalComponent } from './calendario-modal/calendario-modal.component';
@@ -27,6 +28,7 @@ export class CoursesComponent implements OnInit {
 
   private router = inject(Router);
   private publicDataService = inject(PublicDataService);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   courses = signal<any[]>([]);
   loading = signal<boolean>(false);
@@ -68,12 +70,9 @@ export class CoursesComponent implements OnInit {
         width: '100px',
         align: 'center',
         imageShape: 'rectangle',
-        formatter: (value: string) => {
-          if (!value) return 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff';
-          // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
-          if (value.startsWith('http')) return value;
-          // Si es solo un filename (legacy), construir la URL completa
-          return `https://cursala.b-cdn.net/images/${value}`;
+        formatter: (value: string, row: any) => {
+          return this.bunnyConfigService.convertStorageToCdnUrl(value, row.updatedAt, 'course-images') || 
+                 'https://ui-avatars.com/api/?name=Course&background=6366f1&color=fff';
         }
       },
       {
@@ -400,28 +399,16 @@ export class CoursesComponent implements OnInit {
   }
 
   editCourse(course: any): void {
-    // Preparar el curso con la URL completa de la imagen para el modal
+    // Preparar el curso con la URL completa de la imagen para el modal utilizando el servicio centralizado
     let imageFileUrl = null;
     if (course.imageUrl) {
-      // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
-      if (course.imageUrl.startsWith('http')) {
-        imageFileUrl = course.imageUrl;
-      } else {
-        // Si es solo un filename (legacy), construir la URL completa
-        imageFileUrl = `https://cursala.b-cdn.net/images/${course.imageUrl}`;
-      }
+      imageFileUrl = this.bunnyConfigService.convertStorageToCdnUrl(course.imageUrl, course.updatedAt, 'course-images');
     }
 
-    // Preparar el programa del curso con la URL completa para el modal
+    // Preparar el programa del curso con la URL completa utilizando el servicio centralizado
     let programFileUrl = null;
     if (course.programUrl) {
-      // Si ya es una URL completa (de Bunny CDN nuevo), usarla directamente
-      if (course.programUrl.startsWith('http')) {
-        programFileUrl = course.programUrl;
-      } else {
-        // Si es solo un filename (legacy), construir la URL completa
-        programFileUrl = `https://cursala.b-cdn.net/course-programs/${course.programUrl}`;
-      }
+      programFileUrl = this.bunnyConfigService.convertStorageToCdnUrl(course.programUrl, course.updatedAt, 'course-programs');
     }
 
     // Preparar teachers: puede venir como array de IDs o como array de objetos con _id
@@ -579,11 +566,13 @@ export class CoursesComponent implements OnInit {
       mode: 'view',
       size: 'xl',
       fields: [
+        { key: 'imageUrl', label: 'Imagen del Curso', type: 'image', imageShape: 'rectangle', aspectRatio: '16:9' },
         { key: 'name', label: 'Nombre', type: 'text' },
         { key: 'description', label: 'Descripción', type: 'textarea' },
         { key: 'longDescription', label: 'Descripción Larga', type: 'textarea' },
         { key: 'modality', label: 'Modalidad', type: 'text' },
         { key: 'price', label: 'Precio', type: 'number' },
+        { key: 'programUrl', label: 'Programa del Curso', type: 'file' },
         { key: 'isPublished', label: 'Publicado', type: 'checkbox' },
         { key: 'createdAt', label: 'Fecha de Creación', type: 'date' }
       ]

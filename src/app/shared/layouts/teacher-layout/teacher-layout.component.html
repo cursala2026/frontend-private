@@ -58,12 +58,13 @@
                 (click)="toggleUserMenu()"
                 class="cursor-pointer flex items-center space-x-2 px-2 py-2 rounded-md hover:bg-gray-100 outline-none  "
               >
-                @if (userProfileImageUrl) {
+                @if (userProfileImageUrl() && !imageError()) {
                   <img 
-                    [src]="userProfileImageUrl" 
+                    [src]="userProfileImageUrl()" 
                     alt="Foto de perfil"
                     class="h-10 w-10 rounded-full object-cover border-2 border-brand-primary cursor-pointer"
                     (error)="onImageError($event)"
+                    referrerpolicy="no-referrer"
                   />
                 } @else {
                   <div class="h-10 w-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold cursor-pointer uppercase">
@@ -81,12 +82,13 @@
                   <!-- User Info Section -->
                   <div class="px-4 py-3 border-b border-gray-200 bg-white">
                     <div class="flex items-center space-x-3">
-                      @if (userProfileImageUrl) {
+                      @if (userProfileImageUrl() && !imageError()) {
                         <img 
-                          [src]="userProfileImageUrl" 
+                          [src]="userProfileImageUrl()" 
                           alt="Foto de perfil"
                           class="h-12 w-12 rounded-full object-cover border-2 border-gray-300"
                           (error)="onImageError($event)"
+                          referrerpolicy="no-referrer"
                         />
                       } @else {
                         <div class="h-12 w-12 rounded-full bg-brand-primary flex items-center justify-center text-white uppercase font-bold border-2 border-gray-300">

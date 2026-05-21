@@ -107,4 +107,80 @@ describe('QuestionnaireTakeComponent', () => {
       expect(mockQuestionnairesService.getStudentSubmissions).toHaveBeenCalled();
     });
   });
+
+  describe('Visualización de Calificaciones Autocalificables', () => {
+    it('debe devolver la calificación autocalificada (autoGradedScore) cuando finalScore no está definido', () => {
+      const mockSubmission = {
+        _id: 'sub123',
+        status: 'GRADED',
+        autoGradedScore: 75,
+        finalScore: undefined,
+        answers: []
+      } as any;
+      component.currentSubmission.set(mockSubmission);
+      
+      expect(component.getScore()).toBe(75);
+    });
+
+    it('debe devolver la calificación final (finalScore) cuando es 0, sin caer erróneamente en la autocalificada', () => {
+      const mockSubmission = {
+        _id: 'sub123',
+        status: 'GRADED',
+        autoGradedScore: 75,
+        finalScore: 0,
+        answers: []
+      } as any;
+      component.currentSubmission.set(mockSubmission);
+      
+      expect(component.getScore()).toBe(0);
+    });
+
+    it('debe mostrar la calificación autocalificada en el DOM cuando finalScore no está definido y el estado es GRADED', () => {
+      const mockQ = { _id: 'q123', title: 'Test Q', questions: [], passingScore: 60 };
+      const mockSubmission = {
+        _id: 'sub123',
+        status: 'GRADED',
+        autoGradedScore: 75,
+        finalScore: undefined,
+        answers: [],
+        attemptNumber: 1
+      } as any;
+
+      mockQuestionnairesService.getQuestionnaireById.mockReturnValue(of({ data: mockQ }));
+      mockQuestionnairesService.getStudentSubmissions.mockReturnValue(of({ data: [mockSubmission] }));
+
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const scoreElement = compiled.querySelector('.text-7xl');
+      expect(scoreElement?.textContent).toContain('75.0%');
+      
+      const statusElement = compiled.querySelector('.text-lg');
+      expect(statusElement?.textContent).toContain('¡Aprobado!');
+    });
+
+    it('debe mostrar la calificación final de 0 en el DOM y reflejar "No Aprobado" cuando finalScore es 0', () => {
+      const mockQ = { _id: 'q123', title: 'Test Q', questions: [], passingScore: 60 };
+      const mockSubmission = {
+        _id: 'sub123',
+        status: 'GRADED',
+        autoGradedScore: 75,
+        finalScore: 0,
+        answers: [],
+        attemptNumber: 1
+      } as any;
+
+      mockQuestionnairesService.getQuestionnaireById.mockReturnValue(of({ data: mockQ }));
+      mockQuestionnairesService.getStudentSubmissions.mockReturnValue(of({ data: [mockSubmission] }));
+
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const scoreElement = compiled.querySelector('.text-7xl');
+      expect(scoreElement?.textContent).toContain('0.0%');
+      
+      const statusElement = compiled.querySelector('.text-lg');
+      expect(statusElement?.textContent).toContain('No Aprobado');
+    });
+  });
 });

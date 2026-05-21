@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { UserRole } from '../../../core/models/user-role.enum';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-teacher-courses',
@@ -17,6 +18,7 @@ export class TeacherCoursesComponent implements OnInit {
   private coursesService = inject(CoursesService);
   private router = inject(Router);
   private viewModeService = inject(ViewModeService);
+  private bunnyConfigService = inject(BunnyConfigService);
   
   user = this.authService.currentUser;
   courses = signal<any[]>([]);
@@ -79,11 +81,7 @@ export class TeacherCoursesComponent implements OnInit {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/course-images/${encodeURIComponent(imageUrl)}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   formatPrice(price?: number): string {

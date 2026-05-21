@@ -20,6 +20,7 @@ import { SignatureCropperComponent } from '../signature-cropper/signature-croppe
               [class]="'object-cover ring-4 ring-white shadow-xl transition-all duration-300 ' +
                 (imageShape === 'rectangle' ? 'w-48 h-32 rounded-lg' : 'w-32 h-32 rounded-full')"
               (error)="$event.target.src='https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'"
+              referrerpolicy="no-referrer"
             />
 
             <!-- Overlay hover -->
@@ -120,7 +121,18 @@ import { SignatureCropperComponent } from '../signature-cropper/signature-croppe
   `
 })
 export class ImageUploaderComponent {
-  @Input() currentImageUrl?: string;
+  private _currentImageUrl?: string;
+  @Input() 
+  set currentImageUrl(value: string | undefined) {
+    this._currentImageUrl = value;
+    if (value && !value.startsWith('data:')) {
+      this.imageUrl.set(value);
+    }
+  }
+  get currentImageUrl(): string | undefined {
+    return this._currentImageUrl;
+  }
+
   @Input() imageShape: 'circle' | 'rectangle' = 'circle'; // Forma de la imagen
   @Input() aspectRatio: string = '1:1'; // Relación de aspecto recomendada
   @Input() useCropper: boolean = false; // Si se debe usar el cropper de firma
@@ -137,9 +149,6 @@ export class ImageUploaderComponent {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    if (this.currentImageUrl) {
-      this.imageUrl.set(this.currentImageUrl);
-    }
   }
 
   async onFileSelected(event: Event) {

@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, signal, effect, inject } from '@angular/core';
 
 import { CoursesService } from '../../../core/services/courses.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-student-courses-view-modal',
@@ -69,7 +70,7 @@ import { CoursesService } from '../../../core/services/courses.service';
 
             <!-- Footer Compacto -->
             <div class="bg-gray-50 px-4 py-2 border-t border-gray-200 flex justify-between items-center">
-               <span class="text-[9px] text-gray-500 truncate max-w-[200px]">Alumno: {{ studentName }}</span>
+               <span class="text-[9px] text-gray-500 truncate max-w-50">Alumno: {{ studentName }}</span>
                <button (click)="onClose()" class="px-4 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded hover:bg-black transition-all shadow-sm">
                 Cerrar
               </button>
@@ -91,6 +92,7 @@ export class StudentCoursesViewModalComponent {
   @Output() close = new EventEmitter<void>();
 
   private coursesService = inject(CoursesService);
+  private bunnyConfigService = inject(BunnyConfigService);
   enrolledCourses = signal<any[]>([]);
   loading = signal<boolean>(false);
 
@@ -144,9 +146,7 @@ export class StudentCoursesViewModalComponent {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return 'https://ui-avatars.com/api/?name=Course&background=f1f5f9&color=64748b';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `https://cursala.b-cdn.net/images/${imageUrl}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   onClose(): void {

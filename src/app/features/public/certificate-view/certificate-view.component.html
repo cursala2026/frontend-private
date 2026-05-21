@@ -79,7 +79,7 @@
                 <div class="border border-[#d1d9de] p-2">
                   <img [src]="getQRCodeUrl()" alt="QR" class="w-28 h-28" (error)="handleQRError($event)">
                 </div>
-                <p class="text-[10px] text-[#4a5560] mt-1 text-center max-w-[120px] leading-tight">Escanea para<br>verificar</p>
+                <p class="text-[10px] text-[#4a5560] mt-1 text-center max-w-30 leading-tight">Escanea para<br>verificar</p>
               </div>
             }
 
@@ -94,10 +94,11 @@
                   @if (teacher.professionalSignatureUrl) {
                     <div class="h-14 flex items-end justify-center mb-1">
                       <img
-                        [src]="teacher.professionalSignatureUrl"
+                        [src]="getSignatureUrl(teacher.professionalSignatureUrl)"
                         [alt]="'Firma de ' + teacher.firstName + ' ' + teacher.lastName"
-                        class="max-h-full max-w-[120px] object-contain"
+                        class="max-h-full max-w-30 object-contain"
                         (error)="$any($event.target).style.display='none'"
+                        referrerpolicy="no-referrer"
                       />
                     </div>
                   } @else {
@@ -119,7 +120,9 @@
           @if (cert.certificateLogos && cert.certificateLogos.length > 0) {
             <div class="mt-8 pt-6 border-t border-[#d1d9de] flex flex-wrap justify-center items-center gap-8">
               @for (logo of cert.certificateLogos; track logo) {
-                <img [src]="logo" alt="Logo institucional" class="h-14 max-w-[120px] object-contain opacity-90 transition-opacity hover:opacity-100">
+                <img [src]="getLogoUrl(logo)" alt="Logo institucional" 
+                  class="h-14 max-w-30 object-contain opacity-90 transition-opacity hover:opacity-100"
+                  referrerpolicy="no-referrer">
               }
             </div>
           }

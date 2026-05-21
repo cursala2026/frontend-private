@@ -257,7 +257,28 @@ export class QuestionnaireEditComponent implements OnInit {
   loadQuestionnaire(): void {
     this.questionnairesService.getQuestionnaireById(this.questionnaireId).subscribe({
       next: (response) => {
+        // DEBUG: mostrar exactamente lo que devuelve la API para depuración
+        console.log('loadQuestionnaire response raw:', response);
         const questionnaire: Questionnaire = response?.data;
+        console.log('loadQuestionnaire questionnaire object:', questionnaire);
+        // DEBUG: log detailed questions and options
+        try {
+          const qs = questionnaire?.questions || [];
+          console.log('loadQuestionnaire questions count:', qs.length);
+          qs.forEach((q: any, idx: number) => {
+            console.log(`question[${idx}] type=${q.type} questionText=${q.questionText}`);
+            console.log(`question[${idx}] options count:`, (q.options && q.options.length) || 0);
+            try {
+              console.log(`question[${idx}] full JSON:`, JSON.stringify(q, null, 2));
+            } catch (e) {
+              console.log(`question[${idx}] options (raw):`, q.options);
+            }
+            console.log(`question[${idx}] correctOptionId:`, q.correctOptionId, 'correctOptionIds:', q.correctOptionIds);
+          });
+        } catch (e) {
+          console.warn('Error logging questions detail', e);
+        }
+
         this.populateForm(questionnaire);
 
         // Consultar si ya existen envíos para este cuestionario
@@ -285,6 +306,9 @@ export class QuestionnaireEditComponent implements OnInit {
               has = false;
             }
 
+            // DEBUG: log raw response and computed value
+            console.log('hasSubmissions response raw:', resp);
+            console.log('hasSubmissions computed value:', has);
             // Guardar el resultado (por defecto false)
             this.hasSubmissions.set(!!has);
           },

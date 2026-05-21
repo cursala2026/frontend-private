@@ -1,8 +1,9 @@
-import { Component, signal, inject, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, inject, HostListener, OnInit, OnDestroy, computed, effect } from '@angular/core';
 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { interval, Subscription, filter } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { QuestionnairesService } from '../../../core/services/questionnaires.service';
 import { UserRole } from '../../../core/models/user-role.enum';
@@ -36,10 +37,20 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private viewModeService = inject(ViewModeService);
   private questionnairesService = inject(QuestionnairesService);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   isMobileMenuOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
+  imageError = signal<boolean>(false);
   user = this.authService.currentUser;
+
+  constructor() {
+    // Resetear error al cambiar el usuario
+    effect(() => {
+      this.user();
+      this.imageError.set(false);
+    });
+  }
 
   // Notificaciones deshabilitadas temporalmente
   // pendingExams = signal<PendingExam[]>([]);
@@ -171,27 +182,19 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
     return this.router.url === route;
   }
 
-  // Getter para construir la URL completa de la imagen de perfil
-  get userProfileImageUrl(): string | null {
+  // URL computada robusta y genérica
+  userProfileImageUrl = computed(() => {
     const currentUser = this.user();
-    if (!currentUser?.profilePhotoUrl) return null;
-    
-    const photoUrl = currentUser.profilePhotoUrl;
-    
-    // Si ya es una URL completa, devolverla tal cual
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-      return photoUrl;
-    }
-    
-    // Si solo es el nombre del archivo, construir la URL de Bunny CDN
-    // Codificar el nombre del archivo para manejar caracteres especiales
-    const encodedFileName = encodeURIComponent(photoUrl);
-    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
-  }
+    return this.bunnyConfigService.convertStorageToCdnUrl(
+      currentUser?.profilePhotoUrl, 
+      currentUser?.updatedAt
+    );
+  });
 
   onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.style.display = 'none';
+    const url = this.userProfileImageUrl();
+    console.warn(`TeacherLayout: Error cargando imagen de perfil (${url})`);
+    this.imageError.set(true);
   }
 
   @HostListener('document:click', ['$event'])

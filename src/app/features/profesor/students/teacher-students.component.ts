@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 import { QuestionnairesService } from '../../../core/services/questionnaires.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
@@ -59,6 +60,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private info = inject(InfoService);
   private certificateService = inject(CertificateService);
+  private bunnyConfigService = inject(BunnyConfigService);
   
   user = this.authService.currentUser;
   students = signal<Student[]>([]);
@@ -291,11 +293,7 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
   }
 
   getStudentImageUrl(profilePhotoUrl?: string): string {
-    if (!profilePhotoUrl) return '';
-    if (profilePhotoUrl.startsWith('http://') || profilePhotoUrl.startsWith('https://')) {
-      return profilePhotoUrl;
-    }
-    return `https://cursala.b-cdn.net/profile-images/${encodeURIComponent(profilePhotoUrl)}`;
+    return this.bunnyConfigService.convertStorageToCdnUrl(profilePhotoUrl) || '';
   }
 
   handleImageError(event: Event): void {

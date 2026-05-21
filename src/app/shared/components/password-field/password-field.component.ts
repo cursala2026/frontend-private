@@ -25,12 +25,13 @@ import { FormsModule, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/f
         (input)="onInput($event)"
         (blur)="onTouched()"
         autocomplete="current-password"
+        [disabled]="disabled"
         [class.password-hidden]="useManualMask && !showPassword()"
         class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-3 pl-10 pr-10 text-gray-900 placeholder-gray-400 transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
         placeholder="Ingresa tu contraseña"
         />
     
-        <button type="button" (click)="toggle()" aria-label="Mostrar contraseña" class="absolute inset-y-0 right-0 cursor-pointer flex items-center pr-3 text-brand-tertiary-lighten hover:text-brand-tertiary">
+        <button type="button" (click)="toggle()" aria-label="Mostrar contraseña" [disabled]="disabled" class="absolute inset-y-0 right-0 cursor-pointer flex items-center pr-3 text-brand-tertiary-lighten hover:text-brand-tertiary">
           @if (showPassword()) {
             <!-- eye-off / visibility_off SVG -->
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">

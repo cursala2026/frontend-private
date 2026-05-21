@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 
 import { RouterModule, Router } from '@angular/router';
 import { CoursesService, Course } from '../../../core/services/courses.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-student-courses',
@@ -12,6 +13,7 @@ import { CoursesService, Course } from '../../../core/services/courses.service';
 export class StudentCoursesComponent implements OnInit {
   private coursesService = inject(CoursesService);
   private router = inject(Router);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   courses = signal<Course[]>([]);
   loading = signal<boolean>(true);
@@ -44,11 +46,7 @@ export class StudentCoursesComponent implements OnInit {
   }
 
   getCourseImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/course-images/${imageUrl}`;
+    return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
   formatPrice(price?: number): string {

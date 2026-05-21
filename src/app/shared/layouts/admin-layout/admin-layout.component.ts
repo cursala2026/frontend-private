@@ -1,7 +1,8 @@
-import { Component, signal, inject, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, PLATFORM_ID, computed, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 import { ViewModeService } from '../../../core/services/view-mode.service';
 
 @Component({
@@ -14,15 +15,42 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private viewModeService = inject(ViewModeService);
+  private bunnyConfigService = inject(BunnyConfigService);
   private platformId = inject(PLATFORM_ID);
 
   isSidebarOpen = signal<boolean>(false);
   isUserMenuOpen = signal<boolean>(false);
+  imageError = signal<boolean>(false);
+  retryCount = signal<number>(0);
   user = this.authService.currentUser;
 
   private resizeListener?: () => void;
 
+  // URL computada para evitar NG0100 y manejar reactividad correctamente
+  userProfileImageUrl = computed(() => {
+    const currentUser = this.user();
+    const attempt = this.retryCount();
+    let url = this.bunnyConfigService.convertStorageToCdnUrl(
+      currentUser?.profilePhotoUrl, 
+      currentUser?.updatedAt
+    );
+    
+    if (url && attempt > 0) {
+      const separator = url.includes('?') ? '&' : '?';
+      url += `${separator}retry=${attempt}`;
+    }
+    
+    return url;
+  });
+
   constructor() {
+    // Resetear error cuando cambie el usuario (y por tanto su imagen)
+    effect(() => {
+      this.user();
+      this.imageError.set(false);
+      this.retryCount.set(0);
+    });
+
     // Detectar si es móvil y ajustar el sidebar
     if (isPlatformBrowser(this.platformId)) {
       const isMobile = window.innerWidth < 1024; // lg breakpoint en Tailwind
@@ -54,24 +82,6 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     if (this.resizeListener && isPlatformBrowser(this.platformId)) {
       window.removeEventListener('resize', this.resizeListener);
     }
-  }
-
-  // Getter para construir la URL completa de la imagen de perfil
-  get userProfileImageUrl(): string | null {
-    const currentUser = this.user();
-    if (!currentUser?.profilePhotoUrl) return null;
-    
-    const photoUrl = currentUser.profilePhotoUrl;
-    
-    // Si ya es una URL completa, devolverla tal cual
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-      return photoUrl;
-    }
-    
-    // Si solo es el nombre del archivo, construir la URL de Bunny CDN
-    // Codificar el nombre del archivo para manejar caracteres especiales
-    const encodedFileName = encodeURIComponent(photoUrl);
-    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
   }
 
   menuItems = [
@@ -158,6 +168,20 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
   }
 
   onImageError(event: any): void {
-    event.target.style.display = 'none';
+    const url = this.userProfileImageUrl();
+    const currentRetry = this.retryCount();
+    
+    console.warn(`AdminLayout: Error cargando imagen de perfil (${url}). Intento: ${currentRetry}`);
+    
+    if (currentRetry < 2) {
+      // Esperar antes de reintentar para dar tiempo al CDN
+      setTimeout(() => {
+        this.imageError.set(false);
+        this.retryCount.update(n => n + 1);
+      }, 2000);
+    } else {
+      console.error('AdminLayout: Max reintentos alcanzados para la imagen de perfil.');
+      this.imageError.set(true);
+    }
   }
 }

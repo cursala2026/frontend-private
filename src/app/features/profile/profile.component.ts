@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { BunnyConfigService } from '../../core/services/bunny-config.service';
 import { InfoService } from '../../core/services/info.service';
 import { UsersService } from '../../core/services/users.service';
 import { Router } from '@angular/router';
@@ -22,6 +23,7 @@ export class ProfileComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private location = inject(Location);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   user = this.authService.currentUser;
   profileForm!: FormGroup;
@@ -67,35 +69,32 @@ export class ProfileComponent {
 
     // Establecer preview de imagen actual
     if (currentUser.profilePhotoUrl) {
-      this.profileImagePreview = this.buildImageUrl(currentUser.profilePhotoUrl);
+      this.profileImagePreview = this.bunnyConfigService.convertStorageToCdnUrl(currentUser.profilePhotoUrl, currentUser.updatedAt);
     }
 
     // Establecer preview de firma actual
     if (currentUser.professionalSignatureUrl) {
-      this.signatureImagePreview = this.buildImageUrl(currentUser.professionalSignatureUrl);
+      this.signatureImagePreview = this.bunnyConfigService.convertStorageToCdnUrl(currentUser.professionalSignatureUrl, currentUser.updatedAt);
     }
   }
 
-  get userProfileImageUrl(): string | null {
+  // URL computada robusta y genérica para perfil
+  userProfileImageUrl = computed(() => {
     const currentUser = this.user();
-    if (!currentUser?.profilePhotoUrl) return null;
-    return this.buildImageUrl(currentUser.profilePhotoUrl);
-  }
+    return this.bunnyConfigService.convertStorageToCdnUrl(
+      currentUser?.profilePhotoUrl, 
+      currentUser?.updatedAt
+    );
+  });
 
-  get userSignatureImageUrl(): string | null {
+  // URL computada robusta y genérica para firma
+  userSignatureImageUrl = computed(() => {
     const currentUser = this.user();
-    if (!currentUser?.professionalSignatureUrl) return null;
-    return this.buildImageUrl(currentUser.professionalSignatureUrl);
-  }
-
-  private buildImageUrl(photoUrl: string): string {
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-      return photoUrl;
-    }
-    // Codificar el nombre del archivo para manejar caracteres especiales
-    const encodedFileName = encodeURIComponent(photoUrl);
-    return `https://cursala.b-cdn.net/profile-images/${encodedFileName}`;
-  }
+    return this.bunnyConfigService.convertStorageToCdnUrl(
+      currentUser?.professionalSignatureUrl, 
+      currentUser?.updatedAt
+    );
+  });
 
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -145,7 +144,7 @@ export class ProfileComponent {
 
   removeImage(): void {
     this.selectedProfileImage = null;
-    this.profileImagePreview = this.userProfileImageUrl;
+    this.profileImagePreview = this.userProfileImageUrl();
   }
 
   onSignatureSelected(event: Event): void {
@@ -192,7 +191,7 @@ export class ProfileComponent {
 
   removeSignature(): void {
     this.selectedSignatureImage = null;
-    this.signatureImagePreview = this.userSignatureImageUrl;
+    this.signatureImagePreview = this.userSignatureImageUrl();
   }
 
   onSubmit(): void {
@@ -262,14 +261,36 @@ export class ProfileComponent {
         
         // Actualizar usuario en AuthService sin recargar
         if (response.data) {
-          this.authService.updateCurrentUser(response.data);
+          const updatedUser = response.data;
+          this.authService.updateCurrentUser(updatedUser);
           
+          if (updatedUser.profilePhotoUrl) {
+            this.profileImagePreview = this.bunnyConfigService.convertStorageToCdnUrl(updatedUser.profilePhotoUrl, updatedUser.updatedAt);
+          } else {
+            this.profileImagePreview = null;
+          }
+
+          if (updatedUser.professionalSignatureUrl) {
+            this.signatureImagePreview = this.bunnyConfigService.convertStorageToCdnUrl(updatedUser.professionalSignatureUrl, updatedUser.updatedAt);
+          } else {
+            this.signatureImagePreview = null;
+          }
+
           // Intentar volver a la página anterior si hay historial, sino ir al dashboard
           if (window.history.length > 1) {
             this.location.back();
           } else {
             this.redirectToDashboard(response.data);
           }
+        }
+
+        // Log para depuración: verificar que el backend devolvió la URL y qué valor se está seteando
+        try {
+          console.info('Perfil actualizado - response.data:', response.data);
+          console.info('preview profileImagePreview ->', this.profileImagePreview);
+          console.info('preview signatureImagePreview ->', this.signatureImagePreview);
+        } catch (e) {
+          // noop
         }
         
         // Limpiar la imagen seleccionada después de guardar

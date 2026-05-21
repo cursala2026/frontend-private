@@ -13,6 +13,7 @@ import { VideoUploadProgressService } from '../../../../core/services/video-uplo
 import { VideoUploadManagerService } from '../../../../core/services/video-upload-manager.service';
 import { Subscription } from 'rxjs';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/components/confirm-modal/confirm-modal.component';
+import { BunnyConfigService } from '../../../../core/services/bunny-config.service';
 
 @Component({
   selector: 'app-teacher-class-edit',
@@ -32,6 +33,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   private videoUploadProgressService = inject(VideoUploadProgressService);
   private uploadManager = inject(VideoUploadManagerService);
   private sanitizer = inject(DomSanitizer);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   classForm!: FormGroup;
   classData = signal<ClassData | null>(null);
@@ -480,11 +482,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   getClassImageUrl(imageUrl?: string): string {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return `https://cursala.b-cdn.net/class-images/${encodeURIComponent(imageUrl)}`;
+    return this.bunnyConfigService.convertStorageToCdnUrl(imageUrl, undefined, 'class-images') || '';
   }
 
   getClassVideoUrl(videoUrl?: string): string {
@@ -595,10 +593,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   getSupportMaterialUrl(fileName: string): string {
-    if (fileName.startsWith('http://') || fileName.startsWith('https://')) {
-      return fileName;
-    }
-    return `https://cursala.b-cdn.net/support-materials/${encodeURIComponent(fileName)}`;
+    return this.bunnyConfigService.getSupportMaterialUrl(fileName);
   }
 
   getSupportMaterialName(fileName: string): string {

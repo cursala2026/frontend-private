@@ -24,7 +24,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M8 3h8v4H8V3zM12 11v6m-3-3h6"/>
               </svg>
             </button>
-            <div [class.opacity-100]="hoveredTooltip()?.label === 'export'" class="pointer-events-none absolute -top-10 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity transition-transform duration-200 ease-out z-50">
+            <div [class.opacity-100]="hoveredTooltip()?.label === 'export'" class="pointer-events-none absolute -top-10 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity duration-200 ease-out z-50">
               Exportar a Excel
             </div>
           </div>
@@ -160,6 +160,7 @@
                         [class]="'object-cover ring-2 ring-gray-200 shadow-sm ' +
                           (column.imageShape === 'rectangle' ? 'w-16 h-10 rounded-md' : 'w-10 h-10 rounded-full')"
                         (error)="$event.target.src='https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'"
+                        referrerpolicy="no-referrer"
                       />
                     </div>
                   }
@@ -205,7 +206,7 @@
                         [value]="selectValue"
                         (change)="handleSelectChange(row, column, $event)"
                         [disabled]="column.editable && !column.editable()"
-                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm max-w-[180px] truncate ' + getSelectClass(selectValue) + (column.editable && !column.editable() ? ' opacity-60 cursor-not-allowed' : ' cursor-pointer')"
+                        [class]="'px-3 py-1.5 text-xs font-semibold rounded-full transition-all border-0 focus:ring-2 focus:ring-offset-1 shadow-sm max-w-45 truncate ' + getSelectClass(selectValue) + (column.editable && !column.editable() ? ' opacity-60 cursor-not-allowed' : ' cursor-pointer')"
                         (click)="$event.stopPropagation()"
                         style="min-width:80px"
                       >
@@ -261,7 +262,7 @@
                             {{ action.icon || action.label }}
                           }
                         </button>
-                        <div [class.opacity-100]="(hoveredTooltip()?.row === row && hoveredTooltip()?.label === action.label)" class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity transition-transform duration-200 ease-out z-50">
+                        <div [class.opacity-100]="(hoveredTooltip()?.row === row && hoveredTooltip()?.label === action.label)" class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 translate-y-2 transition-opacity duration-200 ease-out z-50">
                           {{ action.label }}
                         </div>
                       </div>

@@ -5,10 +5,12 @@ import { FormsModule } from '@angular/forms';
 import {
   QuestionnairesService,
   Questionnaire,
+  Answer,
   QuestionnaireSubmission,
   GradeReportEntry
 } from '../../../../core/services/questionnaires.service';
 import { InfoService } from '../../../../core/services/info.service';
+import { BunnyConfigService } from '../../../../core/services/bunny-config.service';
 import { CourseEventsService } from '../../../../core/services/course-events.service';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 
@@ -24,6 +26,7 @@ export class QuestionnaireResultsComponent implements OnInit {
   private courseEvents = inject(CourseEventsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private bunnyConfigService = inject(BunnyConfigService);
 
   questionnaireId = '';
   questionnaire = signal<Questionnaire | null>(null);
@@ -209,6 +212,21 @@ export class QuestionnaireResultsComponent implements OnInit {
             const bestScore = best.finalScore ?? best.autoGradedScore ?? 0;
             return currentScore > bestScore ? current : best;
           });
+          // DEBUG: log submission answers and questionnaire correct answers for diagnosis
+          try {
+            console.log('viewSubmission bestSubmission:', bestSubmission);
+            const questionnaire = this.questionnaire();
+            if (questionnaire) {
+              bestSubmission.answers.forEach((ans: Answer) => {
+                const q = questionnaire.questions.find(qt => qt._id?.toString() === ans.questionId?.toString());
+                console.log('Answer for questionId:', ans.questionId, 'answer object:', ans);
+                console.log('Question correctOptionId(s):', q?.correctOptionId, q?.correctOptionIds);
+              });
+            }
+          } catch (e) {
+            console.warn('Error logging submission details', e);
+          }
+
           this.openGradingModal(bestSubmission);
         }
       },
@@ -224,7 +242,9 @@ export class QuestionnaireResultsComponent implements OnInit {
   }
 
   private setCurrentSubmissionAndOpenModal(submission: QuestionnaireSubmission): void {
-    this.currentSubmission.set(submission);
+    // Normalize submission answers to ensure selectedOptionId(s) are stored as option _id strings
+    const normalized = this.normalizeSubmissionAnswers(submission);
+    this.currentSubmission.set(normalized);
     this.gradingAnswers = {};
     this.overallFeedback = submission.feedback || '';
 
@@ -242,6 +262,49 @@ export class QuestionnaireResultsComponent implements OnInit {
     }
 
     this.showGradingModal.set(true);
+  }
+
+  // Convert student answers that reference option indices to option _id values
+  private normalizeSubmissionAnswers(submission: QuestionnaireSubmission): QuestionnaireSubmission {
+    try {
+      const questionnaire = this.questionnaire();
+      if (!questionnaire) return submission;
+
+      // Deep clone to avoid mutating original object
+      const cloned: QuestionnaireSubmission = JSON.parse(JSON.stringify(submission));
+
+      cloned.answers = (cloned.answers || []).map((ans: Answer) => {
+        const q = questionnaire.questions.find(qt => qt._id?.toString() === ans.questionId?.toString());
+        if (!q) return ans;
+
+        // MULTIPLE_CHOICE: selectedOptionId may be an index (number or numeric string)
+        const opts = q.options ?? [];
+        if (ans.selectedOptionId != null && opts.length) {
+          const maybeIndex = parseInt(ans.selectedOptionId as any, 10);
+          if (!isNaN(maybeIndex)) {
+            const opt = opts[maybeIndex];
+            if (opt && opt._id) ans.selectedOptionId = opt._id.toString();
+          }
+        }
+
+        // MULTIPLE_SELECT: selectedOptionIds may be array of indices
+        if (ans.selectedOptionIds && Array.isArray(ans.selectedOptionIds) && opts.length) {
+          const mapped = ans.selectedOptionIds.map((id: any) => {
+            const idx = parseInt(id as any, 10);
+            if (!isNaN(idx) && opts[idx] && opts[idx]._id) return opts[idx]._id.toString();
+            return id;
+          });
+          ans.selectedOptionIds = mapped;
+        }
+
+        return ans;
+      });
+
+      return cloned;
+    } catch (e) {
+      console.warn('normalizeSubmissionAnswers failed', e);
+      return submission;
+    }
   }
 
   closeGradingModal(): void {
@@ -343,11 +406,7 @@ export class QuestionnaireResultsComponent implements OnInit {
   }
 
   getStudentImageUrl(profilePhotoUrl?: string): string {
-    if (!profilePhotoUrl) return '';
-    if (profilePhotoUrl.startsWith('http://') || profilePhotoUrl.startsWith('https://')) {
-      return profilePhotoUrl;
-    }
-    return `https://cursala.b-cdn.net/profile-images/${encodeURIComponent(profilePhotoUrl)}`;
+    return this.bunnyConfigService.convertStorageToCdnUrl(profilePhotoUrl) || '';
   }
 
   handleImageError(event: Event): void {
@@ -485,8 +544,8 @@ export class QuestionnaireResultsComponent implements OnInit {
 
     // Encontrar la submission con el mejor score
     const bestSubmission = entry.allSubmissions.reduce((best, current) => {
-      const currentScore = current.finalScore || current.autoGradedScore || 0;
-      const bestScore = best.finalScore || best.autoGradedScore || 0;
+      const currentScore = current.finalScore ?? current.autoGradedScore ?? 0;
+      const bestScore = best.finalScore ?? best.autoGradedScore ?? 0;
       return currentScore > bestScore ? current : best;
     });
 

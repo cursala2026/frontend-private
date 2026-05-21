@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../core/config/environment';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
 
 interface CertificateTeacher {
   _id: string;
@@ -42,6 +43,7 @@ interface CertificateData {
 export class CertificateViewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
+  private bunnyConfigService = inject(BunnyConfigService);
   
   certificateData = signal<CertificateData | null>(null);
   loading = signal<boolean>(true);
@@ -105,6 +107,14 @@ export class CertificateViewComponent implements OnInit {
     // Si falla la carga del QR, intentar con otro servicio o mostrar placeholder
     const img = event.target as HTMLImageElement;
     img.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(`${window.location.origin}/certificate/${this.verificationCode()}`)}`;
+  }
+
+  getSignatureUrl(url?: string): string {
+    return this.bunnyConfigService.convertStorageToCdnUrl(url, undefined, 'profile-images') || '';
+  }
+
+  getLogoUrl(url: string): string {
+    return this.bunnyConfigService.convertStorageToCdnUrl(url, undefined, 'logos') || '';
   }
 }
 

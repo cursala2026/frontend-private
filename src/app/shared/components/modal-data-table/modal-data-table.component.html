@@ -79,10 +79,11 @@
                       @if (field.key === 'profilePhotoUrl' || field.type === 'image') {
                         <div class="flex justify-start">
                           <img 
-                            [src]="getFieldValue(field) || 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'" 
+                            [src]="getImageUrl(getFieldValue(field)) || 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'" 
                             [alt]="field.label"
                             class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-2 sm:ring-4 ring-gray-200 shadow-lg"
                             (error)="$event.target.src='https://ui-avatars.com/api/?name=User&background=6366f1&color=fff'"
+                            referrerpolicy="no-referrer"
                           />
                         </div>
                       } @else if (field.type === 'file') {
@@ -107,7 +108,7 @@
                           <span class="text-xs sm:text-sm text-gray-900">{{ getFieldValue(field) ? (getFieldValue(field) | date: 'dd/MM/yyyy HH:mm') : '-' }}</span>
                         </div>
                       } @else if (field.type === 'textarea') {
-                        <div class="rounded-lg bg-gray-50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-pre-wrap min-h-[60px] sm:min-h-20">
+                        <div class="rounded-lg bg-gray-50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-pre-wrap min-h-15 sm:min-h-20">
                           {{ getFieldValue(field) || '-' }}
                         </div>
                       } @else {
@@ -119,7 +120,7 @@
                       <!-- Edit/Create Mode -->
                       @if (field.key === 'profilePhotoUrl' || field.type === 'image') {
                         <app-image-uploader
-                          [currentImageUrl]="form.get(field.key)?.value"
+                          [currentImageUrl]="getImageUrl(form.get(field.key)?.value)"
                           [imageShape]="field.imageShape || 'circle'"
                           [aspectRatio]="field.aspectRatio || '1:1'"
                           [useCropper]="field.useCropper || false"
@@ -357,6 +358,16 @@
                               <p class="text-xs text-gray-500 mt-1">{{ field.placeholder }}</p>
                             }
                           </div>
+                        }
+                        @case ('password') {
+                          <input
+                            type="password"
+                            [formControlName]="field.key"
+                            [placeholder]="field.placeholder || ''"
+                            autocomplete="new-password"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                            [class.border-red-500]="isFieldInvalid(field)"
+                          />
                         }
                         @default {
                           <input

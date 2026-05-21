@@ -2,6 +2,8 @@ import { Component, Input, Output, EventEmitter, signal, effect, Signal, Writabl
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { ImageUploaderComponent } from '../image-uploader/image-uploader.component';
+import { BunnyConfigService } from '../../../core/services/bunny-config.service';
+import { inject } from '@angular/core';
 import { Subject, of, Observable, from, isObservable } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 
@@ -42,6 +44,7 @@ export interface ModalConfig {
   templateUrl: './modal-data-table.component.html'
 })
 export class ModalDataTableComponent {
+  private bunnyConfigService = inject(BunnyConfigService);
   @Input() isOpen = signal<boolean>(false);
   @Input() config!: ModalConfig;
   @Input() data: any = {};
@@ -509,15 +512,16 @@ export class ModalDataTableComponent {
 
   getProgramUrl(value: any): string {
     if (!value) return '';
-    if (typeof value === 'string') {
-      // Si ya es una URL completa (de Bunny CDN), usarla directamente
-      if (value.startsWith('http://') || value.startsWith('https://')) {
-        return value;
-      }
-      // Si es solo un filename (legacy), construir la URL completa
-      return `https://cursala.b-cdn.net/course-programs/${encodeURIComponent(value)}`;
-    }
-    return '';
+    return this.bunnyConfigService.convertStorageToCdnUrl(value, undefined, 'course-programs') || '';
+  }
+
+  getImageUrl(value: any): string {
+    if (!value) return '';
+    // Si ya es un preview local (File o data URL), no procesar con el servicio de Bunny
+    if (value instanceof File) return ''; // El uploader ya maneja su propio preview para archivos
+    if (typeof value === 'string' && value.startsWith('data:')) return value;
+    
+    return this.bunnyConfigService.convertStorageToCdnUrl(value, this.data?.updatedAt) || '';
   }
 
   getFileName(value: any): string {

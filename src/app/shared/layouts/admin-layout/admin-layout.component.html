@@ -59,15 +59,16 @@
             (click)="toggleUserMenu()"
             class="w-full flex items-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            @if (userProfileImageUrl) {
+            @if (userProfileImageUrl() && !imageError()) {
               <img 
-                [src]="userProfileImageUrl" 
+                [src]="userProfileImageUrl()" 
                 alt="Foto de perfil"
                 class="h-10 w-10 rounded-full object-cover shrink-0 border-2 border-gray-700"
                 (error)="onImageError($event)"
+                referrerpolicy="no-referrer"
               />
             } @else {
-              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold shrink-0">
+              <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold shrink-0 uppercase">
                 {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
               </div>
             }
