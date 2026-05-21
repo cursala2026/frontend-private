@@ -390,6 +390,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
+  getProgramUrl(programUrl?: string): string {
+    return this.bunnyConfigService.convertStorageToCdnUrl(programUrl, undefined, 'course-programs') || '';
+  }
+
   getTeacherImageUrl(imageUrl?: string): string {
     return this.bunnyConfigService.convertStorageToCdnUrl(imageUrl) || '';
   }
@@ -397,10 +401,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
-    // Mostrar el placeholder si existe
-    const placeholder = img.nextElementSibling as HTMLElement;
+    const placeholder = document.getElementById('image-placeholder');
     if (placeholder) {
-      placeholder.style.display = 'flex';
+      placeholder.classList.remove('hidden');
+      placeholder.classList.add('flex');
     }
   }
 

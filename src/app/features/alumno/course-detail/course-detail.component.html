@@ -43,18 +43,24 @@
       </button>
 
       <!-- Hero Section with Image -->
-      <div class="relative h-96 rounded-lg overflow-hidden shadow-sm mb-8">
-        @if (getCourseImageUrl(courseData.imageUrl)) {
-          <img 
-            [src]="getCourseImageUrl(courseData.imageUrl)" 
-            [alt]="courseData.name"
-            class="w-full h-full object-cover"
-            (error)="$event.target.style.display='none'"
-          />
-        } @else {
-          <div class="w-full h-full bg-linear-to-br from-indigo-500 to-purple-600"></div>
-        }
-        <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent"></div>
+      <div class="relative h-96 rounded-lg overflow-hidden shadow-sm mb-8 bg-black">
+        <img 
+          [src]="getCourseImageUrl(courseData.imageUrl)" 
+          [alt]="courseData.name"
+          referrerpolicy="no-referrer"
+          class="absolute inset-0 w-full h-full object-cover z-10"
+          (error)="handleImageError($event)"
+        />
+        
+        <!-- Icon Placeholder (shown if image fails) -->
+        <div id="image-placeholder" class="hidden absolute inset-0 items-center justify-center bg-indigo-900 z-0">
+          <svg class="w-20 h-20 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+
+        <!-- Overlay Text Container -->
+        <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent z-20"></div>
         @if (courseData.hasActivePromotionalCode) {
           <div class="absolute top-4 left-4 bg-amber-500 px-3 py-1 rounded-full flex items-center gap-2 text-sm font-semibold text-white z-20" aria-label="Código promocional activo">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -287,7 +293,7 @@
             <div class="bg-white rounded-lg shadow-md p-6">
               <h2 class="text-2xl font-bold text-gray-900 mb-4">Programa del Curso</h2>
               <a 
-                [href]="courseData.programUrl" 
+                [href]="getProgramUrl(courseData.programUrl)" 
                 target="_blank"
                 class="group mt-2 w-auto relative inline-flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
               >

@@ -22,20 +22,37 @@ export class BunnyConfigService {
     if (!storageUrl) return null;
     
     let finalUrl: string;
+    const storageZoneName = 'dev-cursala'; // Nombre conocido de la zona
 
-    // Caso 1: Es una URL de Storage de Bunny
+    // Caso 1: Es una URL de Storage de Bunny (ej: https://br.storage.bunnycdn.com/dev-cursala/...)
     if (storageUrl.includes('storage.bunnycdn.com')) {
       try {
         const url = new URL(storageUrl);
         const pathParts = url.pathname.split('/').filter(p => p.length > 0);
         
-        if (pathParts.length >= 2) {
-          const storageZoneName = pathParts[0];
-          const remainingPath = pathParts.slice(1).join('/');
-          finalUrl = `https://${storageZoneName}.b-cdn.net/${remainingPath}`;
+        // REGLA DE ORO: En el CDN, el archivo siempre está en /folder/archivo.ext
+        // Si el backend guardó https://br.storage.bunnycdn.com/dev-cursala/course-images/portada.jpg
+        // Queremos llegar a https://dev-cursala.b-cdn.net/course-images/portada.jpg
+        
+        let remainingPathParts: string[];
+        
+        // 1. Si la URL contiene el nombre de la zona, tomamos lo que sigue
+        const zoneIndex = pathParts.indexOf(storageZoneName);
+        if (zoneIndex !== -1) {
+          remainingPathParts = pathParts.slice(zoneIndex + 1);
         } else {
-          finalUrl = storageUrl;
+          // 2. Si no, pero detectamos que el primer componente es un folder conocido
+          const commonFolders = ['course-images', 'course-programs', 'profile-images', 'support-materials'];
+          if (commonFolders.includes(pathParts[0])) {
+            remainingPathParts = pathParts;
+          } else {
+            // 3. Fallback: remover solo el primer componente (asumiendo que es la zona)
+            remainingPathParts = pathParts.slice(1);
+          }
         }
+
+        const cleanPath = remainingPathParts.join('/');
+        finalUrl = `https://${this.DEFAULT_CDN_HOST}/${cleanPath}`;
       } catch (e) {
         finalUrl = storageUrl;
       }
@@ -44,26 +61,51 @@ export class BunnyConfigService {
     else if (!storageUrl.startsWith('http')) {
       let cleanPath = storageUrl.startsWith('/') ? storageUrl.slice(1) : storageUrl;
       
-      // Si el path ya empieza con el nombre de la carpeta, no lo duplicamos
-      if (cleanPath.startsWith(`${folder}/`)) {
-        cleanPath = cleanPath.replace(`${folder}/`, '');
+      // Eliminar el nombre de la zona si está al principio (ej: dev-cursala/course-images/...)
+      if (cleanPath.startsWith(`${storageZoneName}/`)) {
+        cleanPath = cleanPath.substring(storageZoneName.length + 1);
       }
       
-      // Codificar solo el nombre del archivo, no la ruta completa si tuviera subcarpetas
-      const pathParts = cleanPath.split('/');
-      const encodedPath = pathParts.map(part => encodeURIComponent(part)).join('/');
-      finalUrl = `https://${this.DEFAULT_CDN_HOST}/${folder}/${encodedPath}`;
+      const pathParts = cleanPath.split('/').filter(p => p.length > 0);
+      
+      // Si el primer componente NO es el folder esperado, lo agregamos
+      if (folder && pathParts[0] !== folder) {
+        finalUrl = `https://${this.DEFAULT_CDN_HOST}/${folder}/${pathParts.map(part => encodeURIComponent(decodeURIComponent(part))).join('/')}`;
+      } else {
+        finalUrl = `https://${this.DEFAULT_CDN_HOST}/${pathParts.map(part => encodeURIComponent(decodeURIComponent(part))).join('/')}`;
+      }
     }
-    // Caso 3: Ya es una URL completa (posiblemente de CDN)
+    // Caso 3: Ya es una URL completa (CDN correcto, externa, etc.)
     else {
-      finalUrl = storageUrl;
+      // Si ya es una URL del CDN correcto, la devolvemos tal cual
+      if (storageUrl.includes(this.DEFAULT_CDN_HOST)) {
+        finalUrl = storageUrl;
+      } else {
+        // Si es otra URL completa, intentamos ver si contiene folders conocidos para normalizarla
+        const commonFolders = ['course-images', 'course-programs', 'profile-images', 'support-materials'];
+        const foundFolder = commonFolders.find(f => storageUrl.includes(`/${f}/`));
+        
+        if (foundFolder) {
+          try {
+            const url = new URL(storageUrl);
+            const pathParts = url.pathname.split('/').filter(p => p.length > 0);
+            const folderIndex = pathParts.indexOf(foundFolder);
+            const remainingPathParts = pathParts.slice(folderIndex);
+            const cleanPath = remainingPathParts.map(part => encodeURIComponent(decodeURIComponent(part))).join('/');
+            finalUrl = `https://${this.DEFAULT_CDN_HOST}/${cleanPath}`;
+          } catch (e) {
+            finalUrl = storageUrl;
+          }
+        } else {
+          finalUrl = storageUrl;
+        }
+      }
     }
 
     // Aplicar timestamp de cache-busting si existe
     if (timestamp) {
       const t = this.getTimestampValue(timestamp);
       if (t) {
-        // Evitar duplicar el signo ? o usar & si ya hay parámetros
         const separator = finalUrl.includes('?') ? '&' : '?';
         finalUrl += `${separator}t=${t}`;
       }

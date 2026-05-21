@@ -126,6 +126,16 @@ export class AlumnoDashboardComponent implements OnInit {
     return this.bunnyConfigService.getCourseImageUrl(imageUrl);
   }
 
+  handleImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    // Mostrar el placeholder si existe
+    const placeholder = img.nextElementSibling as HTMLElement;
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+    }
+  }
+
   formatPrice(price?: number): string {
     if (!price) return 'Gratis';
     return new Intl.NumberFormat('es-AR', {
