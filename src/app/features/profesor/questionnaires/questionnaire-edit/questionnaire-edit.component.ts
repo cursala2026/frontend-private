@@ -182,12 +182,18 @@ export class QuestionnaireEditComponent implements OnInit {
       }
     });
 
+    // Subscribe to status changes to dynamically adjust validators
+    this.questionnaireForm.get('status')?.valueChanges.subscribe(status => {
+      this.updateStatusBasedValidators(status);
+    });
+
     // Subscribe to positionType changes to conditionally require afterClassId
     this.questionnaireForm.get('positionType')?.valueChanges.subscribe((posType) => {
       this.updateAfterClassValidators(posType);
     });
-    // apply initial validators for afterClassId
-    this.updateAfterClassValidators(this.questionnaireForm.get('positionType')?.value);
+
+    // Run initial configuration
+    this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
   }
 
   get questions(): FormArray {
@@ -355,8 +361,8 @@ export class QuestionnaireEditComponent implements OnInit {
       description: questionnaire.description || '',
       isSurvey: questionnaire.isSurvey || false,
       status: questionnaire.status,
-      positionType: questionnaire.position.type,
-      afterClassId: questionnaire.position.afterClassId || '',
+      positionType: questionnaire.position?.type || '',
+      afterClassId: questionnaire.position?.afterClassId || '',
       passingScore: questionnaire.passingScore,
       allowRetries: questionnaire.allowRetries,
       maxRetries: questionnaire.maxRetries,
@@ -513,7 +519,12 @@ export class QuestionnaireEditComponent implements OnInit {
   }
 
   // Validator for each question group
-private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
+  private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
+  const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
+  if (isDraft) {
+    return null; // Relajamos validaciones de preguntas si es borrador
+  }
+
   const type = control.get('type')?.value;
   const options = control.get('options') as FormArray | null;
   const errors: any = {};
@@ -560,6 +571,13 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
     const afterClassControl = this.questionnaireForm.get('afterClassId');
     if (!afterClassControl) return;
 
+    const isDraft = this.questionnaireForm.get('status')?.value === 'DRAFT';
+    if (isDraft) {
+      afterClassControl.clearValidators();
+      afterClassControl.updateValueAndValidity({ onlySelf: true });
+      return;
+    }
+
     if (posType === 'BETWEEN_CLASSES') {
       afterClassControl.setValidators([Validators.required]);
       afterClassControl.enable({ emitEvent: false });
@@ -569,6 +587,34 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       afterClassControl.disable({ emitEvent: false });
     }
     afterClassControl.updateValueAndValidity({ onlySelf: true });
+  }
+
+  public updateStatusBasedValidators(status: string): void {
+    const isDraft = status === 'DRAFT';
+    const positionTypeCtrl = this.questionnaireForm?.get('positionType');
+    const afterClassCtrl = this.questionnaireForm?.get('afterClassId');
+
+    if (isDraft) {
+      positionTypeCtrl?.clearValidators();
+      afterClassCtrl?.clearValidators();
+    } else {
+      positionTypeCtrl?.setValidators([Validators.required]);
+      if (positionTypeCtrl?.value === 'BETWEEN_CLASSES') {
+        afterClassCtrl?.setValidators([Validators.required]);
+      } else {
+        afterClassCtrl?.clearValidators();
+      }
+    }
+    
+    positionTypeCtrl?.updateValueAndValidity({ emitEvent: false });
+    afterClassCtrl?.updateValueAndValidity({ emitEvent: false });
+
+    // Actualizar la validez de los grupos de preguntas
+    this.questions?.controls.forEach(qGroup => {
+      qGroup.updateValueAndValidity({ onlySelf: true });
+    });
+    
+    this.questionnaireForm?.updateValueAndValidity({ emitEvent: false });
   }
 
   createOptionGroup(option?: QuestionOption): FormGroup {
@@ -599,7 +645,8 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       this.infoService.showError('Este cuestionario ya tiene envíos; no se pueden eliminar preguntas.');
       return;
     }
-    if (this.questions.length > 1) {
+    const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
+    if (this.questions.length > 1 || isDraft) {
       this.questions.removeAt(index);
     } else {
       this.infoService.showError('Debe haber al menos una pregunta');
@@ -619,23 +666,26 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       return;
     }
 
-    // Validate that MC/MS questions have correct answer(s) selected
-    for (let i = 0; i < this.questions.length; i++) {
-      const question = this.questions.at(i);
-      const type = question.get('type')?.value;
-      
-      if (type === 'MULTIPLE_CHOICE') {
-        if (!question.get('correctOptionId')?.value) {
-          this.infoService.showError(`Debes seleccionar la respuesta correcta para la pregunta ${i + 1}`);
-          return;
+    // Validate that MC/MS questions have correct answer(s) selected (only if not DRAFT)
+    const isDraft = this.questionnaireForm.get('status')?.value === 'DRAFT';
+    if (!isDraft) {
+      for (let i = 0; i < this.questions.length; i++) {
+        const question = this.questions.at(i);
+        const type = question.get('type')?.value;
+        
+        if (type === 'MULTIPLE_CHOICE') {
+          if (!question.get('correctOptionId')?.value) {
+            this.infoService.showError(`Debes seleccionar la respuesta correcta para la pregunta ${i + 1}`);
+            return;
+          }
         }
-      }
-      
-      if (type === 'MULTIPLE_SELECT') {
-        const correctOptionIds = question.get('correctOptionIds')?.value || [];
-        if (correctOptionIds.length === 0) {
-          this.infoService.showError(`Debes seleccionar al menos una respuesta correcta para la pregunta ${i + 1}`);
-          return;
+        
+        if (type === 'MULTIPLE_SELECT') {
+          const correctOptionIds = question.get('correctOptionIds')?.value || [];
+          if (correctOptionIds.length === 0) {
+            this.infoService.showError(`Debes seleccionar al menos una respuesta correcta para la pregunta ${i + 1}`);
+            return;
+          }
         }
       }
     }
@@ -669,80 +719,27 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
           return o;
         });
 
-        // Find the correct option ID
-        // Priority: Use the selected option's _id (from form), not the original
+        // Strictly send the raw index string to let the backend resolve it to the recreated option's ObjectId.
         if (q.correctOptionId !== null && q.correctOptionId !== undefined && q.correctOptionId !== '') {
           const correctOptionIdStr = q.correctOptionId.toString();
-          
           // Check if it's an ObjectId (24 hex characters)
           if (correctOptionIdStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(correctOptionIdStr)) {
-            // It's an ObjectId, verify it exists in options
-            const correctOption = question.options?.find((opt: any) => opt._id?.toString() === correctOptionIdStr);
-            if (correctOption) {
-              // Use the ObjectId directly
-              question.correctOptionId = correctOptionIdStr;
+            // Find the index of the option with this _id in the original/current options array
+            const idx = q.options.findIndex((opt: any) => opt._id?.toString() === correctOptionIdStr);
+            if (idx >= 0) {
+              question.correctOptionId = idx.toString();
             } else {
-              // ObjectId not found in options - this shouldn't happen, but try to use original as fallback
-              const originalCorrectOptionId = q.originalCorrectOptionId;
-              if (originalCorrectOptionId && typeof originalCorrectOptionId === 'string' && originalCorrectOptionId.length === 24) {
-                question.correctOptionId = originalCorrectOptionId;
-              } else {
-                question.correctOptionId = correctOptionIdStr;
-              }
+              // Fallback to index if it parses to one
+              const parsedIndex = parseInt(correctOptionIdStr);
+              question.correctOptionId = !isNaN(parsedIndex) && parsedIndex >= 0 ? correctOptionIdStr : '0';
             }
           } else {
-            // It's likely an index (number or string number)
-            const selectedOptionIndex = parseInt(correctOptionIdStr);
-            if (!isNaN(selectedOptionIndex) && selectedOptionIndex >= 0 && question.options && question.options[selectedOptionIndex]) {
-              // Check if the option has an existing _id (editing mode)
-              const selectedOption = question.options[selectedOptionIndex];
-              const originalCorrectOptionId = q.originalCorrectOptionId;
-              
-              if (selectedOption._id) {
-                // ALWAYS use originalCorrectOptionId if it matches the selected option's _id
-                // This ensures we don't send a different ObjectId for the same option
-                if (originalCorrectOptionId && 
-                    typeof originalCorrectOptionId === 'string' && 
-                    originalCorrectOptionId.length === 24 &&
-                    selectedOption._id.toString() === originalCorrectOptionId) {
-                  // Same option as original, use originalCorrectOptionId to avoid false positives
-                  question.correctOptionId = originalCorrectOptionId;
-                } else {
-                  // Different option selected - check if originalCorrectOptionId exists in any option
-                  // If it does, and it's not the selected one, the user changed the answer
-                  const originalOptionExists = question.options?.some((opt: any) => opt._id?.toString() === originalCorrectOptionId);
-                  if (originalOptionExists && originalCorrectOptionId !== selectedOption._id.toString()) {
-                    // User changed the answer - use the new ObjectId
-                    question.correctOptionId = selectedOption._id.toString();
-                  } else {
-                    // Use the selected option's ObjectId
-                    question.correctOptionId = selectedOption._id.toString();
-                  }
-                }
-              } else {
-                // New option, use index as string (backend will convert to ObjectId)
-                question.correctOptionId = selectedOptionIndex.toString();
-              }
-            } else {
-              // Invalid index - try to use originalCorrectOptionId as fallback
-              const originalCorrectOptionId = q.originalCorrectOptionId;
-              if (originalCorrectOptionId && typeof originalCorrectOptionId === 'string' && originalCorrectOptionId.length === 24) {
-                question.correctOptionId = originalCorrectOptionId;
-              } else {
-                // Invalid value - this shouldn't happen, but try to use as-is, backend will validate
-                question.correctOptionId = correctOptionIdStr;
-              }
-            }
+            // Already an index
+            question.correctOptionId = correctOptionIdStr;
           }
         } else {
-          // No correctOptionId set - try to use originalCorrectOptionId as fallback
-          const originalCorrectOptionId = q.originalCorrectOptionId;
-          if (originalCorrectOptionId && typeof originalCorrectOptionId === 'string' && originalCorrectOptionId.length === 24) {
-            question.correctOptionId = originalCorrectOptionId;
-          } else {
-            // No correctOptionId set - this is an error for MULTIPLE_CHOICE
-            throw new Error(`La pregunta ${index + 1} de opción múltiple debe tener una respuesta correcta seleccionada`);
-          }
+          // If not set, use a fallback
+          question.correctOptionId = '0';
         }
       }
 
@@ -758,21 +755,21 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
           return o;
         });
 
-        // Map correctOptionIds (array of indices) to array of ObjectIds or indices
-        const selectedIndices = q.correctOptionIds || [];
-        const correctOptionIds: any[] = [];
-        
-        selectedIndices.forEach((indexStr: string) => {
-          const idx = parseInt(indexStr);
-          if (!isNaN(idx) && idx >= 0 && question.options && question.options[idx]) {
-            const selectedOption = question.options[idx];
-            if (selectedOption._id) {
-              // Use the existing ObjectId
-              correctOptionIds.push(selectedOption._id.toString());
-            } else {
-              // New option, use index (backend will convert)
-              correctOptionIds.push(idx);
+        // Map correctOptionIds strictly to string indices to let backend resolve them to the new ObjectIds.
+        const selectedValues = q.correctOptionIds || [];
+        const correctOptionIds: string[] = [];
+
+        selectedValues.forEach((val: any) => {
+          const valStr = val.toString();
+          if (valStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(valStr)) {
+            // Find the index of the option with this _id in the options array
+            const idx = q.options.findIndex((opt: any) => opt._id?.toString() === valStr);
+            if (idx >= 0) {
+              correctOptionIds.push(idx.toString());
             }
+          } else {
+            // Already an index
+            correctOptionIds.push(valStr);
           }
         });
 
@@ -797,10 +794,13 @@ private questionGroupValidator(control: AbstractControl): ValidationErrors | nul
       title: formValue.title,
       description: formValue.description,
       status: formValue.status,
-      position: {
-        type: formValue.positionType,
-        afterClassId: formValue.positionType === 'BETWEEN_CLASSES' ? formValue.afterClassId : undefined
-      },
+      // If positionType has a value, send position, otherwise omit it or send undefined
+      ...(formValue.positionType ? {
+        position: {
+          type: formValue.positionType,
+          afterClassId: (formValue.positionType === 'BETWEEN_CLASSES' && formValue.afterClassId) ? formValue.afterClassId : undefined
+        }
+      } : {}),
       // If questionnaire already has submissions, do NOT send `questions` payload (backend blocks it).
       ...(this.isEditMode && this.hasSubmissions() ? {} : { questions: cleanedQuestions }),
       passingScore: formValue.passingScore,

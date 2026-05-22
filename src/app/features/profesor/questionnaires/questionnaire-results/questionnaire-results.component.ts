@@ -70,6 +70,7 @@ export class QuestionnaireResultsComponent implements OnInit {
       next: (response) => {
         this.infoService.showSuccess('Todos los intentos del cuestionario fueron eliminados.');
         this.loadGradeReport();
+        try { this.courseEvents.emitQuestionnaireReset(this.questionnaireId); } catch(e) { /* ignore */ }
         this.showResetAllConfirmModal.set(false);
       },
       error: (error) => {

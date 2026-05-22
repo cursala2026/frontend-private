@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, FormGroup, FormArray, FormControl, Validators } from '@angular/forms';
 import { of } from 'rxjs';
+import { ChangeDetectorRef } from '@angular/core';
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import { QuestionnairesService } from '../../../../core/services/questionnaires.service';
 import { ClassesService } from '../../../../core/services/classes.service';
 import { CourseEventsService } from '../../../../core/services/course-events.service';
@@ -8,6 +10,13 @@ import { InfoService } from '../../../../core/services/info.service';
 import { provideRouter } from '@angular/router';
 
 import { QuestionnaireEditComponent } from './questionnaire-edit.component';
+
+class MockChangeDetectorRef {
+  markForCheck() {}
+  detectChanges() {}
+  detach() {}
+  reattach() {}
+}
 
 // ─── Helper ─────────────────────────────────────────────────────────────────
 
@@ -34,7 +43,8 @@ describe('QuestionnaireEditComponent', () => {
     getQuestionnairesByCourse: vi.fn().mockReturnValue(of({ data: [] })),
     getQuestionnaireById: vi.fn().mockReturnValue(of({ data: null })),
     hasSubmissions: vi.fn().mockReturnValue(of({ data: { hasSubmissions: false } })),
-    updateQuestionnaire: vi.fn().mockReturnValue(of({ data: {} }))
+    updateQuestionnaire: vi.fn().mockReturnValue(of({ data: {} })),
+    createQuestionnaire: vi.fn().mockReturnValue(of({ data: {} }))
   };
   const mockInfoService = { showError: vi.fn(), showSuccess: vi.fn() };
   const mockCourseEvents = {} as Partial<CourseEventsService>;
@@ -52,19 +62,18 @@ describe('QuestionnaireEditComponent', () => {
         onQuestionnaireReset: vi.fn().mockReturnValue(of())
       } as any;
 
-      await TestBed.configureTestingModule({
-        imports: [ReactiveFormsModule, QuestionnaireEditComponent],
+      TestBed.configureTestingModule({
         providers: [
+          { provide: ChangeDetectorRef, useClass: MockChangeDetectorRef },
           { provide: ClassesService, useValue: mockClassesService },
           { provide: QuestionnairesService, useValue: mockQuestionnairesService },
           { provide: InfoService, useValue: mockInfoService },
           { provide: CourseEventsService, useValue: mockCourseEvents },
           provideRouter([])
         ]
-      }).compileComponents();
+      });
 
-      fixture = TestBed.createComponent(QuestionnaireEditComponent);
-      component = fixture.componentInstance as QuestionnaireEditComponent;
+      component = TestBed.runInInjectionContext(() => new QuestionnaireEditComponent());
 
       // Inicializar el formulario mínimo para evitar validaciones por defecto
       component.initForm();
@@ -271,4 +280,94 @@ describe('QuestionnaireEditComponent', () => {
       expect(errors?.['noCorrect']).toBeTruthy();
     });
   });
+
+  describe('Comportamiento en modo Borrador (DRAFT)', () => {
+    let mockCourseEvents: Partial<CourseEventsService>;
+    beforeEach(async () => {
+      mockCourseEvents = {
+        onQuestionnaireReset: vi.fn().mockReturnValue(of())
+      } as any;
+
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: ChangeDetectorRef, useClass: MockChangeDetectorRef },
+          { provide: ClassesService, useValue: mockClassesService },
+          { provide: QuestionnairesService, useValue: mockQuestionnairesService },
+          { provide: InfoService, useValue: mockInfoService },
+          { provide: CourseEventsService, useValue: mockCourseEvents },
+          provideRouter([])
+        ]
+      });
+
+      component = TestBed.runInInjectionContext(() => new QuestionnaireEditComponent());
+      component.initForm();
+    });
+
+    it('debe limpiar y quitar validadores requeridos en positionType y afterClassId si el estado es DRAFT', () => {
+      component.questionnaireForm.patchValue({ status: 'DRAFT' });
+      
+      const posTypeCtrl = component.questionnaireForm.get('positionType');
+      const afterClassCtrl = component.questionnaireForm.get('afterClassId');
+      
+      // En Angular, cuando quitamos validadores individuales y grupales, el valor y validez se actualiza
+      expect(posTypeCtrl?.validator).toBeNull();
+      expect(afterClassCtrl?.validator).toBeNull();
+    });
+
+    it('debe permitir guardar un borrador (DRAFT) sin validar respuestas correctas', () => {
+      component.questionnaireForm.patchValue({
+        courseId: 'c1',
+        title: 'Borrador sin respuestas',
+        status: 'DRAFT',
+        positionType: '' // Sin posición
+      });
+
+      // Añadimos una pregunta de opción múltiple sin respuestas correctas marcadas
+      component.questions.clear();
+      component.questions.push((component as any).createQuestionGroup({
+        type: 'MULTIPLE_CHOICE',
+        questionText: '¿Es borrador?',
+        points: 10,
+        options: [{ text: 'Sí' }, { text: 'No' }]
+      } as any));
+
+      const createSpy = vi.spyOn(TestBed.inject(QuestionnairesService), 'createQuestionnaire').mockReturnValue(of({ data: { _id: 'new-id', status: 'DRAFT', questions: [] } }));
+      
+      component.onSubmit();
+      
+      expect(createSpy).toHaveBeenCalled();
+      expect(component.lastSavePayload).toBeDefined();
+      expect(component.lastSavePayload.status).toBe('DRAFT');
+      expect(component.lastSavePayload.position).toBeUndefined(); // Se omitió posición porque no se seleccionó
+    });
+
+    it('debe permitir eliminar preguntas hasta quedar en cero si el estado es DRAFT', () => {
+      component.questionnaireForm.patchValue({ status: 'DRAFT' });
+      
+      // Tenemos por defecto 1 pregunta, la eliminamos
+      expect(component.questions.length).toBe(1);
+      component.removeQuestion(0);
+      expect(component.questions.length).toBe(0);
+    });
+
+    it('debe volver a aplicar validaciones obligatorias de posición y respuestas si el estado cambia de DRAFT a ACTIVE', () => {
+      // Primero cambiamos a DRAFT con datos requeridos mínimos válidos
+      component.questions.clear(); // Limpiamos preguntas vacías por defecto ya que un borrador puede tener 0 preguntas
+      component.questionnaireForm.patchValue({
+        courseId: 'c1',
+        title: 'Mi Borrador',
+        status: 'DRAFT',
+        positionType: ''
+      });
+      expect(component.questionnaireForm.valid).toBe(true);
+
+      // Ahora lo cambiamos a ACTIVE
+      component.questionnaireForm.get('status')?.setValue('ACTIVE');
+      
+      const posTypeCtrl = component.questionnaireForm.get('positionType');
+      expect(posTypeCtrl?.valid).toBe(false); // posición requerida
+      expect(posTypeCtrl?.errors?.['required']).toBeTruthy();
+    });
+  });
 });
+
