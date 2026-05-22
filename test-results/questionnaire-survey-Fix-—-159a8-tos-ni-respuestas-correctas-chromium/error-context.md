@@ -12,49 +12,41 @@
 # Error details
 
 ```
-TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('text=📋 Encuesta de Satisfacción').first()
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
 Call log:
-  - waiting for locator('text=Encuesta de Satisfacción') to be visible
+  - Expect "toBeVisible" with timeout 5000ms
+  - waiting for locator('text=📋 Encuesta de Satisfacción').first()
 
 ```
 
-# Page snapshot
-
 ```yaml
-- generic [ref=e4]:
+- main:
+  - img "Cursala Logo"
+  - heading "Iniciar Sesión" [level=3]
+  - text: Usuario o Email
   - img
-  - main [ref=e5]:
-    - generic [ref=e7]:
-      - img "Cursala Logo" [ref=e10] [cursor=pointer]
-      - generic [ref=e11]:
-        - heading "Iniciar Sesión" [level=3] [ref=e12]
-        - generic [ref=e13]:
-          - generic [ref=e14]:
-            - generic [ref=e15]: Usuario o Email
-            - generic [ref=e16]:
-              - generic:
-                - img
-              - textbox "Usuario o Email" [ref=e17]:
-                - /placeholder: Ingresa tu usuario
-          - generic [ref=e18]:
-            - generic [ref=e19]: Contraseña
-            - generic [ref=e22]:
-              - generic:
-                - img
-              - textbox "Ingresa tu contraseña" [ref=e23]
-              - button "Mostrar contraseña" [ref=e24] [cursor=pointer]:
-                - img [ref=e25]
-          - generic [ref=e27]:
-            - generic [ref=e28]:
-              - checkbox "Recordarme" [ref=e29] [cursor=pointer]
-              - generic [ref=e30] [cursor=pointer]: Recordarme
-            - link "¿Olvidaste tu contraseña?" [ref=e31] [cursor=pointer]:
-              - /url: /forgot-password
-          - button "Iniciar Sesión" [ref=e33] [cursor=pointer]
-          - paragraph [ref=e34]:
-            - text: ¿No tienes una cuenta?
-            - link "Regístrate aquí" [ref=e35] [cursor=pointer]:
-              - /url: /register
+  - textbox "Usuario o Email":
+    - /placeholder: Ingresa tu usuario
+  - text: Contraseña
+  - textbox "Ingresa tu contraseña"
+  - button "Mostrar contraseña"
+  - checkbox "Recordarme"
+  - text: Recordarme
+  - link "¿Olvidaste tu contraseña?":
+    - /url: /forgot-password
+  - button "Iniciar Sesión"
+  - paragraph:
+    - text: ¿No tienes una cuenta?
+    - link "Regístrate aquí":
+      - /url: /register
+- text: Error al cargar los cursos
+- button "×"
 ```
 
 # Test source
@@ -133,10 +125,10 @@ Call log:
   71  |     await mockQuestionnairesListWithSurvey(page);
   72  | 
   73  |     await page.goto(`/profesor/questionnaires?courseId=${COURSE_ID}`);
-> 74  |     await page.waitForSelector('text=Encuesta de Satisfacción', { timeout: 10000 });
-      |                ^ TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+  74  |     await page.waitForSelector('text=Encuesta de Satisfacción', { timeout: 10000 });
   75  | 
-  76  |     await expect(page.locator('text=📋 Encuesta de Satisfacción').first()).toBeVisible();
+> 76  |     await expect(page.locator('text=📋 Encuesta de Satisfacción').first()).toBeVisible();
+      |                                                                            ^ Error: expect(locator).toBeVisible() failed
   77  |     await expect(page.locator('text=Puntuación automática: 100%')).toBeVisible();
   78  |     await expect(page.locator('text=No evalúa respuestas correctas')).toBeVisible();
   79  |     await expect(page.locator('text=Nota mínima')).not.toBeVisible();
