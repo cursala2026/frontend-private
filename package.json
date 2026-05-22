@@ -13,11 +13,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --no-watch --no-progress",
     "test:watch": "ng test",
-    "test:coverage": "ng test --no-watch --no-progress --code-coverage",
+    "test:coverage": "ng test --no-watch --no-progress --coverage",
     "e2e": "npx playwright test",
     "e2e:open": "npx playwright test --ui",
     "pw:install": "npx playwright install --with-deps"
-    
   },
   "prettier": {
     "printWidth": 100,
@@ -56,6 +55,7 @@
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/angular": "^13.0.0",
     "@testing-library/jest-dom": "^6.0.0",
+    "@vitest/coverage-v8": "^4.1.7",
     "autoprefixer": "^10.4.22",
     "jsdom": "^22.1.0",
     "postcss": "^8.5.3",
