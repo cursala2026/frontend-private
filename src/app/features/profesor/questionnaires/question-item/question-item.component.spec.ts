@@ -210,6 +210,9 @@ describe('QuestionItemComponent', () => {
   });
 
   describe('removeOption()', () => {
+
+    // ── Casos básicos ───────────────────────────────────────────────────────
+
     it('debe eliminar la opción en el índice indicado si hay más de 2', () => {
       const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
       component.question = questionGroup as AbstractControl;
@@ -228,7 +231,209 @@ describe('QuestionItemComponent', () => {
       component.removeOption(0);
       expect(component.options.length).toBe(2);
     });
+
+    it('NO debe eliminar si hasSubmissions=true (cuestionario con envíos)', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      component.question = questionGroup as AbstractControl;
+      component.isEditMode = true;
+      component.hasSubmissions = true;
+
+      component.removeOption(0);
+
+      expect(component.options.length).toBe(4);
+      expect(infoServiceMock.showError).toHaveBeenCalledWith(
+        expect.stringContaining('envíos')
+      );
+    });
+
+    // ── Bug de tracking: la opción eliminada debe ser exactamente la del índice dado ──
+
+    it('debe eliminar exactamente la primera opción (índice 0), no la última', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(0); // eliminar "Alpha"
+
+      expect(component.options.length).toBe(3);
+      expect(component.options.at(0).get('text')?.value).toBe('Beta');
+      expect(component.options.at(1).get('text')?.value).toBe('Gamma');
+      expect(component.options.at(2).get('text')?.value).toBe('Delta');
+    });
+
+    it('debe eliminar exactamente la opción del medio (índice 1), no la última', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(1); // eliminar "Beta"
+
+      expect(component.options.length).toBe(3);
+      expect(component.options.at(0).get('text')?.value).toBe('Alpha');
+      expect(component.options.at(1).get('text')?.value).toBe('Gamma');
+      expect(component.options.at(2).get('text')?.value).toBe('Delta');
+    });
+
+    it('debe eliminar exactamente la última opción (índice 3)', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(3); // eliminar "Delta"
+
+      expect(component.options.length).toBe(3);
+      expect(component.options.at(0).get('text')?.value).toBe('Alpha');
+      expect(component.options.at(1).get('text')?.value).toBe('Beta');
+      expect(component.options.at(2).get('text')?.value).toBe('Gamma');
+    });
+
+    it('debe eliminar exactamente la opción en el índice dado (MULTIPLE_CHOICE) cuando es la correcta', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      questionGroup.patchValue({ correctOptionId: '1' }); // Beta es la correcta
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(1); // eliminar "Beta" (la correcta)
+
+      expect(component.options.length).toBe(3);
+      expect(component.options.at(0).get('text')?.value).toBe('Alpha');
+      expect(component.options.at(1).get('text')?.value).toBe('Gamma');
+      expect(component.options.at(2).get('text')?.value).toBe('Delta');
+      expect(questionGroup.get('correctOptionId')?.value).toBe('');
+    });
+
+    it('debe eliminar correctamente en eliminaciones múltiples consecutivas', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(1); // elimina Beta → [Alpha, Gamma, Delta]
+      component.removeOption(1); // elimina Gamma → [Alpha, Delta]
+
+      expect(component.options.length).toBe(2);
+      expect(component.options.at(0).get('text')?.value).toBe('Alpha');
+      expect(component.options.at(1).get('text')?.value).toBe('Delta');
+    });
+
+    // ── Gestión de correctOptionId (MULTIPLE_CHOICE) ────────────────────────
+
+    it('debe limpiar correctOptionId al eliminar la opción marcada como correcta', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      questionGroup.patchValue({ correctOptionId: '2' });
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(2);
+
+      expect(questionGroup.get('correctOptionId')?.value).toBe('');
+    });
+
+    it('debe decrementar correctOptionId si la opción eliminada estaba ANTES de la correcta', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      questionGroup.patchValue({ correctOptionId: '3' }); // índice 3 es la correcta
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(1); // eliminar índice 1 (antes de la correcta)
+
+      expect(questionGroup.get('correctOptionId')?.value).toBe('2');
+    });
+
+    it('NO debe modificar correctOptionId si la opción eliminada estaba DESPUÉS de la correcta', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      questionGroup.patchValue({ correctOptionId: '0' }); // índice 0 es la correcta
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(2); // eliminar índice 2 (después de la correcta)
+
+      expect(questionGroup.get('correctOptionId')?.value).toBe('0');
+    });
+
+    it('NO debe modificar correctOptionId si no hay ninguna selección', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_CHOICE');
+      questionGroup.patchValue({ correctOptionId: '' });
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(0);
+
+      expect(questionGroup.get('correctOptionId')?.value).toBe('');
+    });
+
+    // ── Gestión de correctOptionIds (MULTIPLE_SELECT) ───────────────────────
+
+    it('debe eliminar exactamente la opción en el índice dado (MULTIPLE_SELECT) cuando es correcta', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
+      const options = questionGroup.get('options') as FormArray;
+      ['Alpha', 'Beta', 'Gamma', 'Delta'].forEach((txt, i) =>
+        options.at(i).get('text')?.setValue(txt)
+      );
+      questionGroup.patchValue({ correctOptionIds: ['0', '2'] });
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(2); // eliminar "Gamma" (correcta en índice 2)
+
+      expect(component.options.length).toBe(3);
+      expect(component.options.at(0).get('text')?.value).toBe('Alpha');
+      expect(component.options.at(1).get('text')?.value).toBe('Beta');
+      expect(component.options.at(2).get('text')?.value).toBe('Delta');
+      // '2' debe haberse eliminado de correctOptionIds; '0' sigue igual
+      expect(questionGroup.get('correctOptionIds')?.value).not.toContain('2');
+      expect(questionGroup.get('correctOptionIds')?.value).toContain('0');
+    });
+
+    it('debe decrementar índices en correctOptionIds para opciones que estaban después de la eliminada', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
+      questionGroup.patchValue({ correctOptionIds: ['1', '3'] });
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(0); // eliminar índice 0 → índices 1 y 3 pasan a ser 0 y 2
+
+      const ids: string[] = questionGroup.get('correctOptionIds')?.value;
+      expect(ids).toContain('0');
+      expect(ids).toContain('2');
+      expect(ids).not.toContain('1');
+      expect(ids).not.toContain('3');
+    });
+
+    it('debe mantener sin cambios correctOptionIds para opciones que estaban antes de la eliminada', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
+      questionGroup.patchValue({ correctOptionIds: ['0', '1'] }); // correctas en 0 y 1
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(3); // eliminar el último (índice 3, no correcto)
+
+      const ids: string[] = questionGroup.get('correctOptionIds')?.value;
+      expect(ids).toContain('0');
+      expect(ids).toContain('1');
+    });
+
+    it('debe quedar con correctOptionIds vacío al eliminar la única opción correcta (MULTIPLE_SELECT)', () => {
+      const questionGroup = createQuestionGroup('MULTIPLE_SELECT');
+      questionGroup.patchValue({ correctOptionIds: ['2'] });
+      component.question = questionGroup as AbstractControl;
+
+      component.removeOption(2);
+
+      const ids: string[] = questionGroup.get('correctOptionIds')?.value;
+      expect(ids).toHaveLength(0);
+    });
   });
+
+
+
 
   // ── toggleCorrectOption ─────────────────────────────────────────────────
 
