@@ -42,6 +42,7 @@ export class CoursesComponent implements OnInit {
   isCertificateLogosModalOpen = signal<boolean>(false);
   companyData = signal<PublicData | null>(null);
   selectedDate = signal<Date | null>(null);
+  calendarCourses = signal<any[]>([]);   // todos los cursos para el calendario
   modalConfig!: ModalConfig;
   selectedCourse: any = null;
   duplicateModalConfig: ConfirmModalConfig = {
@@ -217,8 +218,20 @@ export class CoursesComponent implements OnInit {
   }
 
   openCalendarioModal(): void {
-    this.selectedCourse = this.courses();
-    this.isCalendarioModalOpen.set(true);
+    // Cargar TODOS los cursos (no solo la página actual) para que el
+    // calendario muestre todas las fechas ocupadas correctamente.
+    this.coursesService.getCourses({ page: 1, page_size: 100000 }).subscribe({
+      next: (res: any) => {
+        const all: any[] = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        this.calendarCourses.set(all);
+        this.isCalendarioModalOpen.set(true);
+      },
+      error: () => {
+        // Fallback a los cursos de la página actual si falla el request
+        this.calendarCourses.set(this.courses());
+        this.isCalendarioModalOpen.set(true);
+      }
+    });
   }
 
   onCalendarioModalClose(): void {

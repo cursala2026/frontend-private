@@ -110,7 +110,7 @@
 <!-- Modal de calendario -->
 <app-calendario-modal
   [isOpen]="isCalendarioModalOpen()"
-  [courses]="selectedCourse"
+  [courses]="calendarCourses()"
   (close)="onCalendarioModalClose()"
   (dateSelected)="onCalendarioDateSelected($event)"
 />

@@ -1,21 +1,39 @@
 /* Estilos para fechas ocupadas y disponibles en el calendario */
-.occupied-date .mat-calendar-body-cell-content {
-  position: relative;
+
+/* Fondo sutil para el calendario para que resalten las cajas blancas */
+mat-calendar {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  display: block;
 }
 
-.occupied-date .mat-calendar-body-cell-content::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left:35%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #facc15;
-  box-shadow: 10px 0 #facc15;
+/* Celdas cuadradas tipo tarjeta blancas */
+.mat-calendar-body-cell-content {
+  background-color: #ffffff !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid #f1f5f9 !important;
+  width: 90% !important;
+  height: 90% !important;
+  left: 5% !important;
+  top: 5% !important;
+  color: #334155 !important;
 }
 
+/* Hover suave */
+.mat-calendar-body-cell:not(.mat-calendar-body-disabled):hover > .mat-calendar-body-cell-content:not(.mat-calendar-body-selected) {
+  background-color: #f1f5f9 !important;
+}
+
+/* Color para fechas seleccionadas para que mantenga su forma cuadrada */
+.mat-calendar-body-selected {
+  background-color: #4e68ba !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+}
+
+/* Bug 1 fix: línea azul completa debajo de fechas disponibles */
 .available-date .mat-calendar-body-cell-content {
   position: relative;
 }
@@ -23,11 +41,54 @@
 .available-date .mat-calendar-body-cell-content::after {
   content: '';
   position: absolute;
+  bottom: 2px;
   left: 50%;
-  bottom: -2px;
   transform: translateX(-50%);
-  width: 70%;
-  height: 3.2px;
+  width: 50%;
+  height: 2px; /* Sin decimales para evitar renderizado inconsistente (subpíxeles) */
   background-color: #4e68ba;
-  border-radius: 0;
+  border-radius: 1px;
+}
+
+/* Fechas ocupadas: dos puntos amarillos debajo del número */
+.occupied-date .mat-calendar-body-cell-content {
+  position: relative;
+}
+
+.occupied-date .mat-calendar-body-cell-content::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  /* 
+   * Ancho de punto=5px. Offset de sombra=8px. Ancho total del grupo = 13px. 
+   * El centro del grupo está desviado 4px a la derecha. 
+   * Restamos 4px al translateX(-50%) para centrar perfectamente ambos puntos.
+   */
+  transform: translateX(calc(-50% - 4px));
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #facc15;
+  box-shadow: 8px 0 0 #facc15;
+}
+
+/*
+ * Bug 4 fix: Se usa visibility:hidden en lugar de display:none.
+ * display:none colapsa la celda y desordena la grilla del calendario,
+ * dejando días sin fecha (celdas vacías). visibility:hidden oculta
+ * el texto del label del mes pero conserva el espacio de la celda.
+ */
+.mat-calendar-body-label {
+  visibility: hidden;
+  padding: 0 !important;
+  height: 0 !important;
+  line-height: 0 !important;
+}
+
+/* Contenedor lateral de cursos */
+.calendario-container {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
