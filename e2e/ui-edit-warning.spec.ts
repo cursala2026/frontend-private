@@ -93,19 +93,14 @@ test('UI muestra advertencia y bloquea cambios estructurales cuando hay envíos'
   const optionInputs = firstQuestion.locator('input[formcontrolname="text"]');
   const beforeCount = await optionInputs.count();
 
-  // Intentar agregar opción y verificar que no aumente el conteo
+  // Verificar que el botón de agregar opción esté deshabilitado
   const addOptionBtn = firstQuestion.locator('button:has-text("Agregar Opción")');
-  await addOptionBtn.click();
-  await page.waitForTimeout(300); // pequeño delay para que lógica JS se ejecute
-  const afterCount = await optionInputs.count();
-  await expect(afterCount).toBe(beforeCount);
+  await expect(addOptionBtn).toBeDisabled();
 
-  // Intentar eliminar la primera opción y verificar que conteo no cambie
-  const deleteButtons = firstQuestion.locator('button:has-text("Eliminar")');
-  if (await deleteButtons.count() > 0) {
-    await deleteButtons.first().click();
-    await page.waitForTimeout(300);
-    const afterDeleteCount = await optionInputs.count();
-    await expect(afterDeleteCount).toBe(beforeCount);
+  // Verificar que el botón de eliminar de las opciones esté deshabilitado
+  const deleteOptionBtns = firstQuestion.locator('button:has-text("Eliminar")');
+  const deleteCount = await deleteOptionBtns.count();
+  for (let i = 0; i < deleteCount; i++) {
+    await expect(deleteOptionBtns.nth(i)).toBeDisabled();
   }
 });

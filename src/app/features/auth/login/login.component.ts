@@ -32,10 +32,17 @@ export class LoginComponent {
   private courseId: string | null = null;
 
   constructor() {
-    // Si ya está autenticado y el token es válido, permitir que los guards manejen la navegación
-    // o el usuario decida. No redirigimos automáticamente aquí para evitar bucles.
-    if (this.authService.isAuthenticated() && this.authService.checkTokenExpired()) {
-      this.authService.logout();
+    // Si ya está autenticado y el token es válido, redirigir al dashboard/alumno
+    if (this.authService.isAuthenticated()) {
+      if (this.authService.checkTokenExpired()) {
+        this.authService.logout();
+      } else {
+        // Ya está logueado y el token es válido, redirigir
+        const user = this.authService.currentUser();
+        if (user) {
+          this.router.navigate(['/dashboard']);
+        }
+      }
     }
 
     // Obtener parámetros de los query params

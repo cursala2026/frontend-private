@@ -112,14 +112,42 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
     (this.question as FormGroup).updateValueAndValidity();
   }
 
-  removeOption(optionIndex: number) {
+  /**
+   * removeOption acepta un índice (número) o directamente un AbstractControl
+   * del option group. Esto evita depender de índices frágiles derivados del
+   * DOM reusado y garantiza que eliminemos el option correcto.
+   */
+  removeOption(optionOrIndex: number | AbstractControl) {
     if (this.isEditMode && this.hasSubmissions) {
       this.infoService.showError('No es posible eliminar opciones: el cuestionario ya tiene envíos.');
       return;
     }
+
     const options = this.options;
+    let optionIndex: number;
+
+    if (typeof optionOrIndex === 'number') {
+      optionIndex = optionOrIndex;
+    } else {
+      optionIndex = options.controls.indexOf(optionOrIndex as AbstractControl);
+    }
+
+    if (optionIndex < 0) return; // no encontrado
+
     if (options.length > 2) {
+      try {
+        const before = options.controls.map((c: any) => ({ _id: c.get('_id')?.value, text: c.get('text')?.value }));
+      } catch (e) {
+        // ignore
+      }
+
       options.removeAt(optionIndex);
+
+      try {
+        const after = options.controls.map((c: any) => ({ _id: c.get('_id')?.value, text: c.get('text')?.value }));
+      } catch (e) {
+        // ignore
+      }
 
       // --- Actualizar correctOptionId (MULTIPLE_CHOICE) ---
       const correctIdCtrl = (this.question as FormGroup).get('correctOptionId');

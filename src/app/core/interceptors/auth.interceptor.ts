@@ -35,14 +35,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(clonedRequest).pipe(
       catchError((error: HttpErrorResponse) => {
         console.log('AuthInterceptor: Error detectado', error.status, error.error);
-        // Si recibimos un 401 (Unauthorized), el token puede estar expirado
+        // Si recibimos un 401 (Unauthorized), el token ya no es válido o ha expirado
         if (error.status === 401) {
-          // Verificar si el error es por token expirado/inválido
-          if (isTokenExpiredError(error)) {
-            console.warn('AuthInterceptor: Token inválido o expirado. Cerrando sesión...');
-            // Limpiar la sesión automáticamente
-            authService.logout();
-          }
+          console.warn('AuthInterceptor: 401 detected. Logging out...');
+          // Usamos setTimeout para asegurar que la navegación ocurra fuera del ciclo de la petición
+          setTimeout(() => authService.logout(), 0);
         }
         return throwError(() => error);
       })

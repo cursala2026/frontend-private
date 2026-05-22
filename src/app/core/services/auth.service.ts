@@ -346,9 +346,10 @@ export class AuthService implements OnDestroy {
                             currentUrl.includes('/admin') || 
                             currentUrl.includes('/alumno') ||
                             currentUrl.includes('/profesor') ||
-                            currentUrl.includes('/vendedor');
+                            currentUrl.includes('/vendedor') ||
+                            currentUrl === '/';
 
-    if (isProtectedRoute) {
+    if (isProtectedRoute || !currentUrl) {
         this.router.navigate(['/login']);
         return;
     }
@@ -416,6 +417,7 @@ export class AuthService implements OnDestroy {
    * Cierra la sesión del usuario
    */
   logout(): void {
+    console.warn('AuthService: logout called');
     this.stopTokenMonitoring();
     this.clearSession();
   }

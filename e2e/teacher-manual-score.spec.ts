@@ -78,8 +78,11 @@ const MOCK_QUESTIONNAIRES = [
 // ─── Setup helpers ────────────────────────────────────────────────────────────
 
 async function setupMocks(page: Page) {
+  // Register mocks at context level so they're active before app boot
+  const ctx = page.context();
+
   // GET cursos del profesor
-  await page.route(`${API}/courses/teacher/${PROFESOR_USER_ID}`, (route: Route) =>
+  await ctx.route(`${API}/courses/teacher/${PROFESOR_USER_ID}`, (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -88,7 +91,7 @@ async function setupMocks(page: Page) {
   );
 
   // GET estudiantes del profesor
-  await page.route(`${API}/user/getStudentsByTeacherCourses/${PROFESOR_USER_ID}`, (route: Route) =>
+  await ctx.route(`${API}/user/getStudentsByTeacherCourses/${PROFESOR_USER_ID}`, (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -97,7 +100,7 @@ async function setupMocks(page: Page) {
   );
 
   // GET curso (para loadStudentProgressDetails)
-  await page.route(`${API}/courses/${COURSE_ID}`, (route: Route) =>
+  await ctx.route(`${API}/courses/${COURSE_ID}`, (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -106,7 +109,7 @@ async function setupMocks(page: Page) {
   );
 
   // GET progreso del alumno
-  await page.route(`${API}/courseProgress/${COURSE_ID}?userId=${STUDENT_USER_ID}`, (route: Route) =>
+  await ctx.route(`${API}/courseProgress/${COURSE_ID}?userId=${STUDENT_USER_ID}`, (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,7 +118,7 @@ async function setupMocks(page: Page) {
   );
 
   // GET cuestionarios del curso
-  await page.route(`${API}/questionnaires/course/${COURSE_ID}`, (route: Route) =>
+  await ctx.route(`${API}/questionnaires/course/${COURSE_ID}`, (route: Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',

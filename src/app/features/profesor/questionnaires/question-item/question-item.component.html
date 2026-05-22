@@ -102,8 +102,8 @@
         }
 
 
-        <div class="space-y-2" formArrayName="options">
-              @for (option of options.controls; track $index; let j = $index) {
+          <div class="space-y-2" formArrayName="options">
+            @for (option of options.controls; track option.get('_id')?.value; let j = $index) {
                 <div [formGroupName]="j" class="flex items-center gap-2">
               @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
                 <input type="radio" [name]="'correctOption' + index" [checked]="question.get('correctOptionId')?.value === j.toString()" (change)="question.patchValue({ correctOptionId: j.toString() })" class="cursor-pointer h-4 w-4 " />
@@ -117,7 +117,7 @@
 
               <!-- per-option inline error removed (group-level message remains) -->
               @if (options.length > 2) {
-                <button type="button" (click)="removeOption(j)" class="cursor-pointer text-red-600 p-2">Eliminar</button>
+                <button type="button" (click)="removeOption(options.at(j))" [disabled]="isEditMode && hasSubmissions" class="cursor-pointer text-red-600 p-2">Eliminar</button>
               }
             </div>
           }
