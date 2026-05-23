@@ -4,6 +4,7 @@
  */
 
 import { test, expect, Page, Route } from '@playwright/test';
+import path from 'path';
 import {
   injectProfesorAuth,
   COURSE_ID,
@@ -93,7 +94,7 @@ test.describe('Fix — Encuestas no muestran configuración de evaluación', () 
   test('Card de encuesta muestra badge y NO muestra nota mínima, reintentos ni respuestas correctas', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     await mockQuestionnairesListWithSurvey(p);
@@ -114,7 +115,7 @@ test.describe('Fix — Encuestas no muestran configuración de evaluación', () 
   test('Card de cuestionario normal NO muestra badge de encuesta y SÍ muestra configuración', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     await mockQuestionnairesListWithRegular(p);
@@ -133,7 +134,7 @@ test.describe('Fix — Encuestas no muestran configuración de evaluación', () 
   test('Formulario de edición oculta sección Configuración al marcar isSurvey', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     await mockCommonData(p);
@@ -166,7 +167,7 @@ test.describe('Fix — Encuestas no muestran configuración de evaluación', () 
   test('Formulario de edición muestra sección Configuración al desmarcar isSurvey', async ({ page }) => {
     const browser2 = page.context().browser();
     if (!browser2) throw new Error('No browser available');
-    const ctx2 = await browser2.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx2 = await browser2.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p2 = await ctx2.newPage();
 
     await mockCommonData(p2);

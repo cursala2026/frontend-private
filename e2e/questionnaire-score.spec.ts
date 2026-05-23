@@ -7,6 +7,7 @@
  */
 
 import { test, expect, Page, Route } from '@playwright/test';
+import path from 'path';
 import {
   injectAlumnoAuth,
   COURSE_ID,
@@ -135,7 +136,7 @@ test.describe('Bug #4 — finalScore=0 tratado como 0, no falsy (operador ??)', 
       // 1. Crear un contexto nuevo con storageState (asegura token/localStorage)
       const browser = page.context().browser();
       if (!browser) throw new Error('No browser instance available');
-      const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-alumno.json', baseURL: 'http://localhost:4200' });
+      const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-alumno.json'), baseURL: 'http://localhost:4200' });
       const p = await ctx.newPage();
 
       // 2. Configurar mocks de API en el nuevo page/context
@@ -163,7 +164,7 @@ test.describe('Bug #4 — finalScore=0 tratado como 0, no falsy (operador ??)', 
     async ({ page }) => {
       const browser2 = page.context().browser();
       if (!browser2) throw new Error('No browser instance available');
-      const ctx = await browser2.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-alumno.json', baseURL: 'http://localhost:4200' });
+      const ctx = await browser2.newContext({ storageState: path.join(__dirname, '.auth-alumno.json'), baseURL: 'http://localhost:4200' });
       const p = await ctx.newPage();
 
       await mockCourse(p);
@@ -187,7 +188,7 @@ test.describe('Bug #4 — finalScore=0 tratado como 0, no falsy (operador ??)', 
     async ({ page }) => {
       const browser3 = page.context().browser();
       if (!browser3) throw new Error('No browser instance available');
-      const ctx = await browser3.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-alumno.json', baseURL: 'http://localhost:4200' });
+      const ctx = await browser3.newContext({ storageState: path.join(__dirname, '.auth-alumno.json'), baseURL: 'http://localhost:4200' });
       const p = await ctx.newPage();
 
       await mockCourse(p);

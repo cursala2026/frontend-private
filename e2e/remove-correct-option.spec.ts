@@ -10,6 +10,7 @@
  * Fix aplicado: cambiar `track option` → `track $index`.
  */
 import { test, expect, Page, Route } from '@playwright/test';
+import path from 'path';
 import { injectProfesorAuth } from './helpers/auth';
 
 const API = 'http://localhost:8081/api/v1';
@@ -205,7 +206,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('eliminar la opción correcta elimina la opción seleccionada, no la última', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     // Debug logging
@@ -265,7 +266,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('eliminar la primera opción deja las 3 restantes en orden correcto', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     p.on('console', msg => console.log('[PAGE][console]', msg.type(), msg.text()));
@@ -302,7 +303,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('eliminar la última opción deja las 3 primeras en orden correcto', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     p.on('console', msg => console.log('[PAGE][console]', msg.type(), msg.text()));
@@ -339,7 +340,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('eliminar una opción del medio deja el orden correcto', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     p.on('console', msg => console.log('[PAGE][console]', msg.type(), msg.text()));
@@ -376,7 +377,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('dos eliminaciones consecutivas mantienen el orden correcto', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     p.on('console', msg => console.log('[PAGE][console]', msg.type(), msg.text()));
@@ -434,7 +435,7 @@ test.describe('Eliminación de opciones en editor de cuestionario', () => {
   test('con cuestionario que tiene envíos, los botones Eliminar están deshabilitados', async ({ page }) => {
     const browser = page.context().browser();
     if (!browser) throw new Error('No browser available');
-    const ctx = await browser.newContext({ storageState: 'F:/cursala/cursala-private/frontend-private/e2e/.auth-profesor.json', baseURL: 'http://localhost:4200' });
+    const ctx = await browser.newContext({ storageState: path.join(__dirname, '.auth-profesor.json'), baseURL: 'http://localhost:4200' });
     const p = await ctx.newPage();
 
     p.on('console', msg => console.log('[PAGE][console]', msg.type(), msg.text()));
