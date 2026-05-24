@@ -94,7 +94,7 @@
                             </svg>
                             <div class="flex-1 min-w-0">
                               <p class="text-sm font-medium text-gray-900 truncate">{{ getFileName(getFieldValue(field)) }}</p>
-                              <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
+                              <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" rel="noreferrer" referrerpolicy="no-referrer" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
                             </div>
                           </div>
                         } @else {
@@ -306,7 +306,7 @@
                                   </svg>
                                   <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">{{ getFileName(getFieldValue(field)) }}</p>
-                                    <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
+                                    <a [href]="getProgramUrl(getFieldValue(field))" target="_blank" rel="noreferrer" referrerpolicy="no-referrer" class="text-xs text-blue-600 hover:text-blue-800">Ver/Descargar</a>
                                   </div>
                                 </div>
                                 <button
