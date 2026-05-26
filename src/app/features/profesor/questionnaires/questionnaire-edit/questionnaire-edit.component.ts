@@ -191,6 +191,20 @@ export class QuestionnaireEditComponent implements OnInit {
     this.questionnaireForm.get('positionType')?.valueChanges.subscribe((posType) => {
       this.updateAfterClassValidators(posType);
     });
+    // Subscribe to isSurvey changes to disable/enable positionType
+    this.questionnaireForm.get('isSurvey')?.valueChanges.subscribe((isSurvey) => {
+      const positionTypeControl = this.questionnaireForm.get('positionType');
+      if (isSurvey) {
+        positionTypeControl?.setValue('FINAL_EXAM', { emitEvent: false });
+        positionTypeControl?.disable({ emitEvent: false });
+        this.updateAfterClassValidators('FINAL_EXAM');
+      } else {
+        positionTypeControl?.enable({ emitEvent: false });
+      }
+    });
+
+// Run initial configuration
+this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
 
     // Run initial configuration
     this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
