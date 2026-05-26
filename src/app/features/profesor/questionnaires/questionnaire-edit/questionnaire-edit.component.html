@@ -126,10 +126,12 @@
               Posición
             </label>
             <select
-              id="positionType"
-              formControlName="positionType"
-              class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+            id="positionType"
+            formControlName="positionType"
+            [attr.disabled]="questionnaireForm.get('isSurvey')?.value ? true : null"
+            class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
+      
               @if (questionnaireForm.get('status')?.value === 'DRAFT') {
                 <option value="">Sin definir (Borrador)</option>
               }
