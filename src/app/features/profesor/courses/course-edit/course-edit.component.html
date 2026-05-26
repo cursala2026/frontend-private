@@ -202,39 +202,50 @@
       </div>
 
       <!-- Fechas -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
 
-        
-        <!-- Fecha de Inicio -->
-        <div>
-          <label for="startDate" class="block text-base font-bold text-brand-tertiary mb-2">
-            Fecha de Inicio <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            id="startDate"
-            formControlName="startDate"
-            class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-          />
-          @if (courseForm.get('startDate')?.invalid && courseForm.get('startDate')?.touched) {
-            <p class="mt-1 text-sm text-red-600">La fecha de inicio es requerida</p>
-          }
-        </div>
+  <!-- Fecha de Inicio -->
+  <div>
+    <label for="startDate" class="block text-base font-bold text-brand-tertiary mb-2">
+      Fecha de Inicio <span class="text-red-500">*</span>
+    </label>
+    <input
+      type="date"
+      id="startDate"
+      formControlName="startDate"
+      [min]="courseForm.get('registrationOpenDate')?.value || ''"
+      class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+    />
+    @if (courseForm.get('startDate')?.invalid && courseForm.get('startDate')?.touched) {
+      <p class="mt-1 text-sm text-red-600">La fecha de inicio es requerida</p>
+    }
+  </div>
 
-        <!-- Fecha de inscripción -->
-        <div class="">
-          <label for="registrationOpenDate" class="block text-base font-bold text-brand-tertiary mb-2">
-            Fecha de Apertura de Inscripciones
-          </label>
-          <input
-            type="date"
-            id="registrationOpenDate"
-            formControlName="registrationOpenDate"
-            class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-          />
-        </div>
-      </div>
+  <!-- Fecha de inscripción -->
+  <div>
+    <label for="registrationOpenDate" class="block text-base font-bold text-brand-tertiary mb-2">
+      Fecha de Apertura de Inscripciones
+    </label>
+    <input
+      type="date"
+      id="registrationOpenDate"
+      formControlName="registrationOpenDate"
+      [max]="courseForm.get('startDate')?.value || ''"
+      class="cursor-pointer w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+    />
+  </div>
 
+</div>
+
+<!-- ✅ Error de validación cruzada de fechas -->
+@if (courseForm.errors?.['startBeforeRegistration'] && 
+     courseForm.get('startDate')?.touched && 
+     courseForm.get('registrationOpenDate')?.touched) {
+  <p class="mb-4 text-sm text-red-600">
+    La fecha de inicio debe ser posterior a la fecha de apertura de inscripciones.
+  </p>
+}
+      
       <!-- Días, Hora,  -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
