@@ -124,18 +124,35 @@ export class CourseEditComponent implements OnInit {
   }
 
   onImageSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedImageFile = input.files[0];
-      this.deleteImage = false; // Si se selecciona nueva imagen, no eliminar
-      this.courseForm.markAsDirty();
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.imagePreview = e.target.result;
-      };
-      reader.readAsDataURL(this.selectedImageFile);
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+
+    // ✅ Validar que sea imagen
+    if (!file.type.startsWith('image/')) {
+      this.infoService.showError('Solo se permiten imágenes (PNG, JPG, GIF). No se permiten videos.');
+      input.value = '';
+      return;
     }
+
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.infoService.showError('La imagen no puede superar los 10MB.');
+      input.value = '';
+      return;
+    }
+
+    this.selectedImageFile = file;
+    this.deleteImage = false;
+    this.courseForm.markAsDirty();
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.imagePreview = e.target.result;
+    };
+    reader.readAsDataURL(this.selectedImageFile);
   }
+}
 
   longDescriptionLength(): number {
     const val = this.courseForm.get('longDescription')?.value || '';
