@@ -103,7 +103,7 @@
 
 
           <div class="space-y-2" formArrayName="options">
-            @for (option of options.controls; track option.get('_id')?.value; let j = $index) {
+            @for (option of options.controls; track option; let j = $index) {
                 <div [formGroupName]="j" class="flex items-center gap-2">
               @if (question.get('type')?.value === 'MULTIPLE_CHOICE') {
                 <input type="radio" [name]="'correctOption' + index" [checked]="question.get('correctOptionId')?.value === j.toString()" (change)="question.patchValue({ correctOptionId: j.toString() })" class="cursor-pointer h-4 w-4 " />
