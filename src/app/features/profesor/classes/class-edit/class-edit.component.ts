@@ -76,6 +76,7 @@ export class TeacherClassEditComponent implements OnInit, OnDestroy, AfterViewIn
     confirmText: 'Eliminar',
     cancelText: 'Cancelar',
     confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
     icon: 'danger'
   };
 
