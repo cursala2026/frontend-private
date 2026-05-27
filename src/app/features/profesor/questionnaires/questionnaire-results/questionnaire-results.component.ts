@@ -52,7 +52,8 @@ export class QuestionnaireResultsComponent implements OnInit {
     confirmText: 'Resetear',
     cancelText: 'Cancelar',
     icon: 'danger',
-    confirmButtonClass: 'bg-red-600 hover:bg-red-700'
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
   };
 
   // View state

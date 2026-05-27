@@ -49,7 +49,8 @@ export class TeacherQuestionnairesComponent implements OnInit {
     message: '¿Estás seguro de que deseas eliminar este cuestionario?',
     confirmText: 'Eliminar',
     cancelText: 'Cancelar',
-    confirmClass: 'bg-red-600 hover:bg-red-700'
+    confirmClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
   };
 
   ngOnInit(): void {
