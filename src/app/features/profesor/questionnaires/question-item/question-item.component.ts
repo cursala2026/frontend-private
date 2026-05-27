@@ -27,6 +27,7 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
   @Input() questionnaireId?: string;
   @Input() isEditMode = false;
   @Input() hasSubmissions = false;
+  @Input() isSurvey = false;
 
   private infoService = inject(InfoService);
   private uploadManager = inject(QuestionMediaUploadManagerService);
