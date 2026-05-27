@@ -90,7 +90,7 @@
                     }
                   }
                 </div>
-                @if (questionnaire()?.passingScore) {
+                @if (questionnaire()?.passingScore && !questionnaire()?.isSurvey) {
                   <p class="text-brand-tertiary mt-3">
                     Nota mínima requerida: {{ questionnaire()?.passingScore }}%
                   </p>
@@ -112,7 +112,7 @@
               @if (previousSubmissions().length > 0) {
                 <p>Total de intentos: {{ previousSubmissions().length }}</p>
               }
-              @if (getTimeElapsed()) {
+              @if (getTimeElapsed() && !questionnaire()?.isSurvey) {
                 <p class="mt-2">
                   <span class="font-semibold text-blue-600">Tiempo de resolución: {{ getTimeElapsed() }}</span>
                   @if (questionnaire()?.timeLimitMinutes) {
@@ -219,18 +219,20 @@
                               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                           }
-                          @if (isCorrectOption(question._id!, option._id!.toString())) {
+                          @if (!questionnaire()?.isSurvey && isCorrectOption(question._id!, option._id!.toString())) {
                             <span class="text-xs font-medium text-green-700">Correcta</span>
                           }
                         </div>
                       }
-                      <div class="mt-2 text-sm">
-                        @if (answer.isCorrect) {
-                          <span class="text-green-600 font-medium">✓ Respuesta correcta (+{{ question.points }} pts)</span>
-                        } @else {
-                          <span class="text-red-600 font-medium">✗ Respuesta incorrecta (0 pts)</span>
-                        }
-                      </div>
+                      @if (!questionnaire()?.isSurvey) {
+                        <div class="mt-2 text-sm">
+                          @if (answer.isCorrect) {
+                            <span class="text-green-600 font-medium">✓ Respuesta correcta (+{{ question.points }} pts)</span>
+                          } @else {
+                            <span class="text-red-600 font-medium">✗ Respuesta incorrecta (0 pts)</span>
+                          }
+                        </div>
+                      }
                     </div>
                   }
 
@@ -261,13 +263,15 @@
                           }
                         </div>
                       }
-                      <div class="mt-2 text-sm">
-                        @if (answer.isCorrect) {
-                          <span class="text-green-600 font-medium">✓ Todas las respuestas correctas (+{{ question.points }} pts)</span>
-                        } @else {
-                          <span class="text-orange-600 font-medium">○ Respuesta parcial o incorrecta (0 pts)</span>
-                        }
-                      </div>
+                      @if (!questionnaire()?.isSurvey) {
+                        <div class="mt-2 text-sm">
+                          @if (answer.isCorrect) {
+                            <span class="text-green-600 font-medium">✓ Todas las respuestas correctas (+{{ question.points }} pts)</span>
+                          } @else {
+                            <span class="text-orange-600 font-medium">○ Respuesta parcial o incorrecta (0 pts)</span>
+                          }
+                        </div>
+                      }
                     </div>
                   }
 
@@ -279,7 +283,7 @@
                         <p class="text-gray-900">{{ answer.textAnswer || '(Sin respuesta)' }}</p>
                       </div>
 
-                      @if (answer.pointsAwarded !== undefined) {
+                      @if (answer.pointsAwarded !== undefined && !questionnaire()?.isSurvey) {
                         <div class="text-sm font-medium">
                           Puntos: {{ answer.pointsAwarded }} / {{ question.points }}
                         </div>
@@ -370,9 +374,11 @@
                     <span class="text-red-500">*</span>
                   }
                 </h3>
-                <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
-                  {{ question.points }} pts
-                </span>
+                @if (!questionnaire()?.isSurvey) {
+                  <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
+                    {{ question.points }} pts
+                  </span>
+                }
               </div>
 
               <!-- Media Section (Image or Video) -->
@@ -493,7 +499,7 @@
               @if (questionnaire()?.timeLimitMinutes) {
                 <li>• Tienes {{ questionnaire()?.timeLimitMinutes }} minutos para completar el cuestionario</li>
               }
-              @if (questionnaire()?.passingScore) {
+              @if (questionnaire()?.passingScore && !questionnaire()?.isSurvey) {
                 <li>• Nota mínima para aprobar: {{ questionnaire()?.passingScore }}%</li>
               }
               @if (questionnaire()?.allowRetries) {

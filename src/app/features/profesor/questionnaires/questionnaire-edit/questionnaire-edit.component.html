@@ -302,6 +302,7 @@
               [questionnaireId]="questionnaireId"
               [isEditMode]="isEditMode"
               [hasSubmissions]="hasSubmissions()"
+              [isSurvey]="questionnaireForm.get('isSurvey')?.value"
               [mediaPreview]="getMediaPreview(i)"
               (remove)="removeQuestion($event)"
               (removeMedia)="removeMedia($event)"
