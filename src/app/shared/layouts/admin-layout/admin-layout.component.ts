@@ -116,6 +116,11 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
       route: '/admin/public-data'
     },
     {
+      label: 'Notificaciones',
+      icon: 'M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 18a2 2 0 002-2H8a2 2 0 002 2z',
+      route: '/admin/notifications'
+    },
+    {
       label: 'Códigos Promocionales',
       icon: 'M5 13c0 3.87 3.13 7 7 7s7-3.13 7-7-3.13-7-7-7S5 9.13 5 13zm7-9c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2z',
       route: '/admin/promotional-codes'
