@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, effect, HostListener } from '@angular/core';
 
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -57,6 +57,17 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   // Mostrar explicación de cómo se calcula la nota para el estudiante (antes de comenzar)
   showGradingExplanationStudent = signal<boolean>(true);
 
+  // ==========================================
+  // CONTROL: Prevención de Cierre de Pestaña
+  // ==========================================
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    // Si el examen empezó, no se está enviando, y no estamos en la pantalla final de resultados
+    if (this.started() && !this.submitting() && !this.showResults()) {
+      $event.returnValue = true; // El navegador mostrará la advertencia nativa
+    }
+  }
+
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.courseId.set(params['courseId']);
@@ -92,7 +103,41 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       this.timerInterval = null;
     }
   }
+  // ==========================================
+  // CONTROL DE AUDITORÍA: Savepoints Locales
+  // ==========================================
+  private getStorageKey(): string {
+    const subId = this.currentSubmission()?._id;
+    return `cursala_draft_${this.questionnaireId()}_${subId || 'new'}`;
+  }
 
+  private saveProgressToLocal(): void {
+    if (!this.started()) return;
+    const draft = {
+      answers: this.answers,
+      multipleSelectAnswers: this.multipleSelectAnswers
+    };
+    localStorage.setItem(this.getStorageKey(), JSON.stringify(draft));
+  }
+
+  private restoreProgressFromLocal(): boolean {
+    const saved = localStorage.getItem(this.getStorageKey());
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        this.answers = draft.answers || {};
+        this.multipleSelectAnswers = draft.multipleSelectAnswers || {};
+        return true;
+      } catch (e) {
+        console.error('Error recuperando savepoint', e);
+      }
+    }
+    return false;
+  }
+
+  private clearLocalProgress(): void {
+    localStorage.removeItem(this.getStorageKey());
+  }
   startTimer(): void {
     this.clearTimer();
     const questionnaire = this.questionnaire();
@@ -183,6 +228,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         this.loadPreviousSubmissions();
 
         this.infoService.showInfo('El cuestionario se ha enviado automáticamente al finalizar el tiempo.');
+        this.clearLocalProgress();
+        this.currentSubmission.set(updatedSubmission);
       },
       error: (error) => {
         console.error('Error auto-submitting questionnaire:', error);
@@ -476,6 +523,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     // debug logs removed
     this.started.set(true);
     this.startTimer();
+    this.restoreProgressFromLocal();
   }
 
   printQuestions(): void {
@@ -503,6 +551,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       questionType: 'MULTIPLE_CHOICE',
       selectedOptionId: optionIdStr
     };
+    this.saveProgressToLocal();
   }
 
   onMultipleSelectChange(questionId: string, optionId: string, checked: boolean): void {
@@ -532,6 +581,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       questionType: 'MULTIPLE_SELECT',
       selectedOptionIds: this.multipleSelectAnswers[questionId]
     };
+
+    this.saveProgressToLocal();
   }
 
   isMultipleSelectOptionSelected(questionId: string, optionId: string): boolean {
@@ -544,6 +595,7 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       questionType: 'TEXT',
       textAnswer: text
     };
+    this.saveProgressToLocal();
   }
 
   submitQuestionnaire(): void {
@@ -583,10 +635,13 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
       next: (response) => {
         const updatedSubmission = response?.data;
+        this.clearLocalProgress();
+
         this.currentSubmission.set(updatedSubmission);
         this.showResults.set(true);
         this.submitting.set(false);
-        this.clearTimer(); // Detener el temporizador al enviar
+        this.clearTimer(); // Detener el temporizador
+
 
         // Update course progress
         this.updateCourseProgress(updatedSubmission);
