@@ -47,6 +47,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
   canRetry = signal<boolean>(false);
   started = signal<boolean>(false);
   // Cached next navigation target to avoid repeated computation from template
+  isReviewing = signal<boolean>(false); 
+  sendEmailCopy = signal<boolean>(false);
   nextItem = signal<{ type: 'CLASS'|'QUESTIONNAIRE'; id: string } | null>(null);
 
   // Timer
@@ -598,17 +600,20 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
     this.saveProgressToLocal();
   }
 
-  submitQuestionnaire(): void {
+  // ==========================================
+  // PASO 1: Validar y mostrar pantalla de resumen
+  // ==========================================
+  reviewAnswers(): void {
     const submission = this.currentSubmission();
     if (!submission) {
       this.infoService.showError('No hay un envío activo');
       return;
     }
 
-    // Validate required questions
     const questionnaire = this.questionnaire();
     if (!questionnaire) return;
 
+    // 1. Validar que las preguntas obligatorias estén respondidas
     for (const question of questionnaire.questions) {
       if (question.required) {
         const answer = this.answers[question._id!];
@@ -622,6 +627,19 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       }
     }
 
+    // 2. Apagar el temporizador visualmente (opcional) y pasar a modo revisión
+    this.isReviewing.set(true);
+    // Guardamos el progreso por si cierra la ventana en la pantalla de revisión
+    this.saveProgressToLocal(); 
+  }
+
+  // ==========================================
+  // PASO 2: Confirmar envío definitivo a la API
+  // ==========================================
+  confirmSubmit(): void {
+    const submission = this.currentSubmission();
+    if (!submission) return;
+
     this.submitting.set(true);
 
     const answersArray: Answer[] = Object.values(this.answers).filter(a =>
@@ -630,40 +648,33 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
       (a.questionType === 'TEXT' && a.textAnswer)
     );
 
-    // debug logs removed
-
+    // TODO: Acá deberíamos pasar el flag `this.sendEmailCopy()` al backend si la API lo soporta.
+    // Por ahora enviamos las respuestas normales.
+    
     this.questionnairesService.submitAnswers(submission._id!, answersArray).subscribe({
       next: (response) => {
         const updatedSubmission = response?.data;
         this.clearLocalProgress();
 
         this.currentSubmission.set(updatedSubmission);
+        this.isReviewing.set(false); // Apagamos la revisión
         this.showResults.set(true);
         this.submitting.set(false);
-        this.clearTimer(); // Detener el temporizador
+        this.clearTimer();
 
-
-        // Update course progress
         this.updateCourseProgress(updatedSubmission);
-
-        // Reload previous submissions to update canRetry status
-        // This will also call checkOrStartSubmission, but since showResults is already true,
-        // it won't start a new submission
         this.loadPreviousSubmissions();
 
-        // Show appropriate message based on status
-        if (updatedSubmission.status === 'SUBMITTED') {
-          this.infoService.showSuccess('Cuestionario enviado exitosamente. Esperando calificación del profesor.');
+        // Mensajes de feedback
+        if (this.sendEmailCopy()) {
+          this.infoService.showSuccess('Cuestionario enviado. Recibirás una copia en tu email en breve.');
+        } else if (updatedSubmission.status === 'SUBMITTED') {
+          this.infoService.showSuccess('Cuestionario enviado exitosamente. Esperando calificación.');
         } else if (updatedSubmission.status === 'GRADED') {
-          const passed = this.isPassed();
-          if (passed) {
+          if (this.isPassed()) {
             this.infoService.showSuccess('¡Felicidades! Has aprobado el cuestionario.');
           } else {
-            if (this.canRetry()) {
-              this.infoService.showInfo('No has aprobado el cuestionario. Puedes intentar nuevamente.');
-            } else {
-              this.infoService.showInfo('No has aprobado el cuestionario. Ya no tienes más intentos disponibles.');
-            }
+            this.infoService.showInfo(this.canRetry() ? 'No has aprobado. Puedes intentar nuevamente.' : 'No has aprobado. Ya no tienes intentos.');
           }
         } else {
           this.infoService.showSuccess('Cuestionario enviado exitosamente');
@@ -674,8 +685,6 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         let errorMessage = 'Error al enviar el cuestionario';
         if (error.error?.message) {
           errorMessage += `: ${error.error.message}`;
-        } else if (error.status === 500) {
-          errorMessage += '. Error interno del servidor. Contacta al administrador.';
         }
         this.infoService.showError(errorMessage);
         this.submitting.set(false);

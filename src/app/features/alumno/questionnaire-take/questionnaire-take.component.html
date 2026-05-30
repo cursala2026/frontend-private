@@ -1,6 +1,5 @@
 <div class=" ">
   <div class="">
-    <!-- Header -->
     <div class="mb-6">
       <button
         (click)="goBack()"
@@ -12,7 +11,6 @@
         Volver al curso
       </button>
       
-
       @if (loading()) {
         <div class="h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
         <div class="h-6 bg-gray-200 rounded w-2/3 animate-pulse"></div>
@@ -25,7 +23,6 @@
     </div>
 
     @if (loading()) {
-      <!-- Loading State -->
       <div class="bg-white rounded-lg shadow-md p-8">
         <div class="animate-pulse space-y-6">
           @for (item of [1, 2, 3]; track item) {
@@ -37,14 +34,11 @@
         </div>
       </div>
     } @else if (showResults()) {
-      <!-- Results View -->
       <div class="space-y-6">
-        <!-- Score Card -->
         <div class="bg-white rounded-lg shadow-sm p-6 ">
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-4">Resultado del Cuestionario</h2>
 
-            <!-- Pending Grading Message -->
             @if (currentSubmission()?.status === 'SUBMITTED') {
               <div class="mb-6">
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-4">
@@ -66,39 +60,46 @@
                 </p>
               </div>
             } @else if (currentSubmission()?.status === 'GRADED') {
-              <!-- Only show score and results when GRADED -->
               <div class="mb-6">
-                <div [class]="getScoreColor() + ' text-7xl font-bold mb-2'">
-                  {{ getScore().toFixed(1) }}%
-                </div>
-                <div class="text-lg">
-                  @if (isPassed()) {
-                    <span class="text-green-600 font-semibold">¡Aprobado!</span>
-                  } @else {
-                    <span class="text-red-600 font-semibold">No Aprobado</span>
-                    @if (canRetry()) {
-                      <p class="text-sm text-gray-600 mt-2">
-                        Puedes intentar nuevamente para mejorar tu calificación.
-                      </p>
-                      <p class="text-sm text-yellow-700 font-medium mt-2 bg-yellow-50 border border-yellow-200 rounded p-2">
-                        ⚠️ Las respuestas no se mostrarán hasta que hayas agotado todos tus intentos.
-                      </p>
+                @if (!questionnaire()?.isSurvey) {
+                  <div [class]="getScoreColor() + ' text-7xl font-bold mb-2'">
+                    {{ getScore().toFixed(1) }}%
+                  </div>
+                  <div class="text-lg">
+                    @if (isPassed()) {
+                      <span class="text-green-600 font-semibold">¡Aprobado!</span>
                     } @else {
-                      <p class="text-sm text-gray-600 mt-2">
-                        Ya no tienes más intentos disponibles. Esta es tu calificación final.
-                      </p>
+                      <span class="text-red-600 font-semibold">No Aprobado</span>
+                      @if (canRetry()) {
+                        <p class="text-sm text-gray-600 mt-2">
+                          Puedes intentar nuevamente para mejorar tu calificación.
+                        </p>
+                        <p class="text-sm text-yellow-700 font-medium mt-2 bg-yellow-50 border border-yellow-200 rounded p-2">
+                          ⚠️ Las respuestas no se mostrarán hasta que hayas agotado todos tus intentos.
+                        </p>
+                      } @else {
+                        <p class="text-sm text-gray-600 mt-2">
+                          Ya no tienes más intentos disponibles. Esta es tu calificación final.
+                        </p>
+                      }
                     }
+                  </div>
+                  @if (questionnaire()?.passingScore) {
+                    <p class="text-brand-tertiary mt-3">
+                      Nota mínima requerida: {{ questionnaire()?.passingScore }}%
+                    </p>
                   }
-                </div>
-                @if (questionnaire()?.passingScore && !questionnaire()?.isSurvey) {
-                  <p class="text-brand-tertiary mt-3">
-                    Nota mínima requerida: {{ questionnaire()?.passingScore }}%
+                } @else {
+                  <div class="text-green-600 text-3xl font-bold mb-2">
+                    ¡Gracias por tu opinión!
+                  </div>
+                  <p class="text-gray-600 mt-2 text-lg">
+                    Tus respuestas han sido registradas exitosamente.
                   </p>
                 }
               </div>
             }
 
-            <!-- Feedback -->
             @if (currentSubmission()?.feedback) {
               <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p class="text-sm font-semibold text-blue-900 mb-2">Comentarios del profesor:</p>
@@ -106,7 +107,6 @@
               </div>
             }
 
-            <!-- Attempt Info -->
             <div class="text-sm text-brand-tertiary-light mb-6">
               <p>Intento #{{ currentSubmission()?.attemptNumber }}</p>
               @if (previousSubmissions().length > 0) {
@@ -122,7 +122,6 @@
               }
             </div>
 
-            <!-- Actions -->
             <div class="flex justify-center gap-4 flex-wrap mt-10">
               <button
                 (click)="goBack()"
@@ -131,8 +130,6 @@
                 Volver al Curso
               </button>
 
-              <!-- Only allow retry if GRADED and not passed, or if questionnaire allows retries while waiting -->
-              <!-- But don't allow retry if status is SUBMITTED and maxRetries is 1 (only one attempt) -->
               @if (currentSubmission()?.status === 'GRADED' && canRetry() && !isPassed()) {
                 <button
                   (click)="retry()"
@@ -142,7 +139,6 @@
                 </button>
               }
 
-              <!-- Only show continue button if GRADED and passed -->
               @if (currentSubmission()?.status === 'GRADED' && isPassed()) {
                 @if (nextItem()) {
                   <button
@@ -157,8 +153,6 @@
           </div>
         </div>
 
-        <!-- Answers Review (only show if GRADED and showCorrectAnswers is true AND no retries available) -->
-        <!-- Don't show answers if status is SUBMITTED (waiting for grading) or if student can retry -->
         @if (currentSubmission()?.status === 'GRADED' && questionnaire()?.showCorrectAnswers && !canRetry()) {
           <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-xl font-bold mb-4">Revisión de Respuestas</h3>
@@ -167,7 +161,6 @@
               @for (question of questionnaire()?.questions; track question._id; let i = $index) {
                 @let answer = getAnswerForQuestion(question._id!);
                 <div class="border-b border-gray-200 pb-6 last:border-b-0">
-                  <!-- Question Header -->
                   <div class="flex items-start justify-between mb-3">
                     <h4 class="text-lg font-bold text-brand-primary">
                       {{ i + 1 }}. {{ question.questionText }}
@@ -179,7 +172,6 @@
                     }
                   </div>
 
-                  <!-- Media Section (Image or Video) in Results -->
                   @if (question.promptMediaUrl) {
                     <div class="mb-4 bg-gray-50 rounded-lg p-4">
                       @if (question.promptType === 'IMAGE') {
@@ -203,7 +195,6 @@
                     </div>
                   }
 
-                  <!-- Multiple Choice Answer -->
                   @if (question.type === 'MULTIPLE_CHOICE' && answer) {
                     <div class="space-y-2">
                       @for (option of question.options; track option._id) {
@@ -236,7 +227,6 @@
                     </div>
                   }
 
-                  <!-- Multiple Select Answer -->
                   @if (question.type === 'MULTIPLE_SELECT' && answer) {
                     <div class="space-y-2">
                       @for (option of question.options; track option._id) {
@@ -275,7 +265,6 @@
                     </div>
                   }
 
-                  <!-- Text Answer -->
                   @if (question.type === 'TEXT' && answer) {
                     <div class="space-y-3">
                       <div class="bg-gray-50 rounded p-3">
@@ -303,10 +292,8 @@
           </div>
         }
       </div>
-    } @else if (started()) {
-      <!-- Questionnaire Form -->
+    } @else if (started() && !isReviewing()) {
       <div class="bg-white rounded-lg shadow-md p-6">
-        <!-- Timer Display -->
         @if (questionnaire()?.timeLimitMinutes && timeRemaining() !== null) {
           <div class="mb-6 p-4 rounded-lg border-2" 
                [class.bg-red-50]="timeRemaining()! <= 60"
@@ -339,7 +326,6 @@
           </div>
         }
 
-        <!-- Instructions -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h3 class="font-semibold text-blue-900 mb-2">Instrucciones:</h3>
           <ul class="text-sm text-blue-800 space-y-1">
@@ -349,7 +335,7 @@
             }
             @if (questionnaire()?.passingScore && !questionnaire()?.isSurvey) {
               <li>• Nota mínima para aprobar: {{ questionnaire()?.passingScore }}%</li>
-      }
+            }
             @if (questionnaire()?.allowRetries) {
               @if (questionnaire()?.maxRetries) {
                 <li>• Puedes realizar hasta {{ questionnaire()?.maxRetries }} intentos</li>
@@ -362,11 +348,9 @@
           </ul>
         </div>
 
-        <!-- Questions -->
         <div class="space-y-8">
           @for (question of questionnaire()?.questions; track question._id; let i = $index) {
             <div class="border-b border-gray-200 pb-8 last:border-b-0">
-              <!-- Question Header -->
               <div class="flex items-start justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">
                   {{ i + 1 }}. {{ question.questionText }}
@@ -381,7 +365,6 @@
                 }
               </div>
 
-              <!-- Media Section (Image or Video) -->
               @if (question.promptMediaUrl) {
                 <div class="mb-4 bg-gray-50 rounded-lg p-4">
                   @if (question.promptType === 'IMAGE') {
@@ -405,7 +388,6 @@
                 </div>
               }
 
-              <!-- Multiple Choice -->
               @if (question.type === 'MULTIPLE_CHOICE') {
                 <div class="space-y-2">
                   @for (option of question.options; track option._id) {
@@ -424,7 +406,6 @@
                 </div>
               }
 
-              <!-- Multiple Select -->
               @if (question.type === 'MULTIPLE_SELECT') {
                 <div class="space-y-2">
                   <p class="text-sm text-gray-600 mb-3 italic">Selecciona todas las opciones correctas</p>
@@ -442,7 +423,6 @@
                 </div>
               }
 
-              <!-- Text Question -->
               @if (question.type === 'TEXT') {
                 <textarea
                   [value]="answers[question._id!]?.textAnswer || ''"
@@ -456,34 +436,72 @@
           }
         </div>
 
-        <!-- Submit Button -->
         <div class="mt-8 flex justify-end gap-4">
           <button
             (click)="goBack()"
-            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
 
           <button
-            (click)="submitQuestionnaire()"
+            (click)="reviewAnswers()"
             [disabled]="submitting()"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+          >
+            <span>Siguiente: Revisar</span>
+          </button>
+        </div>
+      </div>
+
+    } @else if (started() && isReviewing()) {
+      <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-3 text-brand-tertiary">Revisión Final</h2>
+          <p class="text-gray-600 text-lg">Has respondido todas las preguntas requeridas. Por favor, revisa tus opciones antes de hacer el envío definitivo.</p>
+        </div>
+
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 flex items-start gap-4">
+          <input 
+            type="checkbox" 
+            id="emailCopy" 
+            [checked]="sendEmailCopy()"
+            (change)="sendEmailCopy.set($any($event.target).checked)"
+            class="mt-1 h-6 w-6 text-brand-primary rounded border-gray-300 focus:ring-brand-primary cursor-pointer"
+          >
+          <div>
+            <label for="emailCopy" class="text-xl font-bold text-blue-900 cursor-pointer">Enviarme una copia de mis respuestas</label>
+            <p class="text-blue-800 mt-2">Recibirás un correo electrónico automático con el detalle de lo que has contestado para tus propios registros.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
+          <button 
+            (click)="isReviewing.set(false)"
+            class="w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            ← Volver y editar respuestas
+          </button>
+
+          <button 
+            (click)="confirmSubmit()"
+            [disabled]="submitting()"
+            class="w-full sm:w-auto px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-bold text-lg flex items-center justify-center gap-3 cursor-pointer shadow-md disabled:bg-gray-400"
           >
             @if (submitting()) {
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               <span>Enviando...</span>
             } @else {
-              <span>Enviar Cuestionario</span>
+              <span>Confirmar y Enviar</span>
             }
           </button>
         </div>
       </div>
+
     } @else {
-      <!-- Start Questionnaire Screen -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="text-center">
           <h2 class="text-2xl font-bold mb-4">Cuestionario: {{ questionnaire()?.title }}</h2>
@@ -491,7 +509,6 @@
             <p class="text-gray-700 mb-6">{{ questionnaire()?.description }}</p>
           }
           
-          <!-- Instructions -->
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h3 class="font-semibold text-blue-900 mb-2">Instrucciones:</h3>
             <ul class="text-sm text-blue-800 space-y-1">
@@ -514,7 +531,6 @@
             </ul>
           </div>
 
-          <!-- Student grading explanation (dismissible, improved design) -->
           @if (showGradingExplanationStudent() && !questionnaire()?.isSurvey) {
             <div role="region" aria-label="Explicación de cómo se calcula la nota" class="bg-yellow-50 border border-yellow-200 rounded-lg p-5 pr-12 mb-6 shadow-sm max-w-3xl mx-auto overflow-visible">
               <div class="relative">
@@ -532,7 +548,7 @@
                 </div>
 
                 <div class="mt-4 text-center">
-                  <button id="grading-explain-close-button" type="button" (click)="closeGradingExplanationStudent()" class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-300">Entendido</button>
+                  <button id="grading-explain-close-button" type="button" (click)="closeGradingExplanationStudent()" class="cursor-pointer px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-300">Entendido</button>
                 </div>
               </div>
             </div>
