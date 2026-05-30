@@ -201,6 +201,7 @@ export class QuestionnaireEditComponent implements OnInit {
       } else {
         positionTypeControl?.enable({ emitEvent: false });
       }
+      this.questions.controls.forEach(qGroup => qGroup.updateValueAndValidity());
     });
 
 // Run initial configuration
@@ -419,7 +420,7 @@ this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
       _id: [question?._id || undefined],
       type: [question?.type || 'MULTIPLE_CHOICE', Validators.required],
       questionText: [question?.questionText || '', [Validators.required, Validators.maxLength(1000)]],
-      points: [question?.points || 10, [Validators.required, Validators.min(1)]],
+      points: [question?.points || (this.questionnaireForm?.get('isSurvey')?.value ? 0 : 10), [Validators.required, Validators.min(0)]],
       required: [question?.required ?? true],
       options: this.fb.array([]),
       correctOptionId: [''], // This will store the index as string for the radio button (MULTIPLE_CHOICE)
@@ -533,53 +534,57 @@ this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
   }
 
   // Validator for each question group
-  private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
-  const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
-  if (isDraft) {
-    return null; // Relajamos validaciones de preguntas si es borrador
-  }
+   private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
+    const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
+    const isSurvey = this.questionnaireForm?.get('isSurvey')?.value === true; 
 
-  const type = control.get('type')?.value;
-  const options = control.get('options') as FormArray | null;
-  const errors: any = {};
-
-  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-    if (!options || options.length < 2) {
-      errors.optionsCount = 'Debe haber al menos 2 opciones';
+    if (isDraft) {
+      return null; 
     }
 
-    if (options) {
-      const emptyIndexes: number[] = [];
-      for (let i = 0; i < options.length; i++) {
-        const txtCtrl = options.at(i).get('text');
-        const txtVal = txtCtrl?.value;
-        // ✅ Solo evaluar el valor real, sin tocar ni setear errores en el control hijo
-        if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
-          emptyIndexes.push(i);
+    const type = control.get('type')?.value;
+    const options = control.get('options') as FormArray | null;
+    const errors: any = {};
+
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+      if (!options || options.length < 2) {
+        errors.optionsCount = 'Debe haber al menos 2 opciones';
+      }
+
+      if (options) {
+        const emptyIndexes: number[] = [];
+        for (let i = 0; i < options.length; i++) {
+          const txtCtrl = options.at(i).get('text');
+          const txtVal = txtCtrl?.value;
+          if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
+            emptyIndexes.push(i);
+          }
+        }
+        if (emptyIndexes.length) {
+          errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
         }
       }
-      if (emptyIndexes.length) {
-        errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
+
+     
+      if (!isSurvey) {
+        if (type === 'MULTIPLE_CHOICE') {
+          const correct = control.get('correctOptionId')?.value;
+          if (correct === null || correct === undefined || correct === '') {
+            errors.noCorrect = 'Selecciona una opción correcta';
+          }
+        }
+
+        if (type === 'MULTIPLE_SELECT') {
+          const corrects = control.get('correctOptionIds')?.value || [];
+          if (!Array.isArray(corrects) || corrects.length === 0) {
+            errors.noCorrect = 'Selecciona al menos una opción correcta';
+          }
+        }
       }
     }
 
-    if (type === 'MULTIPLE_CHOICE') {
-      const correct = control.get('correctOptionId')?.value;
-      if (correct === null || correct === undefined || correct === '') {
-        errors.noCorrect = 'Selecciona una opción correcta';
-      }
-    }
-
-    if (type === 'MULTIPLE_SELECT') {
-      const corrects = control.get('correctOptionIds')?.value || [];
-      if (!Array.isArray(corrects) || corrects.length === 0) {
-        errors.noCorrect = 'Selecciona al menos una opción correcta';
-      }
-    }
+    return Object.keys(errors).length ? errors : null;
   }
-
-  return Object.keys(errors).length ? errors : null;
-}
 
   private updateAfterClassValidators(posType: string | null) {
     const afterClassControl = this.questionnaireForm.get('afterClassId');
@@ -680,9 +685,12 @@ this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
       return;
     }
 
-    // Validate that MC/MS questions have correct answer(s) selected (only if not DRAFT)
+    // Validate that MC/MS questions have correct answer(s) selected (only if not DRAFT and not SURVEY)
     const isDraft = this.questionnaireForm.get('status')?.value === 'DRAFT';
-    if (!isDraft) {
+    const isSurvey = this.questionnaireForm.get('isSurvey')?.value === true;
+    
+    // 👇 Si es borrador o si es encuesta, salteamos este bloqueo 👇
+    if (!isDraft && !isSurvey) {
       for (let i = 0; i < this.questions.length; i++) {
         const question = this.questions.at(i);
         const type = question.get('type')?.value;
@@ -702,11 +710,12 @@ this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
           }
         }
       }
-    }
+    } 
 
     this.saving.set(true);
 
     const formValue = this.questionnaireForm.value;
+    
 
     // Process questions
     const questions: Question[] = formValue.questions.map((q: any, index: number) => {
