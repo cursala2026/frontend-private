@@ -146,6 +146,12 @@ export class QuestionnaireEditComponent implements OnInit {
     } else {
       const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
       const courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
+      const isSurveyFromQuery = this.route.snapshot.queryParamMap.get('isSurvey'); // 👇 NUEVO
+      
+      if (isSurveyFromQuery === 'true') {
+        this.questionnaireForm.patchValue({ isSurvey: true });
+      }
+
       if (courseIdFromQuery) {
         this.preselectedCourseId.set(courseIdFromQuery);
         this.questionnaireForm.patchValue({ courseId: courseIdFromQuery });
