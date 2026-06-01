@@ -22,6 +22,10 @@ export interface Question {
   promptType?: 'TEXT' | 'IMAGE' | 'VIDEO';
   promptMediaUrl?: string;
   promptMediaProvider?: 'BUNNY';
+  scaleMin?: number; 
+  scaleMax?: number;
+  scaleMinLabel?: string;
+  scaleMaxLabel?: string;
 }
 
 export interface QuestionnairePosition {
@@ -50,10 +54,12 @@ export interface Questionnaire {
 
 export interface Answer {
   questionId: string;
-  questionType: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT';
+  questionType: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT' | 'LINEAR_SCALE';
   selectedOptionId?: string; // For MULTIPLE_CHOICE
   selectedOptionIds?: string[]; // For MULTIPLE_SELECT
   textAnswer?: string;
+  numericAnswer?: number;
+  scaleMax?: number;
   isCorrect?: boolean;
   pointsAwarded?: number;
   feedback?: string;

@@ -186,38 +186,50 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onQuestionTypeChange() {
-  const type = (this.question as FormGroup).get('type')?.value;
-  const optionsArray = this.options;
+    const type = (this.question as FormGroup).get('type')?.value;
+    const optionsArray = this.options;
 
-  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-    // Guardar los textos actuales antes de limpiar
-    const existingTexts: string[] = optionsArray.controls.map(
-      ctrl => ctrl.get('text')?.value || ''
-    );
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+      // Guardar los textos actuales antes de limpiar
+      const existingTexts: string[] = optionsArray.controls.map(
+        ctrl => ctrl.get('text')?.value || ''
+      );
 
-    // Limpiar opciones
-    while (optionsArray.length) {
-      optionsArray.removeAt(0);
+      // Limpiar opciones
+      while (optionsArray.length) {
+        optionsArray.removeAt(0);
+      }
+
+      // Recrear 4 opciones preservando el texto que ya había
+      for (let i = 0; i < 4; i++) {
+        const group = this.createOptionGroup();
+        const savedText = existingTexts[i] ?? '';
+        group.patchValue({ text: savedText });
+        optionsArray.push(group);
+      }
+    } else {
+      // Si cambia a TEXT o LINEAR_SCALE, limpiar opciones (no se necesitan)
+      while (optionsArray.length) {
+        optionsArray.removeAt(0);
+      }
+      
+      // Si cambia a LINEAR_SCALE, inicializamos los valores por defecto
+      if (type === 'LINEAR_SCALE') {
+        const currentScaleMin = (this.question as FormGroup).get('scaleMin')?.value;
+        if (currentScaleMin === null || currentScaleMin === undefined) {
+          (this.question as FormGroup).patchValue({
+            scaleMin: 1,
+            scaleMax: 10,
+            scaleMinLabel: 'Muy en desacuerdo',
+            scaleMaxLabel: 'Muy de acuerdo'
+          });
+        }
+      }
     }
 
-    // Recrear 4 opciones preservando el texto que ya había
-    for (let i = 0; i < 4; i++) {
-      const group = this.createOptionGroup();
-      const savedText = existingTexts[i] ?? '';
-      group.patchValue({ text: savedText });
-      optionsArray.push(group);
-    }
-  } else {
-    // Si cambia a TEXT, limpiar opciones (no se necesitan)
-    while (optionsArray.length) {
-      optionsArray.removeAt(0);
-    }
+    (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
+    (this.question as FormGroup).updateValueAndValidity();
   }
-
-  (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
-  (this.question as FormGroup).updateValueAndValidity();
-}
-
   onMediaSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;

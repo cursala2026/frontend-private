@@ -46,7 +46,7 @@ export class QuestionnaireEditComponent implements OnInit {
   questionnaires = signal<Questionnaire[]>([]);
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
-  hasUnsavedDraft = signal<boolean>(false); // Corregido a hasUnsavedDraft
+  hasUnsavedDraft = signal<boolean>(false);
   loadingClasses = signal<boolean>(false);
   preselectedCourseId = signal<string | null>(null);
   preselectedCourseName = signal<string>('');
@@ -146,7 +146,7 @@ export class QuestionnaireEditComponent implements OnInit {
     } else {
       const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
       const courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
-      const isSurveyFromQuery = this.route.snapshot.queryParamMap.get('isSurvey'); // 👇 NUEVO
+      const isSurveyFromQuery = this.route.snapshot.queryParamMap.get('isSurvey');
       
       if (isSurveyFromQuery === 'true') {
         this.questionnaireForm.patchValue({ isSurvey: true });
@@ -182,7 +182,6 @@ export class QuestionnaireEditComponent implements OnInit {
         this.questionnaireId = params['id'];
         this.loadQuestionnaire();
       } else {
-        // Corregido el error de sintaxis acá
         setTimeout(() => this.checkForDraft(), 300);
         this.loading.set(false);
       }
@@ -256,7 +255,6 @@ export class QuestionnaireEditComponent implements OnInit {
 
     this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
 
-    // Auto-guardado en tiempo real
     this.questionnaireForm.valueChanges.subscribe(() => {
       if (!this.saving()) {
         this.saveDraftToLocal();
@@ -331,7 +329,6 @@ export class QuestionnaireEditComponent implements OnInit {
         const questionnaire: Questionnaire = response?.data;
         this.populateForm(questionnaire);
         
-        // Revisamos si hay borrador local para este cuestionario editado
         setTimeout(() => this.checkForDraft(), 500);
 
         this.questionnairesService.hasSubmissions(this.questionnaireId).subscribe({
@@ -441,6 +438,12 @@ export class QuestionnaireEditComponent implements OnInit {
       correctOptionIds: this.fb.control<string[]>([]), 
       originalCorrectOptionId: [question?.correctOptionId || null], 
       originalCorrectOptionIds: this.fb.control<string[]>(question?.correctOptionIds || []), 
+      
+      scaleMin: [question?.scaleMin ?? 1],
+      scaleMax: [question?.scaleMax ?? 10],
+      scaleMinLabel: [question?.scaleMinLabel || ''],
+      scaleMaxLabel: [question?.scaleMaxLabel || ''],
+
       promptType: [question?.promptType || 'TEXT'],
       promptMediaUrl: [question?.promptMediaUrl || ''],
       promptMediaProvider: [question?.promptMediaProvider || 'BUNNY']
@@ -698,7 +701,7 @@ export class QuestionnaireEditComponent implements OnInit {
 
     this.saving.set(true);
 
-    const formValue = this.questionnaireForm.value;
+    const formValue = this.questionnaireForm.getRawValue();
     
     const questions: Question[] = formValue.questions.map((q: any, index: number) => {
       const question: any = {
@@ -709,7 +712,11 @@ export class QuestionnaireEditComponent implements OnInit {
         required: q.required,
         promptType: q.promptType || 'TEXT',
         promptMediaUrl: q.promptMediaUrl || undefined,
-        promptMediaProvider: q.promptMediaProvider || undefined
+        promptMediaProvider: q.promptMediaProvider || undefined,
+        scaleMin: q.scaleMin,
+        scaleMax: q.scaleMax,
+        scaleMinLabel: q.scaleMinLabel,
+        scaleMaxLabel: q.scaleMaxLabel
       };
 
       if (q.type === 'MULTIPLE_CHOICE') {
@@ -788,6 +795,7 @@ export class QuestionnaireEditComponent implements OnInit {
       title: formValue.title,
       description: formValue.description,
       status: formValue.status,
+      isSurvey: formValue.isSurvey,
       ...(formValue.positionType ? {
         position: {
           type: formValue.positionType,
@@ -795,7 +803,7 @@ export class QuestionnaireEditComponent implements OnInit {
         }
       } : {}),
       ...(this.isEditMode && this.hasSubmissions() ? {} : { questions: cleanedQuestions }),
-      passingScore: formValue.passingScore,
+      passingScore: isSurvey ? 0 : (formValue.passingScore || 0),
       allowRetries: formValue.allowRetries,
       maxRetries: formValue.allowRetries ? formValue.maxRetries : undefined,
       showCorrectAnswers: formValue.showCorrectAnswers,
