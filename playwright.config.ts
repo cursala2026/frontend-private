@@ -14,6 +14,7 @@ export default defineConfig({
     // No headless para poder ver qué pasa si algo falla
     headless: true,
   },
+  tsconfig: './tsconfig.json',
   projects: [
     {
       name: 'chromium',
