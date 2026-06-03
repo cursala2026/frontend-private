@@ -351,71 +351,70 @@
         <div class="space-y-8">
           @for (question of questionnaire()?.questions; track question._id; let i = $index) {
             <div class="border-b border-gray-200 pb-8 last:border-b-0">
+              
               <div class="flex items-start justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">
                   {{ i + 1 }}. {{ question.questionText }}
-                  @if (question.required) {
-                    <span class="text-red-500">*</span>
-                  }
+                  @if (question.required) { <span class="text-red-500">*</span> }
                 </h3>
-                @if (!questionnaire()?.isSurvey) {
-                  <span class="text-sm text-gray-600 whitespace-nowrap ml-4">
-                    {{ question.points }} pts
-                  </span>
-                }
               </div>
 
               @if (question.promptMediaUrl) {
                 <div class="mb-4 bg-gray-50 rounded-lg p-4">
                   @if (question.promptType === 'IMAGE') {
-                    <img 
-                      [src]="question.promptMediaUrl" 
-                      [alt]="'Imagen de la pregunta ' + (i + 1)"
-                      class="max-w-full max-h-96 rounded mx-auto shadow-sm"
-                      loading="lazy"
-                    />
+                    <img [src]="question.promptMediaUrl" class="max-w-full max-h-96 rounded mx-auto shadow-sm" loading="lazy" />
                   }
                   @if (question.promptType === 'VIDEO') {
-                    <video 
-                      [src]="question.promptMediaUrl" 
-                      controls 
-                      class="max-w-full max-h-96 rounded mx-auto shadow-sm"
-                      preload="metadata"
-                    >
+                    <video [src]="question.promptMediaUrl" controls class="max-w-full max-h-96 rounded mx-auto shadow-sm" preload="metadata">
                       Tu navegador no soporta el elemento de video.
                     </video>
                   }
                 </div>
               }
 
-              @if (question.type === 'MULTIPLE_CHOICE') {
-                <div class="space-y-2">
-                  @for (option of question.options; track option._id) {
-                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <input
-                        type="radio"
-                        [name]="'question-' + question._id"
-                        [value]="option._id"
-                        [checked]="answers[question._id!]?.selectedOptionId === option._id?.toString()"
-                        (change)="onMultipleChoiceChange(question._id!, option._id!.toString())"
-                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <span class="flex-1">{{ option.text }}</span>
-                    </label>
-                  }
+              @if ($any(question).type === 'LINEAR_SCALE') {
+                <div class="space-y-4 max-w-2xl mx-auto pt-2 pb-4">
+                  <div class="flex justify-between text-sm text-gray-600 px-2 font-medium">
+                    <span>{{ $any(question).scaleMinLabel || 'Mínimo' }}</span>
+                    <span>{{ $any(question).scaleMaxLabel || 'Máximo' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center bg-gray-50 p-6 rounded-xl overflow-x-auto shadow-inner gap-4">
+                    @for (val of getScaleRange($any(question).scaleMin, $any(question).scaleMax); track val) {
+                      <label class="flex flex-col items-center cursor-pointer gap-3 shrink-0 group">
+                        <span class="text-xl font-bold text-gray-700 group-hover:text-brand-primary transition-colors">{{ val }}</span>
+                        <input
+                          type="radio"
+                          [name]="'question-' + question._id"
+                          [value]="val"
+                          [checked]="answers[question._id!]?.numericAnswer === val"
+                          (change)="onLinearScaleChange(question._id!, val)"
+                          class="w-7 h-7 text-brand-primary focus:ring-brand-primary border-gray-400 cursor-pointer"
+                        />
+                      </label>
+                    }
+                  </div>
                 </div>
               }
 
-              @if (question.type === 'MULTIPLE_SELECT') {
+              @if (question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') {
                 <div class="space-y-2">
-                  <p class="text-sm text-gray-600 mb-3 italic">Selecciona todas las opciones correctas</p>
+                  @if (question.type === 'MULTIPLE_SELECT') {
+                    <p class="text-sm text-gray-600 mb-3 italic">Selecciona todas las opciones correctas</p>
+                  }
                   @for (option of question.options; track option._id) {
                     <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors">
                       <input
-                        type="checkbox"
-                        [checked]="isMultipleSelectOptionSelected(question._id!, option._id!.toString())"
-                        (change)="onMultipleSelectChange(question._id!, option._id!.toString(), $any($event.target).checked)"
-                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        [type]="question.type === 'MULTIPLE_CHOICE' ? 'radio' : 'checkbox'"
+                        [name]="'question-' + question._id"
+                        [value]="option._id"
+                        [checked]="question.type === 'MULTIPLE_CHOICE' 
+                                   ? (answers[question._id!]?.selectedOptionId === option._id?.toString())
+                                   : isMultipleSelectOptionSelected(question._id!, option._id!.toString())"
+                        (change)="question.type === 'MULTIPLE_CHOICE' 
+                                   ? onMultipleChoiceChange(question._id!, option._id!.toString())
+                                   : onMultipleSelectChange(question._id!, option._id!.toString(), $any($event.target).checked)"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        [class.rounded-full]="question.type === 'MULTIPLE_CHOICE'"
                       />
                       <span class="flex-1">{{ option.text }}</span>
                     </label>

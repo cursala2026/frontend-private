@@ -21,7 +21,7 @@
         Volver a Cuestionarios
       </button>
 
-      @if (gradeReport().length > 0 && gradeReport().length <= 1) {
+      @if (gradeReport().length > 0) {
         <button
           (click)="openResetAllConfirm()"
           class="ml-3 mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-4 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-red-600 border-2 border-red-600 hover:ring-[3px] hover:ring-red-600/30"
@@ -97,9 +97,11 @@
                   <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
                     Intentos
                   </th>
-                  <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                    Nota
-                  </th>
+                  @if (!questionnaire()?.isSurvey) {
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                      Nota
+                    </th>
+                  }
                   <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
                     Último Intento
                   </th>
@@ -145,20 +147,16 @@
                         {{ entry.attemptCount }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                      @if (!questionnaire()?.isSurvey) {
+                    @if (!questionnaire()?.isSurvey) {
+                      <td class="px-6 py-4 whitespace-nowrap text-center">
                         <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold"
-                            [ngClass]="entry.bestScore && entry.bestScore >= (questionnaire()?.passingScore || 0)
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'">
-                          {{ entry.bestScore?.toFixed(1) || 0 }}%
-                        </div>
-                      } @else {
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
-                          Completada
-                        </div>
-                      }
+                        [ngClass]="entry.bestScore && entry.bestScore >= (questionnaire()?.passingScore || 0)
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'">
+                        {{ entry.bestScore?.toFixed(1) || 0 }}%
+                      </div>
                     </td>
+                  }
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                       <div class="text-sm text-gray-600">
                         {{ entry.lastAttempt ? (entry.lastAttempt | date: 'short') : '-' }}
@@ -269,6 +267,7 @@
 @if (showGradingModal()) {
   <div class="fixed inset-0 bg-black/70 bg-opacity-50 flex items-center justify-center z-50 p-4" (click)="closeGradingModal()">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" (click)="$event.stopPropagation()">
+
       <!-- Modal Header -->
       <div class="bg-linear-to-br from-amber-400 to-amber-600 px-6 py-4 flex items-center justify-between">
         <div class="flex items-center">
@@ -498,27 +497,29 @@
       <!-- Modal Footer -->
       <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-200">
         <button
+          (click)="downloadSubmissionPDF()"
+          class="mr-auto group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-white border-2 border-brand-secondary hover:bg-brand-secondary hover:text-white"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Descargar PDF
+        </button>
+        <button
           (click)="closeGradingModal()"
-          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-brand-tertiary border-2 border-brand-tertiary hover:bg-brand-tertiary/90"
         >
           Cancelar
         </button>
         <button
           (click)="saveGrade()"
           [disabled]="savingGrade()"
-          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-brand-secondary hover:bg-brand-secondary/90"
         >
-          @if (savingGrade()) {
-            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Guardando...</span>
-          } @else {
-            <span>Guardar Calificación</span>
-          }
+          Guardar Calificación
         </button>
       </div>
+
     </div>
   </div>
 }

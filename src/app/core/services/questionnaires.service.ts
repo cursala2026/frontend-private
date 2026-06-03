@@ -11,7 +11,7 @@ export interface QuestionOption {
 
 export interface Question {
   _id?: string;
-  type: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT';
+  type: 'MULTIPLE_CHOICE' | 'MULTIPLE_SELECT' | 'TEXT' | 'LINEAR_SCALE';
   questionText: string;
   order: number;
   points: number;
