@@ -522,6 +522,14 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
     }));
   }
 
+  getDisplayedStudentCount(): number {
+    if(!this.selectedCourseId) {
+      return this.students().length;
+    } else {
+      return this.students().filter(s => String(s.courseId) === String(this.selectedCourseId)).length;
+    }
+  }
+
   getFilteredGroupedStudentsArray(): Array<{ courseId: string; courseName: string; students: Student[] }> {
     const selected = this.selectedCourseId ? String(this.selectedCourseId) : '';
     const search = this.searchTerms();
