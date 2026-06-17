@@ -3,28 +3,25 @@
   <div class="relative overflow-hidden bg-linear-to-tr from-green-700 to-green-200 rounded-xl">
     <div class="px-4 py-6 sm:px-6 sm:py-6 flex items-center flex-col sm:flex-row sm:items-center sm:justify-between">
       <div>
-        
-
-    @if (loading()) {
-      <div class="h-10 bg-gray-200 rounded animate-pulse mb-2"></div>
-      <div class="h-6 bg-gray-200 rounded w-2/3 animate-pulse"></div>
-    } @else {
-      <h1 class="text-xl sm:text-3xl font-bold text-white">{{ questionnaire()?.title }}</h1>
-      <p class="text-white text-sm">Resultados y Calificaciones</p>
-    }
+        @if (loading()) {
+          <div class="h-10 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div class="h-6 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+        } @else {
+          <h1 class="text-xl sm:text-3xl font-bold text-white">{{ questionnaire()?.title }}</h1>
+          <p class="text-white text-sm">Resultados y Calificaciones</p>
+        }
       </div>
       <button
-      (click)="goBack()"
-      class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 border-2 border-white hover:ring-[3px] hover:ring-white/60 hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      Volver a Cuestionarios
-    </button>
-      
-      <!-- Reset all attempts (visible when hay 1 o menos estudiantes en reporte) -->
-      @if (gradeReport().length > 0 && gradeReport().length <= 1) {
+        (click)="goBack()"
+        class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 border-2 border-white hover:ring-[3px] hover:ring-white/60 hover:bg-brand-primary active:bg-brand-primary-dark active:text-white"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver a Cuestionarios
+      </button>
+
+      @if (gradeReport().length > 0) {
         <button
           (click)="openResetAllConfirm()"
           class="ml-3 mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-4 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-red-600 border-2 border-red-600 hover:ring-[3px] hover:ring-red-600/30"
@@ -33,7 +30,6 @@
         </button>
       }
     </div>
-    
   </div>
 
   @if (loading()) {
@@ -101,15 +97,19 @@
                   <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
                     Intentos
                   </th>
-                  <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                    Nota
-                  </th>
+                  @if (!questionnaire()?.isSurvey) {
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                      Nota
+                    </th>
+                  }
                   <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
                     Último Intento
                   </th>
-                  <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                    Tiempo de Resolución
-                  </th>
+                  @if (!questionnaire()?.isSurvey) {
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                      Tiempo de Resolución
+                    </th>
+                  }
                   <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">
                     Acciones
                   </th>
@@ -147,39 +147,37 @@
                         {{ entry.attemptCount }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                      @if (!questionnaire()?.isSurvey) {
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold" 
-                            [ngClass]="entry.bestScore && entry.bestScore >= (questionnaire()?.passingScore || 0) 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'">
-                          {{ entry.bestScore?.toFixed(1) || 0 }}%
-                        </div>
-                      } @else {
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
-                          Completada
-                        </div>
-                      }
+                    @if (!questionnaire()?.isSurvey) {
+                      <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold"
+                        [ngClass]="entry.bestScore && entry.bestScore >= (questionnaire()?.passingScore || 0)
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'">
+                        {{ entry.bestScore?.toFixed(1) || 0 }}%
+                      </div>
                     </td>
+                  }
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                       <div class="text-sm text-gray-600">
                         {{ entry.lastAttempt ? (entry.lastAttempt | date: 'short') : '-' }}
                       </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                      <div class="text-sm text-gray-600">
-                        @if (getBestAttemptTime(entry)) {
-                          <span class="font-semibold text-blue-600">{{ getBestAttemptTime(entry) }}</span>
-                        } @else {
-                          <span>-</span>
-                        }
-                      </div>
-                    </td>
+                    @if (!questionnaire()?.isSurvey) {
+                      <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <div class="text-sm text-gray-600">
+                          @if (getBestAttemptTime(entry)) {
+                            <span class="font-semibold text-blue-600">{{ getBestAttemptTime(entry) }}</span>
+                          } @else {
+                            <span>-</span>
+                          }
+                        </div>
+                      </td>
+                    }
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center justify-center gap-4">
                         <button
                           (click)="viewSubmission(entry.studentId)"
-                          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-4 pr-6 py-1 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary  hover:bg-brand-primary hover:text-white active:bg-brand-tertiary active:text-white"
+                          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-primary px-4 pr-6 py-1 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-brand-primary hover:bg-brand-primary hover:text-white active:bg-brand-tertiary active:text-white"
                         >
                           <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -189,7 +187,7 @@
                         </button>
                         <button
                           (click)="resetStudentAttempts(entry.studentId)"
-                          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-red-500 px-4 pr-6 py-1 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-red-500  hover:bg-red-500 hover:text-white active:bg-brand-tertiary active:text-white"
+                          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-red-500 px-4 pr-6 py-1 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-white border-2 border-red-500 hover:bg-red-500 hover:text-white active:bg-brand-tertiary active:text-white"
                           title="Resetear intentos del estudiante"
                         >
                           <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,7 +237,7 @@
                       <span class="text-sm text-gray-600">
                         Intento #{{ submission.attemptNumber }}
                       </span>
-                      @if (getTimeElapsed(submission)) {
+                      @if (!questionnaire()?.isSurvey && getTimeElapsed(submission)) {
                         <span class="text-sm font-semibold text-blue-600">
                           Tiempo: {{ getTimeElapsed(submission) }}
                         </span>
@@ -269,13 +267,15 @@
 @if (showGradingModal()) {
   <div class="fixed inset-0 bg-black/70 bg-opacity-50 flex items-center justify-center z-50 p-4" (click)="closeGradingModal()">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden" (click)="$event.stopPropagation()">
+
       <!-- Modal Header -->
       <div class="bg-linear-to-br from-amber-400 to-amber-600 px-6 py-4 flex items-center justify-between">
         <div class="flex items-center">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8 mr-2 text-white"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8 mr-2 text-white">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
           <h2 class="text-2xl font-bold text-white">Revisar y Calificar</h2>
         </div>
-        
         <button
           (click)="closeGradingModal()"
           class="cursor-pointer text-white/50 hover:text-white transition-colors"
@@ -296,22 +296,18 @@
                 <span class="text-sm text-gray-600">Estudiante:</span>
                 <p class="font-bold text-lg">{{ currentSubmission()?.studentName }}</p>
               </div>
+              <div>
+                <span class="text-sm text-gray-600">Enviado:</span>
+                <p class="font-bold text-lg">{{ currentSubmission()?.submittedAt | date: 'short' }}</p>
+              </div>
               @if (!questionnaire()?.isSurvey) {
                 <div>
                   <span class="text-sm text-gray-600">Calificación Automática:</span>
                   <p class="font-bold text-lg">{{ currentSubmission()?.autoGradedScore?.toFixed(1) || 0 }}%</p>
                 </div>
               }
-              <div>
-                <span class="text-sm text-gray-600">Enviado:</span>
-                <p class="font-bold text-lg">{{ currentSubmission()?.submittedAt | date: 'short' }}</p>
-              </div>
-              <div>
-                <span class="text-sm text-gray-600">Calificación Automática:</span>
-                <p class="font-bold text-lg">{{ currentSubmission()?.autoGradedScore?.toFixed(1) || 0 }}%</p>
-              </div>
             </div>
-            @if (currentSubmission() && getTimeElapsed(currentSubmission()!)) {
+            @if (!questionnaire()?.isSurvey && currentSubmission() && getTimeElapsed(currentSubmission()!)) {
               <div class="mt-4 pt-4 border-t border-brand-tertiary/30">
                 <span class="text-sm text-gray-600">Tiempo de Resolución:</span>
                 <div class="mt-2">
@@ -324,7 +320,6 @@
                     }
                   </p>
                 </div>
-                
               </div>
             }
           </div>
@@ -338,15 +333,17 @@
                   <!-- Question Header -->
                   <div class="flex items-center justify-between mb-3">
                     <h3 class="text-xl font-bold text-brand-tertiary mb-2 px-3 py-2">{{ i + 1 }}. {{ question.questionText }}</h3>
-                    <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/20 px-2 py-1 font-bold  whitespace-nowrap ml-4">{{ question.points }} puntos</span>
+                    @if (!questionnaire()?.isSurvey) {
+                      <span class="text-sm text-brand-tertiary bg-brand-tertiary-lighten/20 px-2 py-1 font-bold whitespace-nowrap ml-4">{{ question.points }} puntos</span>
+                    }
                   </div>
 
-                  <!-- Prompt media (video/image) -->
+                  <!-- Prompt media -->
                   @if (question.promptMediaUrl) {
                     <div class="mb-4 px-3 bg-gray-50 rounded-lg p-4">
                       @if (question.promptType === 'IMAGE') {
-                        <img 
-                          [src]="question.promptMediaUrl" 
+                        <img
+                          [src]="question.promptMediaUrl"
                           [alt]="'Imagen de la pregunta ' + (i + 1)"
                           class="max-w-full max-h-72 rounded mx-auto shadow-sm object-contain border border-gray-200 bg-white p-1"
                           loading="lazy"
@@ -367,25 +364,26 @@
                         <p class="text-sm text-red-500">Error: No se encontraron opciones para esta pregunta</p>
                       } @else {
                         @for (option of question.options; track option._id) {
-                        <div
-                          class="flex items-center gap-2 px-3 py-2 rounded"
-                          [class.bg-green-200]="isCorrectOption(question, option._id!.toString())"
-                          [class.bg-red-100]="!isCorrectOption(question, option._id!.toString()) && answer.selectedOptionId?.toString() === option._id?.toString()"
-                          [class.bg-brand-tertiary-lighten/20]="answer.selectedOptionId?.toString() !== option._id?.toString() && !isCorrectOption(question, option._id!.toString())"
-                        >
-                          <span class="flex-1">{{ option.text }}</span>
-                          @if (answer.selectedOptionId?.toString() === option._id?.toString()) {
-                            <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
-                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                          }
-                          @if (isCorrectOption(question, option._id!.toString())) {
-                            <span class="text-xs font-medium text-green-700">Correcta</span>
-                          }
-                        </div>
+                          <div
+                            class="flex items-center gap-2 px-3 py-2 rounded"
+                            [class.bg-green-200]="!questionnaire()?.isSurvey && isCorrectOption(question, option._id!.toString())"
+                            [class.bg-red-100]="!questionnaire()?.isSurvey && !isCorrectOption(question, option._id!.toString()) && answer.selectedOptionId?.toString() === option._id?.toString()"
+                            [class.bg-brand-secondary/20]="questionnaire()?.isSurvey && answer.selectedOptionId?.toString() === option._id?.toString()"
+                            [class.bg-brand-tertiary-lighten/20]="answer.selectedOptionId?.toString() !== option._id?.toString() && (questionnaire()?.isSurvey || !isCorrectOption(question, option._id!.toString()))"
+                          >
+                            <span class="flex-1">{{ option.text }}</span>
+                            @if (answer.selectedOptionId?.toString() === option._id?.toString()) {
+                              <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                              </svg>
+                            }
+                            @if (!questionnaire()?.isSurvey && isCorrectOption(question, option._id!.toString())) {
+                              <span class="text-xs font-medium text-green-700">Correcta</span>
+                            }
+                          </div>
                         }
                       }
-                      @if (answer) {
+                      @if (answer && !questionnaire()?.isSurvey) {
                         <div class="mt-4 text-sm">
                           @if (answer.isCorrect) {
                             <span class="text-green-600 font-medium">✓ Correcta (+{{ question.points }} puntos)</span>
@@ -406,26 +404,27 @@
                         <p class="text-sm text-red-500">Error: No se encontraron opciones para esta pregunta</p>
                       } @else {
                         @for (option of question.options; track option._id) {
-                        <div
-                          class="flex items-center gap-2 px-3 py-2 rounded"
-                          [class.bg-green-200]="question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
-                          [class.bg-yellow-100]="question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && !(answer.selectedOptionIds?.includes(option._id ? option._id.toString() : ''))"
-                          [class.bg-red-100]="!question.correctOptionIds?.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
-                        >
-                          <span class="flex-1">{{ option.text }}</span>
-                          @if (answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')) {
-                            <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
-                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                          }
-                          @if (question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '')) {
-                            <span class="text-xs font-medium text-green-700">Correcta</span>
-                          }
-                        </div>
+                          <div
+                            class="flex items-center gap-2 px-3 py-2 rounded"
+                            [class.bg-green-200]="!questionnaire()?.isSurvey && question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
+                            [class.bg-yellow-100]="!questionnaire()?.isSurvey && question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '') && !(answer.selectedOptionIds?.includes(option._id ? option._id.toString() : ''))"
+                            [class.bg-red-100]="!questionnaire()?.isSurvey && !question.correctOptionIds?.includes(option._id ? option._id.toString() : '') && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
+                            [class.bg-brand-secondary/20]="questionnaire()?.isSurvey && answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')"
+                            [class.bg-brand-tertiary-lighten/20]="questionnaire()?.isSurvey && !(answer.selectedOptionIds?.includes(option._id ? option._id.toString() : ''))"
+                          >
+                            <span class="flex-1">{{ option.text }}</span>
+                            @if (answer.selectedOptionIds?.includes(option._id ? option._id.toString() : '')) {
+                              <svg class="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                              </svg>
+                            }
+                            @if (!questionnaire()?.isSurvey && question.correctOptionIds && question.correctOptionIds.includes(option._id ? option._id.toString() : '')) {
+                              <span class="text-xs font-medium text-green-700">Correcta</span>
+                            }
+                          </div>
                         }
                       }
-
-                      @if (answer) {
+                      @if (answer && !questionnaire()?.isSurvey) {
                         <div class="mt-4 text-sm">
                           @if (answer.isCorrect) {
                             <span class="text-green-600 font-medium">✓ Correcta (+{{ question.points }} puntos)</span>
@@ -445,33 +444,34 @@
                         <p class="text-brand-tertiary text-lg">{{ answer.textAnswer || '(Sin respuesta)' }}</p>
                       </div>
 
-                      <!-- Grading Section -->
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 mt-6 border-t border-gray-200 bg-brand-tertiary-lighten/10 rounded-md p-4">
-                        <div>
-                          <label class="block text-sm font-bold text-brand-tertiary mb-2">
-                            Puntos (de {{ question.points }})
-                          </label>
-                          <input
-                            type="number"
-                            [(ngModel)]="gradingAnswers[question._id!.toString()].points"
-                            [max]="question.points"
-                            min="0"
-                            step="0.5"
-                            class="w-full bg-white px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-                          />
+                      @if (!questionnaire()?.isSurvey) {
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 mt-6 border-t border-gray-200 bg-brand-tertiary-lighten/10 rounded-md p-4">
+                          <div>
+                            <label class="block text-sm font-bold text-brand-tertiary mb-2">
+                              Puntos (de {{ question.points }})
+                            </label>
+                            <input
+                              type="number"
+                              [(ngModel)]="gradingAnswers[question._id!.toString()].points"
+                              [max]="question.points"
+                              min="0"
+                              step="0.5"
+                              class="w-full bg-white px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+                            />
+                          </div>
+                          <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-brand-tertiary mb-2">
+                              Retroalimentación (opcional)
+                            </label>
+                            <textarea
+                              [(ngModel)]="gradingAnswers[question._id!.toString()].feedback"
+                              rows="2"
+                              placeholder="Comentarios sobre esta respuesta..."
+                              class="bg-white w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
+                            ></textarea>
+                          </div>
                         </div>
-                        <div class="md:col-span-2">
-                          <label class="block text-sm font-bold text-brand-tertiary mb-2">
-                            Retroalimentación (opcional)
-                          </label>
-                          <textarea
-                            [(ngModel)]="gradingAnswers[question._id!.toString()].feedback"
-                            rows="2"
-                            placeholder="Comentarios sobre esta respuesta..."
-                            class="bg-white w-full px-3 py-2 border border-gray-300 rounded-md transition focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary placeholder-gray-400"
-                          ></textarea>
-                        </div>
-                      </div>
+                      }
                     </div>
                   }
                 </div>
@@ -497,27 +497,29 @@
       <!-- Modal Footer -->
       <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-200">
         <button
+          (click)="downloadSubmissionPDF()"
+          class="mr-auto group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-white border-2 border-brand-secondary hover:bg-brand-secondary hover:text-white"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Descargar PDF
+        </button>
+        <button
           (click)="closeGradingModal()"
-          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-brand-tertiary border-2 border-brand-tertiary hover:bg-brand-tertiary/90"
         >
           Cancelar
         </button>
         <button
           (click)="saveGrade()"
           [disabled]="savingGrade()"
-          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
+          class="group mt-2 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer bg-brand-secondary hover:bg-brand-secondary/90"
         >
-          @if (savingGrade()) {
-            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Guardando...</span>
-          } @else {
-            <span>Guardar Calificación</span>
-          }
+          Guardar Calificación
         </button>
       </div>
+
     </div>
   </div>
 }

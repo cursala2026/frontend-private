@@ -55,6 +55,7 @@
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/angular": "^13.0.0",
     "@testing-library/jest-dom": "^6.0.0",
+    "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
     "autoprefixer": "^10.4.22",
     "jsdom": "^22.1.0",

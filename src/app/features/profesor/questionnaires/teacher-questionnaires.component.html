@@ -81,7 +81,7 @@
           <!-- course name shown in header instead of as a separate field -->
 
           @if (selectedCourseId) {
-            <div class="flex items-end">
+            <div class="flex flex-col sm:flex-row items-end gap-3">
               <button
                 (click)="openQuestionnaireEdit()"
                 class="group mt-4 md:mt-8 w-auto relative flex justify-center items-center rounded-full text-brand-tertiary px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-secondary hover:ring-[3px] hover:ring-[#dcab07] hover:bg-brand-secondary active:bg-brand-tertiary active:text-white"
@@ -90,6 +90,16 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Nuevo Cuestionario
+              </button>
+
+              <button
+                (click)="openQuestionnaireEdit(undefined, true)"
+                class="group sm:mt-8 w-auto relative flex justify-center items-center rounded-full text-white px-6 py-3 text-sm font-bold transition-all duration-300 cursor-pointer bg-green-600 border border-transparent hover:bg-green-700 hover:shadow-md active:bg-green-800"
+                >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Crear Encuesta de Satisfacción
               </button>
             </div>
           }
@@ -268,6 +278,15 @@
     class="group mt-6 w-auto relative flex justify-center mx-auto items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-brand-tertiary border-2 border-brand-tertiary hover:ring-[3px] hover:ring-brand-tertiary/50 hover:bg-brand-tertiary active:bg-brand-tertiary active:text-white active:ring-[#dcab07]"
     >
     Crear Primer Cuestionario
+  </button>
+  <button
+    (click)="openQuestionnaireEdit(undefined, true)"
+    class="group mt-6 w-auto relative flex justify-center mx-auto items-center rounded-full text-white px-6 py-2 text-sm font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-green-600 border border-transparent hover:bg-green-700 hover:shadow-md active:bg-green-800"
+    >
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+    Crear Encuesta de Satisfacción
   </button>
 </div>
 }
