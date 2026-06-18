@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { NotificationsService } from './notifications.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 import { CourseStartComponent } from './course-start/course-start.component';
 import { NoEnrollmentComponent } from './no-enrollment/no-enrollment.component';
 

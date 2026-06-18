@@ -12,9 +12,13 @@
 # Error details
 
 ```
-TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+Test timeout of 20000ms exceeded.
+```
+
+```
+Error: locator.check: Test timeout of 20000ms exceeded.
 Call log:
-  - waiting for locator('text=Información Básica') to be visible
+  - waiting for locator('#isSurvey')
 
 ```
 
@@ -60,8 +64,6 @@ Call log:
 # Test source
 
 ```ts
-  12  | 
-  13  | const API = 'http://localhost:8081/api/v1';
   14  | 
   15  | async function mockQuestionnairesListWithSurvey(page: Page) {
   16  |   await page.route(`${API}/questionnaires/course/${COURSE_ID}`, (route: Route) =>
@@ -160,10 +162,10 @@ Call log:
   109 |     await injectProfesorAuth(page);
   110 | 
   111 |     await page.goto(`/profesor/questionnaires/new?courseId=${COURSE_ID}`);
-> 112 |     await page.waitForSelector('text=Información Básica', { timeout: 10000 });
-      |                ^ TimeoutError: page.waitForSelector: Timeout 10000ms exceeded.
+  112 |     await page.waitForSelector('text=Información Básica', { timeout: 10000 });
   113 | 
-  114 |     await page.locator('#isSurvey').check();
+> 114 |     await page.locator('#isSurvey').check();
+      |                                     ^ Error: locator.check: Test timeout of 20000ms exceeded.
   115 |     await expect(page.locator('text=Configuración')).not.toBeVisible();
   116 |     await page.locator('#isSurvey').uncheck();
   117 |     await expect(page.locator('text=Configuración')).toBeVisible();

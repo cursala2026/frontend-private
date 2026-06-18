@@ -29,7 +29,7 @@ Call log:
       - element is not enabled
     - retrying click action
       - waiting 100ms
-    36 × waiting for element to be visible, enabled and stable
+    34 × waiting for element to be visible, enabled and stable
        - element is not enabled
      - retrying click action
        - waiting 500ms
