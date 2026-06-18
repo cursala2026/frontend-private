@@ -13,6 +13,7 @@ import { InfoService } from '../../../../core/services/info.service';
 import { BunnyConfigService } from '../../../../core/services/bunny-config.service';
 import { CourseEventsService } from '../../../../core/services/course-events.service';
 import { ConfirmModalComponent, ConfirmModalConfig } from '../../../../shared/components/confirm-modal/confirm-modal.component';
+import { environment } from '../../../../core/config/environment.prod';
 
 @Component({
   selector: 'app-questionnaire-results',
@@ -52,7 +53,8 @@ export class QuestionnaireResultsComponent implements OnInit {
     confirmText: 'Resetear',
     cancelText: 'Cancelar',
     icon: 'danger',
-    confirmButtonClass: 'bg-red-600 hover:bg-red-700'
+    confirmButtonClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
   };
 
   // View state
@@ -170,6 +172,16 @@ export class QuestionnaireResultsComponent implements OnInit {
       }
     });
   }
+  downloadSubmissionPDF() {
+    const submissionId = this.currentSubmission()?._id;
+    if (!submissionId) {
+      this.infoService.showError('No se pudo encontrar el ID de la entrega');
+      return;
+    }
+    window.open(`${environment.apiUrl}/reports/submission/${submissionId}/pdf`, '_blank');
+  }
+
+
 
   viewSubmission(studentId: string | any): void {
     let studentIdStr: string | null = null;

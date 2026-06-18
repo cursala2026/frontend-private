@@ -27,6 +27,7 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
   @Input() questionnaireId?: string;
   @Input() isEditMode = false;
   @Input() hasSubmissions = false;
+  @Input() isSurvey = false;
 
   private infoService = inject(InfoService);
   private uploadManager = inject(QuestionMediaUploadManagerService);
@@ -112,14 +113,42 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
     (this.question as FormGroup).updateValueAndValidity();
   }
 
-  removeOption(optionIndex: number) {
+  /**
+   * removeOption acepta un índice (número) o directamente un AbstractControl
+   * del option group. Esto evita depender de índices frágiles derivados del
+   * DOM reusado y garantiza que eliminemos el option correcto.
+   */
+  removeOption(optionOrIndex: number | AbstractControl) {
     if (this.isEditMode && this.hasSubmissions) {
       this.infoService.showError('No es posible eliminar opciones: el cuestionario ya tiene envíos.');
       return;
     }
+
     const options = this.options;
+    let optionIndex: number;
+
+    if (typeof optionOrIndex === 'number') {
+      optionIndex = optionOrIndex;
+    } else {
+      optionIndex = options.controls.indexOf(optionOrIndex as AbstractControl);
+    }
+
+    if (optionIndex < 0) return; // no encontrado
+
     if (options.length > 2) {
+      try {
+        const before = options.controls.map((c: any) => ({ _id: c.get('_id')?.value, text: c.get('text')?.value }));
+      } catch (e) {
+        // ignore
+      }
+
       options.removeAt(optionIndex);
+
+      try {
+        const after = options.controls.map((c: any) => ({ _id: c.get('_id')?.value, text: c.get('text')?.value }));
+      } catch (e) {
+        // ignore
+      }
 
       // --- Actualizar correctOptionId (MULTIPLE_CHOICE) ---
       const correctIdCtrl = (this.question as FormGroup).get('correctOptionId');
@@ -157,38 +186,50 @@ export class QuestionItemComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onQuestionTypeChange() {
-  const type = (this.question as FormGroup).get('type')?.value;
-  const optionsArray = this.options;
+    const type = (this.question as FormGroup).get('type')?.value;
+    const optionsArray = this.options;
 
-  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-    // Guardar los textos actuales antes de limpiar
-    const existingTexts: string[] = optionsArray.controls.map(
-      ctrl => ctrl.get('text')?.value || ''
-    );
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+      // Guardar los textos actuales antes de limpiar
+      const existingTexts: string[] = optionsArray.controls.map(
+        ctrl => ctrl.get('text')?.value || ''
+      );
 
-    // Limpiar opciones
-    while (optionsArray.length) {
-      optionsArray.removeAt(0);
+      // Limpiar opciones
+      while (optionsArray.length) {
+        optionsArray.removeAt(0);
+      }
+
+      // Recrear 4 opciones preservando el texto que ya había
+      for (let i = 0; i < 4; i++) {
+        const group = this.createOptionGroup();
+        const savedText = existingTexts[i] ?? '';
+        group.patchValue({ text: savedText });
+        optionsArray.push(group);
+      }
+    } else {
+      // Si cambia a TEXT o LINEAR_SCALE, limpiar opciones (no se necesitan)
+      while (optionsArray.length) {
+        optionsArray.removeAt(0);
+      }
+      
+      // Si cambia a LINEAR_SCALE, inicializamos los valores por defecto
+      if (type === 'LINEAR_SCALE') {
+        const currentScaleMin = (this.question as FormGroup).get('scaleMin')?.value;
+        if (currentScaleMin === null || currentScaleMin === undefined) {
+          (this.question as FormGroup).patchValue({
+            scaleMin: 1,
+            scaleMax: 10,
+            scaleMinLabel: 'Muy en desacuerdo',
+            scaleMaxLabel: 'Muy de acuerdo'
+          });
+        }
+      }
     }
 
-    // Recrear 4 opciones preservando el texto que ya había
-    for (let i = 0; i < 4; i++) {
-      const group = this.createOptionGroup();
-      const savedText = existingTexts[i] ?? '';
-      group.patchValue({ text: savedText });
-      optionsArray.push(group);
-    }
-  } else {
-    // Si cambia a TEXT, limpiar opciones (no se necesitan)
-    while (optionsArray.length) {
-      optionsArray.removeAt(0);
-    }
+    (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
+    (this.question as FormGroup).updateValueAndValidity();
   }
-
-  (this.question as FormGroup).patchValue({ correctOptionId: '', correctOptionIds: [] });
-  (this.question as FormGroup).updateValueAndValidity();
-}
-
   onMediaSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;

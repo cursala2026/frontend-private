@@ -1,5 +1,4 @@
-import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList, input } from '@angular/core';
-
+import { Component, OnInit, inject, signal, ChangeDetectorRef, ViewChildren, QueryList, input, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import {
@@ -27,7 +26,6 @@ interface ClassData {
   templateUrl: './questionnaire-edit.component.html'
 })
 export class QuestionnaireEditComponent implements OnInit {
-  // Expose last payload for tests
   public lastSavePayload: any = null;
   private fb = inject(FormBuilder);
   private questionnairesService = inject(QuestionnairesService);
@@ -45,36 +43,98 @@ export class QuestionnaireEditComponent implements OnInit {
   questionnaireId = '';
 
   classes = signal<ClassData[]>([]);
-  questionnaires = signal<Questionnaire[]>([]); // Questionnaires of the selected course
+  questionnaires = signal<Questionnaire[]>([]);
   loading = signal<boolean>(true);
   saving = signal<boolean>(false);
+  hasUnsavedDraft = signal<boolean>(false);
   loadingClasses = signal<boolean>(false);
-  preselectedCourseId = signal<string | null>(null); // CourseId from query params
-  preselectedCourseName = signal<string>(''); // Name of the preselected course
+  preselectedCourseId = signal<string | null>(null);
+  preselectedCourseName = signal<string>('');
 
-  // Allow optional external inputs (when parent/launcher provides them instead of navigating)
   externalCourseId = input<string | null | undefined>();
   externalCourseName = input<string | null | undefined>();
 
-  // Media upload tracking
-  // Media upload tracking is handled by each QuestionItem child
   mediaPreviews = signal<{ [questionIndex: number]: string }>({});
-  // Grading help modal visibility
   showGradingHelp = signal(false);
-  // Indica si el cuestionario ya tiene envíos
   hasSubmissions = signal<boolean>(false);
-  // pendingMediaFiles removed: each QuestionItem handles its own pending upload
+
+  // ==========================================
+  // CONTROL: Prevención de Cierre (Profesor)
+  // ==========================================
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): void {
+    if (this.questionnaireForm?.dirty && !this.saving()) {
+      $event.returnValue = true;
+    }
+  }
+
+  // ==========================================
+  // CONTROL: Savepoints Locales (Borrador)
+  // ==========================================
+  private getDraftKey(): string {
+    const cid = this.preselectedCourseId() || 'nocourse';
+    const qid = this.questionnaireId || 'new';
+    return `cursala_admin_draft_${cid}_${qid}`;
+  }
+
+  private saveDraftToLocal(): void {
+    if (this.questionnaireForm && this.questionnaireForm.dirty) {
+      const draft = this.questionnaireForm.getRawValue();
+      localStorage.setItem(this.getDraftKey(), JSON.stringify(draft));
+    }
+  }
+
+  public checkForDraft(): void {
+    const saved = localStorage.getItem(this.getDraftKey());
+    if (saved) {
+      this.hasUnsavedDraft.set(true);
+    }
+  }
+
+  public restoreDraftFromLocal(): void {
+    const saved = localStorage.getItem(this.getDraftKey());
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        
+        while (this.questions.length) {
+          this.questions.removeAt(0);
+        }
+        
+        if (draft.questions && Array.isArray(draft.questions)) {
+          draft.questions.forEach((q: any) => {
+            this.addQuestionFromData(q);
+          });
+        }
+
+        this.questionnaireForm.patchValue(draft, { emitEvent: false });
+        this.questionnaireForm.markAsDirty(); 
+        
+        this.hasUnsavedDraft.set(false);
+        this.infoService.showSuccess('Borrador recuperado con éxito');
+      } catch (e) {
+        console.error('Error recuperando borrador:', e);
+      }
+    }
+  }
+
+  public discardDraft(): void {
+    this.clearAdminDraft();
+    this.hasUnsavedDraft.set(false);
+    this.infoService.showInfo('Borrador descartado. Comenzando desde cero.');
+  }
+
+  private clearAdminDraft(): void {
+    localStorage.removeItem(this.getDraftKey());
+  }
 
   ngOnInit(): void {
     this.initForm();
 
-    // Check for preselected courseId from query params (only in create mode)
-    // Priority: external inputs passed via `input()` from a parent component
     const extIdRaw = this.externalCourseId?.();
     const extNameRaw = this.externalCourseName?.();
 
     if (typeof extIdRaw === 'string' && extIdRaw) {
-      // Parent provided an id (and maybe a name) — use id and load related data
       const extId = extIdRaw;
       this.preselectedCourseId.set(extId);
       this.questionnaireForm.patchValue({ courseId: extId }, { emitEvent: false });
@@ -84,24 +144,25 @@ export class QuestionnaireEditComponent implements OnInit {
       this.loadClassesByCourse(extId);
       this.loadQuestionnairesByCourse(extId);
     } else {
-      // Fallback to query params (existing behavior)
       const courseIdFromQuery = this.route.snapshot.queryParamMap.get('courseId');
       const courseNameFromQuery = this.route.snapshot.queryParamMap.get('courseName');
+      const isSurveyFromQuery = this.route.snapshot.queryParamMap.get('isSurvey');
+      
+      if (isSurveyFromQuery === 'true') {
+        this.questionnaireForm.patchValue({ isSurvey: true });
+      }
+
       if (courseIdFromQuery) {
         this.preselectedCourseId.set(courseIdFromQuery);
         this.questionnaireForm.patchValue({ courseId: courseIdFromQuery });
-        // Use the course name from query params (should always be provided)
         if (courseNameFromQuery) {
           this.preselectedCourseName.set(courseNameFromQuery);
         }
-        // Load classes for the preselected course
         this.loadClassesByCourse(courseIdFromQuery);
-        // Load questionnaires to filter available classes
         this.loadQuestionnairesByCourse(courseIdFromQuery);
       }
     }
 
-    // Also accept courseName/courseId passed via navigation state (navigationExtras.state)
     try {
       const navState: any = this.router.getCurrentNavigation?.()?.extras?.state;
       if (navState) {
@@ -113,34 +174,27 @@ export class QuestionnaireEditComponent implements OnInit {
           this.preselectedCourseName.set(navState.courseName);
         }
       }
-    } catch (e) {
-      // ignore - getCurrentNavigation may be undefined or throw in some contexts
-    }
+    } catch (e) {}
 
-    // Check if edit mode
     this.route.params.subscribe(params => {
       if (params['id'] && params['id'] !== 'new') {
         this.isEditMode = true;
         this.questionnaireId = params['id'];
-        // In edit mode, load the questionnaire data
         this.loadQuestionnaire();
       } else {
-        // In create mode, we expect courseId and courseName to be provided
+        setTimeout(() => this.checkForDraft(), 300);
         this.loading.set(false);
       }
     });
 
-    // Listen for external resets so the edit form can be enabled again
     try {
       this.courseEvents.onQuestionnaireReset().subscribe((qid) => {
         if (this.isEditMode && qid === this.questionnaireId) {
           this.hasSubmissions.set(false);
-          try { this.cdr.detectChanges(); } catch (e) { /* ignore */ }
+          try { this.cdr.detectChanges(); } catch (e) {}
         }
       });
-    } catch (e) {
-      // ignore if subscription not available
-    }
+    } catch (e) {}
   }
 
   openGradingHelp(): void {
@@ -150,7 +204,6 @@ export class QuestionnaireEditComponent implements OnInit {
   closeGradingHelp(): void {
     this.showGradingHelp.set(false);
   }
-
 
   initForm(): void {
     this.questionnaireForm = this.fb.group({
@@ -169,10 +222,8 @@ export class QuestionnaireEditComponent implements OnInit {
       questions: this.fb.array([])
     });
 
-    // Add at least one question by default
     this.addQuestion();
 
-    // Subscribe to allowRetries changes to enable/disable maxRetries
     this.questionnaireForm.get('allowRetries')?.valueChanges.subscribe(allowRetries => {
       const maxRetriesControl = this.questionnaireForm.get('maxRetries');
       if (allowRetries) {
@@ -182,24 +233,38 @@ export class QuestionnaireEditComponent implements OnInit {
       }
     });
 
-    // Subscribe to status changes to dynamically adjust validators
     this.questionnaireForm.get('status')?.valueChanges.subscribe(status => {
       this.updateStatusBasedValidators(status);
     });
 
-    // Subscribe to positionType changes to conditionally require afterClassId
     this.questionnaireForm.get('positionType')?.valueChanges.subscribe((posType) => {
       this.updateAfterClassValidators(posType);
     });
 
-    // Run initial configuration
+    this.questionnaireForm.get('isSurvey')?.valueChanges.subscribe((isSurvey) => {
+      const positionTypeControl = this.questionnaireForm.get('positionType');
+      if (isSurvey) {
+        positionTypeControl?.setValue('FINAL_EXAM', { emitEvent: false });
+        positionTypeControl?.disable({ emitEvent: false });
+        this.updateAfterClassValidators('FINAL_EXAM');
+      } else {
+        positionTypeControl?.enable({ emitEvent: false });
+      }
+      this.questions.controls.forEach(qGroup => qGroup.updateValueAndValidity());
+    });
+
     this.updateStatusBasedValidators(this.questionnaireForm.get('status')?.value);
+
+    this.questionnaireForm.valueChanges.subscribe(() => {
+      if (!this.saving()) {
+        this.saveDraftToLocal();
+      }
+    });
   }
 
   get questions(): FormArray {
     return this.questionnaireForm.get('questions') as FormArray;
   }
-
 
   loadQuestionnairesByCourse(courseId: string | null | undefined): void {
     if (!courseId) {
@@ -221,20 +286,18 @@ export class QuestionnaireEditComponent implements OnInit {
   getAvailableClassesForQuestionnaire(): ClassData[] {
     const allClasses = this.classes();
     const courseQuestionnaires = this.questionnaires();
-    const currentQuestionnaireId = this.questionnaireId; // Current questionnaire being edited
+    const currentQuestionnaireId = this.questionnaireId;
     
-    // Get class IDs that already have a questionnaire after them (excluding current questionnaire if editing)
     const classesWithQuestionnaires = new Set(
       courseQuestionnaires
         .filter(q => 
-          q._id !== currentQuestionnaireId && // Exclude current questionnaire if editing
+          q._id !== currentQuestionnaireId &&
           q.position?.type === 'BETWEEN_CLASSES' && 
           q.position?.afterClassId
         )
         .map(q => q.position!.afterClassId!)
     );
     
-    // Filter out classes that already have questionnaires after them
     return allClasses.filter(classItem => !classesWithQuestionnaires.has(classItem._id));
   }
 
@@ -263,37 +326,14 @@ export class QuestionnaireEditComponent implements OnInit {
   loadQuestionnaire(): void {
     this.questionnairesService.getQuestionnaireById(this.questionnaireId).subscribe({
       next: (response) => {
-        // DEBUG: mostrar exactamente lo que devuelve la API para depuración
-        console.log('loadQuestionnaire response raw:', response);
         const questionnaire: Questionnaire = response?.data;
-        console.log('loadQuestionnaire questionnaire object:', questionnaire);
-        // DEBUG: log detailed questions and options
-        try {
-          const qs = questionnaire?.questions || [];
-          console.log('loadQuestionnaire questions count:', qs.length);
-          qs.forEach((q: any, idx: number) => {
-            console.log(`question[${idx}] type=${q.type} questionText=${q.questionText}`);
-            console.log(`question[${idx}] options count:`, (q.options && q.options.length) || 0);
-            try {
-              console.log(`question[${idx}] full JSON:`, JSON.stringify(q, null, 2));
-            } catch (e) {
-              console.log(`question[${idx}] options (raw):`, q.options);
-            }
-            console.log(`question[${idx}] correctOptionId:`, q.correctOptionId, 'correctOptionIds:', q.correctOptionIds);
-          });
-        } catch (e) {
-          console.warn('Error logging questions detail', e);
-        }
-
         this.populateForm(questionnaire);
+        
+        setTimeout(() => this.checkForDraft(), 500);
 
-        // Consultar si ya existen envíos para este cuestionario
         this.questionnairesService.hasSubmissions(this.questionnaireId).subscribe({
           next: (resp) => {
-            // Normalmente el API devuelve { data: { hasSubmissions: true } }
-            // Ser estrictos: considerar `hasSubmissions` true solo cuando el API lo indica explícitamente
             let has = false;
-
             try {
               if (typeof resp === 'boolean') {
                 has = resp;
@@ -311,21 +351,14 @@ export class QuestionnaireEditComponent implements OnInit {
             } catch (e) {
               has = false;
             }
-
-            // DEBUG: log raw response and computed value
-            console.log('hasSubmissions response raw:', resp);
-            console.log('hasSubmissions computed value:', has);
-            // Guardar el resultado (por defecto false)
             this.hasSubmissions.set(!!has);
           },
           error: (err) => {
-            // No bloquear la edición si falla la comprobación; mostrar en consola
             console.warn('No se pudo verificar si el cuestionario tiene envíos', err);
             this.hasSubmissions.set(false);
           }
         });
 
-        // If we don't have the course name yet, try to get it from the response
         if (!this.preselectedCourseName()) {
           const maybeName = (response?.data && ((response.data as any).courseName || (response.data as any).course?.name));
           if (maybeName) {
@@ -344,17 +377,13 @@ export class QuestionnaireEditComponent implements OnInit {
   }
 
   populateForm(questionnaire: Questionnaire): void {
-    // Load classes for the course first
     this.loadClassesByCourse(questionnaire.courseId);
-    // Load questionnaires to filter available classes
     this.loadQuestionnairesByCourse(questionnaire.courseId);
 
-    // Clear existing questions
     while (this.questions.length) {
       this.questions.removeAt(0);
     }
 
-    // Populate form
     this.questionnaireForm.patchValue({
       courseId: questionnaire.courseId,
       title: questionnaire.title,
@@ -370,12 +399,10 @@ export class QuestionnaireEditComponent implements OnInit {
       timeLimitMinutes: questionnaire.timeLimitMinutes || null
     });
 
-    // Add questions
     questionnaire.questions.forEach(question => {
       this.addQuestionFromData(question);
     });
     
-    // After all questions are added, ensure correctOptionId values are set
     setTimeout(() => {
       this.questions.controls.forEach((questionGroup, index) => {
         if (questionGroup.get('type')?.value === 'MULTIPLE_CHOICE') {
@@ -383,7 +410,6 @@ export class QuestionnaireEditComponent implements OnInit {
           const originalCorrectOptionId = questionGroup.get('originalCorrectOptionId')?.value;
           
           if (originalCorrectOptionId && correctOptionIdControl) {
-            // Find the index of the option with the original ObjectId
             const optionsArray = questionGroup.get('options') as FormArray;
             const correctIndex = optionsArray.controls.findIndex((opt: any) => {
               const optId = opt.get('_id')?.value;
@@ -405,71 +431,62 @@ export class QuestionnaireEditComponent implements OnInit {
       _id: [question?._id || undefined],
       type: [question?.type || 'MULTIPLE_CHOICE', Validators.required],
       questionText: [question?.questionText || '', [Validators.required, Validators.maxLength(1000)]],
-      points: [question?.points || 10, [Validators.required, Validators.min(1)]],
+      points: [question?.points || (this.questionnaireForm?.get('isSurvey')?.value ? 0 : 10), [Validators.required, Validators.min(0)]],
       required: [question?.required ?? true],
       options: this.fb.array([]),
-      correctOptionId: [''], // This will store the index as string for the radio button (MULTIPLE_CHOICE)
-      correctOptionIds: this.fb.control<string[]>([]), // This will store array of indices for checkboxes (MULTIPLE_SELECT)
-      originalCorrectOptionId: [question?.correctOptionId || null], // Store original ObjectId from backend
-      originalCorrectOptionIds: this.fb.control<string[]>(question?.correctOptionIds || []), // Store original ObjectIds for MULTIPLE_SELECT
+      correctOptionId: [''], 
+      correctOptionIds: this.fb.control<string[]>([]), 
+      originalCorrectOptionId: [question?.correctOptionId || null], 
+      originalCorrectOptionIds: this.fb.control<string[]>(question?.correctOptionIds || []), 
+      
+      scaleMin: [question?.scaleMin ?? 1],
+      scaleMax: [question?.scaleMax ?? 10],
+      scaleMinLabel: [question?.scaleMinLabel || ''],
+      scaleMaxLabel: [question?.scaleMaxLabel || ''],
+
       promptType: [question?.promptType || 'TEXT'],
       promptMediaUrl: [question?.promptMediaUrl || ''],
       promptMediaProvider: [question?.promptMediaProvider || 'BUNNY']
     });
 
-    // Attach a validator that enforces options count and correct answer presence
     group.setValidators(this.questionGroupValidator.bind(this));
 
-    // Ensure group validity updates when options change
     const optionsArray = group.get('options') as FormArray;
     optionsArray.valueChanges.subscribe(() => {
       group.updateValueAndValidity({ onlySelf: true });
     });
-    // If multiple choice or multiple select, add options
+
     if (question && (question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') && question.options) {
-      const optionsArray = group.get('options') as FormArray;
       question.options.forEach(opt => {
         optionsArray.push(this.createOptionGroup(opt));
       });
       
-      // Set correctOptionId after options are added (for MULTIPLE_CHOICE)
       if (question.type === 'MULTIPLE_CHOICE' && question.correctOptionId) {
         const correctOptionIdStr = question.correctOptionId.toString();
-        
-        // Check if it's an ObjectId (24 hex characters)
         if (correctOptionIdStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(correctOptionIdStr)) {
-          // Find the index of the option with this _id
           const correctIndex = question.options.findIndex(
             (opt: any) => opt._id?.toString() === correctOptionIdStr
           );
           
           if (correctIndex >= 0) {
-            // Store the original ObjectId for later use when saving
             group.patchValue({ originalCorrectOptionId: correctOptionIdStr }, { emitEvent: false });
-            
-            // Use string for radio button compatibility (HTML inputs use strings)
             const correctOptionIdControl = group.get('correctOptionId');
             if (correctOptionIdControl) {
-              // Set value immediately
               correctOptionIdControl.setValue(correctIndex.toString(), { emitEvent: false });
-              // Also use setTimeout as backup to ensure it's set after render
               setTimeout(() => {
                 correctOptionIdControl.setValue(correctIndex.toString(), { emitEvent: false });
-                this.cdr.detectChanges(); // Force change detection
+                this.cdr.detectChanges(); 
               }, 100);
             }
           } else {
-            // If not found, try to parse as index
             const parsedIndex = parseInt(correctOptionIdStr);
             if (!isNaN(parsedIndex) && parsedIndex >= 0) {
               group.get('correctOptionId')?.setValue(parsedIndex.toString(), { emitEvent: false });
             } else {
-              // If not found, keep the ObjectId (will be handled on save)
               group.get('correctOptionId')?.setValue(correctOptionIdStr, { emitEvent: false });
             }
           }
         } else {
-          // It's already an index or other value - try to parse as number then convert to string
           const parsedIndex = parseInt(correctOptionIdStr);
           if (!isNaN(parsedIndex) && parsedIndex >= 0) {
             group.get('correctOptionId')?.setValue(parsedIndex.toString(), { emitEvent: false });
@@ -479,17 +496,13 @@ export class QuestionnaireEditComponent implements OnInit {
         }
       }
       
-      // Set correctOptionIds after options are added (for MULTIPLE_SELECT)
       if (question.type === 'MULTIPLE_SELECT' && question.correctOptionIds) {
         const correctOptionIds = question.correctOptionIds;
         const indices: string[] = [];
         
         correctOptionIds.forEach((optionId: any) => {
           const optionIdStr = optionId.toString();
-          
-          // Check if it's an ObjectId
           if (optionIdStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(optionIdStr)) {
-            // Find the index of the option with this _id
             const idx = question.options?.findIndex(
               (opt: any) => opt._id?.toString() === optionIdStr
             );
@@ -497,7 +510,6 @@ export class QuestionnaireEditComponent implements OnInit {
               indices.push(idx.toString());
             }
           } else {
-            // It's already an index
             indices.push(optionIdStr);
           }
         });
@@ -508,7 +520,6 @@ export class QuestionnaireEditComponent implements OnInit {
         }, { emitEvent: false });
       }
     } else if (!question || question.type === 'MULTIPLE_CHOICE' || question.type === 'MULTIPLE_SELECT') {
-      // Add default 4 options for new MC/MS questions
       const optionsArray = group.get('options') as FormArray;
       for (let i = 0; i < 4; i++) {
         optionsArray.push(this.createOptionGroup());
@@ -518,54 +529,56 @@ export class QuestionnaireEditComponent implements OnInit {
     return group;
   }
 
-  // Validator for each question group
   private questionGroupValidator(control: AbstractControl): ValidationErrors | null {
-  const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
-  if (isDraft) {
-    return null; // Relajamos validaciones de preguntas si es borrador
-  }
+    const isDraft = this.questionnaireForm?.get('status')?.value === 'DRAFT';
+    const isSurvey = this.questionnaireForm?.get('isSurvey')?.value === true; 
 
-  const type = control.get('type')?.value;
-  const options = control.get('options') as FormArray | null;
-  const errors: any = {};
-
-  if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
-    if (!options || options.length < 2) {
-      errors.optionsCount = 'Debe haber al menos 2 opciones';
+    if (isDraft) {
+      return null; 
     }
 
-    if (options) {
-      const emptyIndexes: number[] = [];
-      for (let i = 0; i < options.length; i++) {
-        const txtCtrl = options.at(i).get('text');
-        const txtVal = txtCtrl?.value;
-        // ✅ Solo evaluar el valor real, sin tocar ni setear errores en el control hijo
-        if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
-          emptyIndexes.push(i);
+    const type = control.get('type')?.value;
+    const options = control.get('options') as FormArray | null;
+    const errors: any = {};
+
+    if (type === 'MULTIPLE_CHOICE' || type === 'MULTIPLE_SELECT') {
+      if (!options || options.length < 2) {
+        errors.optionsCount = 'Debe haber al menos 2 opciones';
+      }
+
+      if (options) {
+        const emptyIndexes: number[] = [];
+        for (let i = 0; i < options.length; i++) {
+          const txtCtrl = options.at(i).get('text');
+          const txtVal = txtCtrl?.value;
+          if (!txtVal || (typeof txtVal === 'string' && txtVal.trim() === '')) {
+            emptyIndexes.push(i);
+          }
+        }
+        if (emptyIndexes.length) {
+          errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
         }
       }
-      if (emptyIndexes.length) {
-        errors.optionTextEmpty = `Hay ${emptyIndexes.length} opción(es) sin texto`;
+
+      if (!isSurvey) {
+        if (type === 'MULTIPLE_CHOICE') {
+          const correct = control.get('correctOptionId')?.value;
+          if (correct === null || correct === undefined || correct === '') {
+            errors.noCorrect = 'Selecciona una opción correcta';
+          }
+        }
+
+        if (type === 'MULTIPLE_SELECT') {
+          const corrects = control.get('correctOptionIds')?.value || [];
+          if (!Array.isArray(corrects) || corrects.length === 0) {
+            errors.noCorrect = 'Selecciona al menos una opción correcta';
+          }
+        }
       }
     }
 
-    if (type === 'MULTIPLE_CHOICE') {
-      const correct = control.get('correctOptionId')?.value;
-      if (correct === null || correct === undefined || correct === '') {
-        errors.noCorrect = 'Selecciona una opción correcta';
-      }
-    }
-
-    if (type === 'MULTIPLE_SELECT') {
-      const corrects = control.get('correctOptionIds')?.value || [];
-      if (!Array.isArray(corrects) || corrects.length === 0) {
-        errors.noCorrect = 'Selecciona al menos una opción correcta';
-      }
-    }
+    return Object.keys(errors).length ? errors : null;
   }
-
-  return Object.keys(errors).length ? errors : null;
-}
 
   private updateAfterClassValidators(posType: string | null) {
     const afterClassControl = this.questionnaireForm.get('afterClassId');
@@ -609,7 +622,6 @@ export class QuestionnaireEditComponent implements OnInit {
     positionTypeCtrl?.updateValueAndValidity({ emitEvent: false });
     afterClassCtrl?.updateValueAndValidity({ emitEvent: false });
 
-    // Actualizar la validez de los grupos de preguntas
     this.questions?.controls.forEach(qGroup => {
       qGroup.updateValueAndValidity({ onlySelf: true });
     });
@@ -653,11 +665,7 @@ export class QuestionnaireEditComponent implements OnInit {
     }
   }
 
-  
- 
-
   onSubmit(): void {
-    // Auto-fill empty option texts so the form can validate (helps UX when users forget)
     this.autoFillEmptyOptionTexts();
 
     if (this.questionnaireForm.invalid) {
@@ -666,9 +674,10 @@ export class QuestionnaireEditComponent implements OnInit {
       return;
     }
 
-    // Validate that MC/MS questions have correct answer(s) selected (only if not DRAFT)
     const isDraft = this.questionnaireForm.get('status')?.value === 'DRAFT';
-    if (!isDraft) {
+    const isSurvey = this.questionnaireForm.get('isSurvey')?.value === true;
+    
+    if (!isDraft && !isSurvey) {
       for (let i = 0; i < this.questions.length; i++) {
         const question = this.questions.at(i);
         const type = question.get('type')?.value;
@@ -688,13 +697,12 @@ export class QuestionnaireEditComponent implements OnInit {
           }
         }
       }
-    }
+    } 
 
     this.saving.set(true);
 
-    const formValue = this.questionnaireForm.value;
-
-    // Process questions
+    const formValue = this.questionnaireForm.getRawValue();
+    
     const questions: Question[] = formValue.questions.map((q: any, index: number) => {
       const question: any = {
         type: q.type,
@@ -704,7 +712,11 @@ export class QuestionnaireEditComponent implements OnInit {
         required: q.required,
         promptType: q.promptType || 'TEXT',
         promptMediaUrl: q.promptMediaUrl || undefined,
-        promptMediaProvider: q.promptMediaProvider || undefined
+        promptMediaProvider: q.promptMediaProvider || undefined,
+        scaleMin: q.scaleMin,
+        scaleMax: q.scaleMax,
+        scaleMinLabel: q.scaleMinLabel,
+        scaleMaxLabel: q.scaleMaxLabel
       };
 
       if (q.type === 'MULTIPLE_CHOICE') {
@@ -719,26 +731,20 @@ export class QuestionnaireEditComponent implements OnInit {
           return o;
         });
 
-        // Strictly send the raw index string to let the backend resolve it to the recreated option's ObjectId.
         if (q.correctOptionId !== null && q.correctOptionId !== undefined && q.correctOptionId !== '') {
           const correctOptionIdStr = q.correctOptionId.toString();
-          // Check if it's an ObjectId (24 hex characters)
           if (correctOptionIdStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(correctOptionIdStr)) {
-            // Find the index of the option with this _id in the original/current options array
             const idx = q.options.findIndex((opt: any) => opt._id?.toString() === correctOptionIdStr);
             if (idx >= 0) {
               question.correctOptionId = idx.toString();
             } else {
-              // Fallback to index if it parses to one
               const parsedIndex = parseInt(correctOptionIdStr);
               question.correctOptionId = !isNaN(parsedIndex) && parsedIndex >= 0 ? correctOptionIdStr : '0';
             }
           } else {
-            // Already an index
             question.correctOptionId = correctOptionIdStr;
           }
         } else {
-          // If not set, use a fallback
           question.correctOptionId = '0';
         }
       }
@@ -755,20 +761,17 @@ export class QuestionnaireEditComponent implements OnInit {
           return o;
         });
 
-        // Map correctOptionIds strictly to string indices to let backend resolve them to the new ObjectIds.
         const selectedValues = q.correctOptionIds || [];
         const correctOptionIds: string[] = [];
 
         selectedValues.forEach((val: any) => {
           const valStr = val.toString();
           if (valStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(valStr)) {
-            // Find the index of the option with this _id in the options array
             const idx = q.options.findIndex((opt: any) => opt._id?.toString() === valStr);
             if (idx >= 0) {
               correctOptionIds.push(idx.toString());
             }
           } else {
-            // Already an index
             correctOptionIds.push(valStr);
           }
         });
@@ -779,8 +782,6 @@ export class QuestionnaireEditComponent implements OnInit {
       return question;
     });
 
-    // Limpiar blob URLs antes de enviar al backend
-    // Los archivos se subirán después de que el cuestionario sea guardado
     const cleanedQuestions = questions.map(q => {
       if (q.promptMediaUrl && q.promptMediaUrl.startsWith('blob:')) {
         const { promptMediaUrl, promptMediaProvider, ...rest } = q;
@@ -794,30 +795,22 @@ export class QuestionnaireEditComponent implements OnInit {
       title: formValue.title,
       description: formValue.description,
       status: formValue.status,
-      // If positionType has a value, send position, otherwise omit it or send undefined
+      isSurvey: formValue.isSurvey,
       ...(formValue.positionType ? {
         position: {
           type: formValue.positionType,
           afterClassId: (formValue.positionType === 'BETWEEN_CLASSES' && formValue.afterClassId) ? formValue.afterClassId : undefined
         }
       } : {}),
-      // If questionnaire already has submissions, do NOT send `questions` payload (backend blocks it).
       ...(this.isEditMode && this.hasSubmissions() ? {} : { questions: cleanedQuestions }),
-      passingScore: formValue.passingScore,
+      passingScore: isSurvey ? 0 : (formValue.passingScore || 0),
       allowRetries: formValue.allowRetries,
       maxRetries: formValue.allowRetries ? formValue.maxRetries : undefined,
       showCorrectAnswers: formValue.showCorrectAnswers,
       timeLimitMinutes: formValue.timeLimitMinutes || undefined
     };
 
-    // Expose for tests
-    try { (this as any).lastSavePayload = questionnaireData; } catch (e) { /* ignore */ }
-
-    // DEBUG: log payload to help debug whether `questions` are sent when `hasSubmissions` is true
-    try {
-      console.log('Questionnaire save payload:', questionnaireData);
-      if (this.isEditMode && this.hasSubmissions()) console.log('hasSubmissions=true, questions omitted from payload');
-    } catch (e) { /* ignore */ }
+    try { (this as any).lastSavePayload = questionnaireData; } catch (e) { }
 
     const request = this.isEditMode
       ? this.questionnairesService.updateQuestionnaire(this.questionnaireId, questionnaireData)
@@ -826,25 +819,21 @@ export class QuestionnaireEditComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         const savedQuestionnaire = response?.data;
+        this.clearAdminDraft();
 
-        // Verificar si hay archivos pendientes para subir
         const hasPendingUploads = this.questionItems?.some((qc: QuestionItemComponent) => !!qc.pendingFile);
 
         if (savedQuestionnaire && hasPendingUploads) {
-          // Hay archivos pendientes, iniciar uploads en segundo plano
           if (!this.isEditMode) {
-            // Modo creación: cambiar a modo edición primero
             this.questionnaireId = savedQuestionnaire._id;
             this.isEditMode = true;
           }
           this.startChildrenPendingUploads(savedQuestionnaire, formValue.courseId);
         } else {
-          // No hay uploads pendientes, mostrar success y navegar
           this.infoService.showSuccess(
             this.isEditMode ? 'Cuestionario actualizado exitosamente' : 'Cuestionario creado exitosamente'
           );
-          // Emitir evento para que `course.orderedContent` sea recargado por cualquier vista interesada
-          try { this.courseEvents.emitCourseReload(formValue.courseId); } catch (e) { /* ignore */ }
+          try { this.courseEvents.emitCourseReload(formValue.courseId); } catch (e) {}
           this.router.navigate(['/profesor/questionnaires'], {
             queryParams: { courseId: formValue.courseId }
           });
@@ -852,7 +841,6 @@ export class QuestionnaireEditComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error saving questionnaire:', error);
-        console.error('Error details:', error?.error);
         const errorMsg = error?.error?.message || error?.message || 'Error al guardar el cuestionario';
         this.infoService.showError(errorMsg);
         this.saving.set(false);
@@ -880,9 +868,10 @@ export class QuestionnaireEditComponent implements OnInit {
   }
 
   cancel(): void {
+    this.clearAdminDraft();
     this.router.navigate(['/profesor/questionnaires']);
   }
-  // Media uploads are handled by each QuestionItem child component.
+
   removeMedia(questionIndex: number): void {
     const question = this.questions.at(questionIndex);
     question.patchValue({
@@ -901,9 +890,6 @@ export class QuestionnaireEditComponent implements OnInit {
     return localPreview || promptMediaUrl || null;
   }
 
-  
-
-  // After creating the questionnaire, ask each QuestionItem child to upload its pending file.
   private async startChildrenPendingUploads(questionnaire: Questionnaire, courseId: string) {
     const children = this.questionItems?.toArray() || [];
     const tasks: Promise<boolean>[] = [];
@@ -911,7 +897,6 @@ export class QuestionnaireEditComponent implements OnInit {
     questionnaire.questions.forEach((q: any, idx: number) => {
       const child = children[idx];
       if (child && typeof child.startPendingUpload === 'function' && q && q._id) {
-        // ensure form has the question _id
         const questionControl = this.questions.at(idx);
         questionControl.patchValue({ _id: q._id });
         tasks.push(child.startPendingUpload(q._id, this.questionnaireId));
@@ -936,8 +921,6 @@ export class QuestionnaireEditComponent implements OnInit {
     this.router.navigate(['/profesor/questionnaires'], { queryParams: { courseId } });
   }
 
-  
-
   finishPendingUploads(hasErrors: boolean, courseId: string): void {
     this.saving.set(false);
     
@@ -951,6 +934,4 @@ export class QuestionnaireEditComponent implements OnInit {
       queryParams: { courseId }
     });
   }
-
-  
 }

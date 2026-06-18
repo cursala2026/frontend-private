@@ -49,7 +49,8 @@ export class TeacherQuestionnairesComponent implements OnInit {
     message: '¿Estás seguro de que deseas eliminar este cuestionario?',
     confirmText: 'Eliminar',
     cancelText: 'Cancelar',
-    confirmClass: 'bg-red-600 hover:bg-red-700'
+    confirmClass: 'bg-red-600 hover:bg-red-700',
+    cancelButtonClass: 'bg-white hover:bg-gray-100 border border-gray-400',
   };
 
   ngOnInit(): void {
@@ -167,7 +168,8 @@ export class TeacherQuestionnairesComponent implements OnInit {
     });
   }
 
-  openQuestionnaireEdit(questionnaire?: Questionnaire): void {
+  // 👇 NUEVO: Se agrega el parámetro isSurvey
+  openQuestionnaireEdit(questionnaire?: Questionnaire, isSurvey: boolean = false): void {
     if (questionnaire) {
       // Include courseId + courseName as query params for the edit component
       const courseId = (questionnaire as any).courseId || this.selectedCourseId || '';
@@ -189,6 +191,10 @@ export class TeacherQuestionnairesComponent implements OnInit {
       const queryParams: any = {};
       if (courseId) queryParams.courseId = courseId;
       if (courseName) queryParams.courseName = courseName;
+      
+      // 👇 NUEVO: Inyectar el parámetro si el profe apretó el botón verde
+      if (isSurvey) queryParams.isSurvey = 'true';
+
       this.router.navigate(['/profesor/questionnaires/new'], {
         queryParams: Object.keys(queryParams).length ? queryParams : {}
       });
