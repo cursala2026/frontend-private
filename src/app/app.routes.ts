@@ -75,6 +75,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
       {
+        path: 'notifications',
+        loadComponent: () => import('./features/admin/notifications/notifications.component').then(m => m.NotificationsComponent)
+      },
+      {
         path: 'promotional-codes',
         loadComponent: () => import('./features/admin/promotional-codes/promotional-codes.component').then(m => m.PromotionalCodesComponent)
       },

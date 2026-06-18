@@ -1,0 +1,301 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<div class="flex-1 h-full flex flex-col overflow-y-auto lg:flex-row gap-6 pb-24 pr-4">
+    <!-- Columna izquierda -->
+    <div class="flex-1 lg:w-1/2">
+        <form [formGroup]="form" class="bg-white border border-gray-200 rounded-xl shadow-md flex flex-col overflow-hidden">
+            
+            <!-- Contenido -->
+            <div class="p-4 space-y-4 min-h-0">
+                <h2 class="text-lg font-bold text-gray-800">Configuración</h2>
+                
+                <!-- Configuración -->
+                <div>
+                    <label class="block text-md font-medium text-black">Enabled</label>
+                    <div class="flex items-center justify-between mt-1">
+                        <label class="text-sm text-gray-700">Activar o desactivar esta notificación</label>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" formControlName="enabled" class="sr-only peer" />
+                            <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-indigo-600 transition-colors"></div>
+                            <div class="absolute left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transform transition"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Usuarios -->
+                <div>
+                    <div class="p-6 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-800">Usuarios detectados</h4>
+                        <h6 class="text-sm text-gray-600 mb-3">Estos usuarios recibirán el correo automáticamente</h6>
+                        <table class="min-w-full border border-gray-300 rounded-lg shadow-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Nombre</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Email</th>
+                                    <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let user of userCoursePairs" class="border-t">
+                                    <td class="px-4 py-2 text-sm text-gray-800">{{ user.userName }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-600">{{ user.email }}</td>
+                                    <td class="px-4 py-2 text-sm text-green-600">Pendiente de notificación</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Plantilla -->
+                <div class="mb-4">
+                    <label class="block text-md font-medium text-black">Template</label>
+                    <label class="block text-sm text-gray-700">Selecciona una plantilla de email</label>
+                    <select (change)="onTemplateChange($event)" class="mt-1 block w-full h-10 rounded-md border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-md">
+                        <option hidden value="">Selecciona una plantilla</option>
+                        <option value="welcome">Inicio de curso - Bienvenida</option>
+                        <option value="reminder">Recordatorio de curso</option>
+                    </select>
+                </div>
+
+                <!-- Vista previa -->
+                <div class="border border-gray-300 rounded-lg p-2 mt-4">
+                    <div [ngSwitch]="previewType">
+
+                        <!-- Bienvenida -->
+                        <div *ngSwitchCase="'welcome'" class="flex items-center">
+                            <img src="/images/pc.png" alt="Imagen" class="h-40">
+                            <div>
+                                <h4 class="text-lg font-semibold">Inicio de curso - Bienvenida</h4>
+                                <p class="text-sm text-gray-700 w-60">Email que se envía al usuario cuando se inicia un curso en el que está inscripto.</p>
+                                <a (click)="openPreview('welcome')" class="text-sm mt-2 text-indigo-600 hover:text-purple-600 font-medium cursor-pointer">Vista previa del template
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Recordatorio -->
+                        <div *ngSwitchCase="'reminder'" class="flex items-center">
+                            <img src="/images/pc.png" alt="Imagen" class="h-40">
+                            <div>
+                                <h4 class="text-lg font-semibold">Recordatorio de curso</h4>
+                                <p class="text-sm text-gray-700 w-60">Email que se envía al usuario como recordatorio de que tiene un curso en progreso.</p>
+                                <a (click)="openPreview('reminder')" class="text-sm mt-2 text-indigo-600 hover:text-purple-600 font-medium cursor-pointer">Vista previa del template
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Default -->
+                        <div *ngSwitchDefault>
+                            <p class="text-sm text-gray-700">Selecciona una plantilla para ver la vista previa.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div *ngIf="showPreview()" class="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-50" (click)="closePreview()">
+                    <div class="bg-white rounded-lg shadow-lg w-full max-w-xl p-6 relative" (click)="$event.stopPropagation()">
+                        <button type="button" (click)="closePreview()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">X</button>
+
+                        <!-- Contenido dinámico -->
+                        <div *ngIf="previewType === 'welcome'">
+                            <img src="/logo/logo-01.svg" alt="CURSALA" class="px-5 h-8 mb-4">
+                            <div *ngFor="let pair of userCoursePairs" class="grid grid-cols-2 gap-2 bg-white rounded-lg p-4 mb-4">
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-800">¡Comienza tu curso!</h2>
+                                    <p class="text-gray-600">Hola {{ pair.userName }} 👋</p>
+                                    <p class="text-gray-700 w-55">Tu curso {{ pair.courseName }} ya ha comenzado. Estamos muy contentos de tenerte.</p>
+                                    <button type="button" (click)="openUrl('https://cursala.com.ar/cursos')" class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 cursor-pointer">
+                                        Ir al curso
+                                    </button>
+                                </div>
+                                <div class="flex justify-end">
+                                    <img src="/images/laptop.png" alt="Imagen" class="h-40">
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 border-t pt-3 flex justify-between">
+                                <span class="px-5">¿Necesitás ayuda?</span>
+                                <div class="flex justify-end gap-3">
+                                    <!-- Íconos sociales -->
+                                    <a href="https://www.instagram.com/cursala.online?igsh=aG4zaml1NGdjYXI4" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/instagram.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://www.linkedin.com/company/cursala/" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/linkedin.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://youtube.com/@cursalaenvivo?si=znn0m5gZfU6dBgtO" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/youtube.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://www.facebook.com/share/18h5Kz5uD5/" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/facebook.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div *ngIf="previewType === 'reminder'">
+                            <img src="/logo/logo-01.svg" alt="CURSALA" class="px-5 h-8 mb-4">
+                            <div *ngFor="let pair of userCoursePairs" class="grid grid-cols-2 gap-2 bg-white rounded-lg p-4 mb-4">
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-800">Recordatorio</h2>
+                                    <p class="text-gray-600">Hola {{ pair.userName }} 👋</p>
+                                    <p class="text-gray-700 w-55">Te recordamos que tu curso {{ pair.courseName }} sigue en progreso. ¡No lo dejes pasar!</p>
+                                    <button type="button" (click)="openUrl('https://cursala.com.ar/cursos')" class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 cursor-pointer">
+                                        Ir al curso
+                                    </button>
+                                </div>
+                                <div class="flex justify-end">
+                                    <img src="/images/laptop.png" alt="Imagen" class="h-40">
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 border-t pt-3 flex justify-between">
+                                <span class="px-5">¿Necesitás ayuda?</span>
+                                <div class="flex justify-end gap-3">
+                                    <!-- Íconos sociales -->
+                                    <a href="https://www.instagram.com/cursala.online?igsh=aG4zaml1NGdjYXI4" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/instagram.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://www.linkedin.com/company/cursala/" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/linkedin.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://youtube.com/@cursalaenvivo?si=znn0m5gZfU6dBgtO" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/youtube.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                    <a href="https://www.facebook.com/share/18h5Kz5uD5/" target="_blank" rel="noopener noreferrer">
+                                        <img src="/images/facebook.png" alt="Instagram" class="w-6 h-6">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Remitente -->
+                <div>
+                    <label class="block text-md font-medium text-black">From Name</label>
+                    <label class="block text-sm text-gray-700">Nombre del remitente</label>
+                    <input type="name" placeholder="Cursala"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-transparent" />
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-md font-medium text-black">From Email</label>
+                    <label class="block text-sm text-gray-700">Email del remitente</label>
+                    <input type="email" placeholder="cursala@gmail.com" formControlName="senderEmail"
+                    class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-transparent" />
+                </div>
+                
+                <!-- Ventana horaria -->
+                <div>
+                    <label class="block text-md font-medium text-black">Ventana horaria</label>
+                    <label class="block text-sm text-gray-700">Rango de horario permitido para el envío</label>
+                    <div formGroupName="timeWindow" class="flex gap-4 mt-2">
+                        <select formControlName="start" class="rounded px-4 py-1 max-h-40 overflow-y-auto border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-md">
+                            <option *ngFor="let h of hours" [value]="h">{{ h }}</option>
+                        </select>
+                        <span class="py-2"><i class="fas fa-arrow-right"></i></span>
+                        <select formControlName="end" class="rounded px-4 py-1 max-h-40 overflow-y-auto border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-md">
+                            <option *ngFor="let h of hours" [value]="h">{{ h }}</option>
+                        </select>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Hora local del servidor (GMT -03:00)</p>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Columna derecha -->
+    <div class="flex-1 lg:w-1/2">
+        <div class="p-6 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
+            <h4 class="text-lg font-bold text-gray-800">Preview</h4>
+            <h6 class="text-sm text-gray-600 mb-3">Previsualiza cómo se verá el email</h6>
+
+            <div [ngSwitch]="previewType">
+                <div *ngSwitchCase="'welcome'">
+                    <div class="bg-white border border-gray-300 rounded-lg shadow p-5 space-y-4">
+                        <img src="/logo/logo-01.svg" alt="CURSALA" class="px-5 h-8 mb-4">
+                        <div *ngFor="let pair of userCoursePairs" class="grid grid-cols-2 gap-2 bg-white rounded-lg p-4 mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-gray-800">¡Comienza tu curso!</h2>
+                                <p class="text-gray-600">Hola {{ pair.userName }} 👋</p>
+                                <p class="text-gray-700 w-55">Tu curso {{ pair.courseName }} ya ha comenzado. Estamos muy contentos de tenerte.</p>
+                                <button type="button" (click)="openUrl('https://cursala.com.ar/cursos')" class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 cursor-pointer">
+                                    Ir al curso
+                                </button>
+                            </div>
+                            <div class="flex justify-end">
+                                <img src="/images/laptop.png" alt="Imagen" class="h-40">
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 border-t pt-3 flex justify-between">
+                            <span class="px-5">¿Necesitás ayuda?</span>
+                            <div class="flex justify-end gap-3">
+                                <!-- Íconos sociales -->
+                                <a href="https://www.instagram.com/cursala.online?igsh=aG4zaml1NGdjYXI4" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/instagram.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://www.linkedin.com/company/cursala/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/linkedin.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://youtube.com/@cursalaenvivo?si=znn0m5gZfU6dBgtO" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/youtube.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://www.facebook.com/share/18h5Kz5uD5/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/facebook.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngSwitchCase="'reminder'">
+                    <div class="bg-white border border-gray-300 rounded-lg shadow p-5 space-y-4">
+                        <img src="/logo/logo-01.svg" alt="CURSALA" class="px-5 h-8 mb-4">
+                        <div *ngFor="let pair of userCoursePairs" class="grid grid-cols-2 gap-2 bg-white rounded-lg p-4 mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-gray-800">Recordatorio</h2>
+                                <p class="text-gray-600">Hola {{ pair.userName }} 👋</p>
+                                <p class="text-gray-700 w-55">Te recordamos que tu curso {{ pair.courseName }} sigue en progreso. ¡No lo dejes pasar!</p>
+                                <button type="button" (click)="openUrl('https://cursala.com.ar/cursos')" class="mt-4 px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 cursor-pointer">
+                                    Ir al curso
+                                </button>
+                            </div>
+                            <div class="flex justify-end">
+                                <img src="/images/laptop.png" alt="Imagen" class="h-40">
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 border-t pt-3 flex justify-between">
+                            <span class="px-5">¿Necesitás ayuda?</span>
+                            <div class="flex justify-end gap-3">
+                                <!-- Íconos sociales -->
+                                <a href="https://www.instagram.com/cursala.online?igsh=aG4zaml1NGdjYXI4" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/instagram.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://www.linkedin.com/company/cursala/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/linkedin.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://youtube.com/@cursalaenvivo?si=znn0m5gZfU6dBgtO" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/youtube.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                                <a href="https://www.facebook.com/share/18h5Kz5uD5/" target="_blank" rel="noopener noreferrer">
+                                    <img src="/images/facebook.png" alt="Instagram" class="w-6 h-6">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngSwitchDefault class="bg-white border border-gray-300 rounded-lg shadow p-5">
+                    <p class="text-sm text-gray-600">Selecciona una plantilla para ver la vista previa.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer fijo -->
+        <div class="flex gap-3 justify-center pt-3 border-t border-gray-200 flex-shrink-0 bg-white px-4 shadow-inner">
+            <button type="button"
+            class="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all cursor-pointer"
+            (click)="sendTest()">Enviar prueba</button>
+        </div>
+    </div>
+</div>
