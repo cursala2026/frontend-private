@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:4200",
+      "localStorage": [
+        {
+          "name": "token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiJ1c2VyLXByb2Zlc29yLTAwMDAwMDAwMDAwMDAwMDAwMDAyIiwiZW1haWwiOiJwcm9mZXNvckBjdXJzYWxhLnRlc3QiLCJyb2xlcyI6WyJQUk9GRVNPUiJdLCJleHAiOjk5OTk5OTk5OTl9.fakesign"
+        },
+        {
+          "name": "user",
+          "value": "{\"_id\":\"user-profesor-00000000000000000002\",\"username\":\"profesor\",\"password\":\"Test1234\",\"email\":\"profesor@cursala.test\",\"firstName\":\"Profesor\",\"lastName\":\"Test\",\"status\":\"ACTIVE\",\"roles\":[\"PROFESOR\"]}"
+        }
+      ]
+    }
+  ]
+}

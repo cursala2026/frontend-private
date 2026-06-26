@@ -43,23 +43,37 @@ export class CourseEditComponent implements OnInit {
   }
 
   initForm(): void {
-    this.courseForm = this.fb.group({
-      name: ['', [Validators.required]],
-      description: ['', [Validators.maxLength(350)]],
-      longDescription: ['', [Validators.maxLength(850)]],
-      modality: ['', [Validators.required]],
-      price: [0],
-      maxInstallments: [1],
-      interestFree: [false],
-      days: ['', [Validators.required]],
-      time: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)]],
-      startDate: ['', [Validators.required]],
-      registrationOpenDate: [''],
-      numberOfClasses: [0, [Validators.required, Validators.min(1)]],
-      duration: [0, [Validators.required, Validators.min(0.5)]],
-      imageFile: [null]
-    });
-  }
+  this.courseForm = this.fb.group({
+    name: ['', [Validators.required]],
+    description: ['', [Validators.maxLength(350)]],
+    longDescription: ['', [Validators.maxLength(850)]],
+    modality: ['', [Validators.required]],
+    price: [0],
+    maxInstallments: [1],
+    interestFree: [false],
+    days: ['', [Validators.required]],
+    time: ['', [Validators.required, Validators.pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)]],
+    startDate: ['', [Validators.required]],
+    registrationOpenDate: [''],
+    numberOfClasses: [0, [Validators.required, Validators.min(1)]],
+    duration: [0, [Validators.required, Validators.min(0.5)]],
+    imageFile: [null]
+  });
+
+  // ✅ Validador cruzado: fecha de inicio debe ser posterior a fecha de inscripción
+  this.courseForm.addValidators((group) => {
+    const startDate = group.get('startDate')?.value;
+    const registrationOpenDate = group.get('registrationOpenDate')?.value;
+    if (startDate && registrationOpenDate) {
+      const start = new Date(startDate);
+      const registration = new Date(registrationOpenDate);
+      if (start < registration) {
+        return { startBeforeRegistration: true };
+      }
+    }
+    return null;
+  });
+} // ← esta llave cierra initForm()
 
   loadCourse(): void {
     if (!this.courseId) return;
@@ -124,18 +138,35 @@ export class CourseEditComponent implements OnInit {
   }
 
   onImageSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedImageFile = input.files[0];
-      this.deleteImage = false; // Si se selecciona nueva imagen, no eliminar
-      this.courseForm.markAsDirty();
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.imagePreview = e.target.result;
-      };
-      reader.readAsDataURL(this.selectedImageFile);
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+
+    // ✅ Validar que sea imagen
+    if (!file.type.startsWith('image/')) {
+      this.infoService.showError('Solo se permiten imágenes (PNG, JPG, GIF). No se permiten videos.');
+      input.value = '';
+      return;
     }
+
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.infoService.showError('La imagen no puede superar los 10MB.');
+      input.value = '';
+      return;
+    }
+
+    this.selectedImageFile = file;
+    this.deleteImage = false;
+    this.courseForm.markAsDirty();
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.imagePreview = e.target.result;
+    };
+    reader.readAsDataURL(this.selectedImageFile);
   }
+}
 
   longDescriptionLength(): number {
     const val = this.courseForm.get('longDescription')?.value || '';

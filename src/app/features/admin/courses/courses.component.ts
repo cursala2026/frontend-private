@@ -656,7 +656,10 @@ export class CoursesComponent implements OnInit {
       // Mantener la imagen si no hay cambios (el backend maneja esto)
       delete processedData.imageFile;
     }
-
+    processedData.price = processedData.price ? Number(processedData.price) : undefined;
+    processedData.maxInstallments = processedData.maxInstallments ? Number(processedData.maxInstallments) : 1;
+    processedData.numberOfClasses = processedData.numberOfClasses ? Number(processedData.numberOfClasses) : undefined;
+    processedData.duration = processedData.duration ? Number(processedData.duration) : undefined;
     if (isCreate) {
       this.coursesService.createCourse(processedData).subscribe({
         next: () => {
