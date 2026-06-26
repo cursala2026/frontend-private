@@ -18,8 +18,9 @@
     "composite": true
   },
   "include": [
-    "src/**/*.ts",
-    "e2e/**/*.ts"
+  "src/**/*.ts",
+  "e2e/**/*.ts",
+  "playwright.config.ts"
   ],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

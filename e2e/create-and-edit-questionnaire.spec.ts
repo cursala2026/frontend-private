@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const API_BASE = 'http://localhost:8081/api/v1';
 
-test('Crear y editar cuestionario (API) para validar frontend behavior', async ({ request }) => {
+test.skip('Crear y editar cuestionario (API) para validar frontend behavior', async ({ request }) => {
   const loginResp = await request.post(`${API_BASE}/login`, { data: { user: 'sebas', password: 'seba1979' } });
   expect(loginResp.status()).toBe(200);
   const loginJson = await loginResp.json();

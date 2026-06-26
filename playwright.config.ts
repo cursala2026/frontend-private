@@ -11,9 +11,16 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4200',
     trace: 'on-first-retry',
-    // No headless para poder ver qué pasa si algo falla
     headless: true,
   },
+  
+  webServer: {
+    command: 'npm start', 
+    url: 'http://localhost:4200',
+    reuseExistingServer: !process.env['CI'],
+    timeout: 120 * 1000, 
+  },
+  
   tsconfig: './tsconfig.json',
   projects: [
     {
