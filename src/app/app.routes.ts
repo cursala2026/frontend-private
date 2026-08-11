@@ -50,6 +50,7 @@ export const routes: Routes = [
         path: '',
         loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
       },
+
       {
         path: 'users',
         loadComponent: () => import('./features/admin/users/users.component').then(m => m.UsersComponent)
@@ -124,6 +125,10 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () => import('./features/profesor/dashboard/profesor-dashboard.component').then(m => m.ProfesorDashboardComponent)
+      },
+            {
+      path: 'documentation',
+      loadComponent: () => import('./features/profesor/documentation/profesor-documentation.component').then(m => m.ProfesorDocumentationComponent)
       },
       {
         path: 'courses',
