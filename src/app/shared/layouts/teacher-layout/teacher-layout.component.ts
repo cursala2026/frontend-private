@@ -141,7 +141,10 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
     {
       label: 'Mis Alumnos',
       route: '/profesor/students'
-    }
+    },
+    { 
+      label: 'Documentación', route: '/profesor/documentation'
+    },
   ];
 
 
