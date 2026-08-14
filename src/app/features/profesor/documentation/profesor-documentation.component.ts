@@ -43,6 +43,33 @@ export class ProfesorDocumentationComponent {
     this.selectedCategory.set(cat);
   }
 
+  readonly searchTerm = signal<string>('');
+
+  // filtro por extension 
+  readonly extensions = ['TODAS', '.pdf', '.png', '.docx', '.xlsx', '.pptx', '.zip'];
+  readonly selectedExtension = signal<string>('TODAS');
+
+  // lista final: aplica busqueda y extension sobre lo ya filtrado por rol y categoria
+  readonly finalFilteredDocuments = computed<IDocument[]>(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const ext = this.selectedExtension().toLowerCase();
+    return this.visibleDocuments().filter(doc => {
+      const matchesName = doc.filename.toLowerCase().includes(term);
+      const matchesExt = ext === 'todas' || doc.filename.toLowerCase().endsWith(ext);
+      return matchesName && matchesExt;
+    });
+  });
+
+  // actualiza el termino de busqueda desde el input
+  onSearch(event: Event): void {
+    this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  // cambia la extension activa
+  selectExtension(ext: string): void {
+    this.selectedExtension.set(ext);
+  }
+
   // pasa bytes
   formatSize(bytes: number): string {
     return bytes >= 1024 * 1024

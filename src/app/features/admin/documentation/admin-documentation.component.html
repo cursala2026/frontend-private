@@ -42,14 +42,35 @@
     </button>
   </form>
 
-  <!-- lista de documentos ya subidos -->
-  <h2 class="text-sm font-semibold text-brand-tertiary mb-3">Documentos ({{ documents().length }})</h2>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    @for (doc of documents(); track doc._id) {
-      <div class="bg-white border border-gray-200 rounded-xl p-4">
-        <p class="text-sm font-medium text-brand-tertiary truncate">{{ doc.title }}</p>
-        <p class="text-xs text-brand-tertiary-light mt-0.5">{{ doc.category }} · {{ doc.filename }}</p>
-      </div>
+<!-- buscador + filtro por extension (#46) -->
+  <input type="text" placeholder="Buscar documentos..." (input)="onSearch($event)"
+    class="w-full max-w-md mb-4 px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-primary" />
+
+  <div class="flex flex-wrap gap-2 mb-4">
+    @for (ext of extensions; track ext) {
+      <button (click)="selectExtension(ext)"
+        [class.bg-brand-primary]="selectedExtension() === ext"
+        [class.text-white]="selectedExtension() === ext"
+        [class.bg-white]="selectedExtension() !== ext"
+        [class.text-brand-tertiary]="selectedExtension() !== ext"
+        class="text-sm px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-primary transition-colors cursor-pointer">
+        {{ ext }}
+      </button>
     }
   </div>
+
+  <h2 class="text-sm font-semibold text-brand-tertiary mb-3">Documentos ({{ finalFilteredDocuments().length }})</h2>
+  @if (finalFilteredDocuments().length > 0) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (doc of finalFilteredDocuments(); track doc._id) {
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <p class="text-sm font-medium text-brand-tertiary truncate">{{ doc.title }}</p>
+          <p class="text-xs text-brand-tertiary-light mt-0.5">{{ doc.category }} · {{ doc.filename }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="text-sm text-brand-tertiary-light">No se encontraron recursos que coincidan.</p>
+  }
+
 </div>
