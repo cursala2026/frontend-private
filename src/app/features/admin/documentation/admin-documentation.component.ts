@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DocumentationService } from '../../../core/services/documentation.service';
 import { InfoService } from '../../../core/services/info.service';
+
 
 @Component({
   selector: 'app-admin-documentation',
@@ -21,6 +22,32 @@ export class AdminDocumentationComponent {
   readonly isUploading = signal(false);
   // progreso de la subida (0 a 100)
   readonly uploadProgress = signal(0);
+
+  // buscador + filtro por extension 
+  readonly searchTerm = signal<string>('');
+  readonly extensions = ['TODAS', '.pdf', '.png', '.docx', '.xlsx', '.pptx', '.zip'];
+  readonly selectedExtension = signal<string>('TODAS');
+
+  // lista final filtrada por nombre y extension
+  readonly finalFilteredDocuments = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const ext = this.selectedExtension().toLowerCase();
+    return this.documents().filter(doc => {
+      const matchesName = doc.filename.toLowerCase().includes(term);
+      const matchesExt = ext === 'todas' || doc.filename.toLowerCase().endsWith(ext);
+      return matchesName && matchesExt;
+    });
+  });
+
+  // actualiza la busqueda desde el input
+  onSearch(event: Event): void {
+    this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  // cambia la extension activa
+  selectExtension(ext: string): void {
+    this.selectedExtension.set(ext);
+  }
 
   // categorias permitidas para el select
   readonly categories = ['PLANTILLAS', 'LOGOS', 'IMAGENES', 'OTROS'];

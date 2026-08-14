@@ -41,8 +41,8 @@
     <svg class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
     </svg>
-    <input type="text" placeholder="Buscar documentos..." disabled
-      class="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed" />
+<input type="text" placeholder="Buscar documentos..." (input)="onSearch($event)"
+      class="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-brand-primary" />
   </div>
 
   <!-- Botones de categoría. @for recorre el array 'categories'. -->
@@ -58,13 +58,26 @@
       </button>
     }
   </div>
+  <!-- filtro por extension (#46) -->
+  <div class="flex flex-wrap gap-2 mb-6">
+    @for (ext of extensions; track ext) {
+      <button (click)="selectExtension(ext)"
+        [class.bg-brand-primary]="selectedExtension() === ext"
+        [class.text-white]="selectedExtension() === ext"
+        [class.bg-white]="selectedExtension() !== ext"
+        [class.text-brand-tertiary]="selectedExtension() !== ext"
+        class="text-sm px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-primary transition-colors cursor-pointer">
+        {{ ext }}
+      </button>
+    }
+  </div>
 
   <h2 class="text-sm font-semibold text-brand-tertiary mb-4">Todos los documentos</h2>
 
   <!-- Grilla de tarjetas. Si hay docs las dibuja; si no, muestra el estado vacío. -->
-  @if (visibleDocuments().length > 0) {
+  @if (finalFilteredDocuments().length > 0) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (doc of visibleDocuments(); track doc._id) {
+      @for (doc of finalFilteredDocuments(); track doc._id) {
         <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-xs hover:shadow-md transition-shadow">
           <div class="flex items-start gap-3">
             <!-- Badge del tipo de archivo (color según iconClasses) -->
