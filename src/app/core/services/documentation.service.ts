@@ -58,17 +58,21 @@ export class DocumentationService {
 
     return docs.filter((doc) => doc.visibility === 'TODOS');
   });
-
-  public getDocuments(): Observable<IDocument[]> {
-    return this.http.get<IDocument[]>(this.apiUrl).pipe(
-      tap((docs) => {
-        this._documents.set(docs || []);
+public getDocuments(): Observable<IDocument[]> {
+    return this.http.get<any>(this.apiUrl).pipe(
+      tap((response) => {
+        // Desempaqueta response.data (estándar de Cursala) o response directo
+        const items = Array.isArray(response)
+          ? response
+          : (Array.isArray(response?.data) ? response.data : (response?.data?.docs || []));
+        this._documents.set(items);
       }),
       catchError((error: HttpErrorResponse) => {
         this._documents.set([]);
         return throwError(() => error);
       })
     );
+  
   }
 
   public refreshDocuments(): void {
