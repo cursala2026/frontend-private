@@ -81,17 +81,17 @@
         <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-xs hover:shadow-md transition-shadow">
           <div class="flex items-start gap-3">
             <!-- Badge del tipo de archivo (color según iconClasses) -->
-            <div class="h-11 w-11 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0" [class]="iconClasses(doc.filename)">
-              {{ fileExtension(doc.filename) }}
+             <div class="h-11 w-11 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0" [class]="iconClasses(doc.originalFileName)">
+              {{ fileExtension(doc.originalFileName) }}
             </div>
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-brand-tertiary truncate">{{ doc.title }}</p>
+              <p class="text-sm font-medium text-brand-tertiary truncate">{{ doc.name }}</p>
               <p class="text-xs text-brand-tertiary-light mt-0.5">
-                {{ fileExtension(doc.filename) }} · {{ formatSize(doc.sizeBytes) }}
+                {{ fileExtension(doc.originalFileName) }} · {{ formatSize(doc.fileSize) }}
               </p>
             </div>
           </div>
-          <button (click)="downloadFile(doc.url, doc.filename)"
+          <button (click)="downloadFile(doc.fileUrl, doc.originalFileName)"
             class="mt-4 w-full inline-flex items-center justify-center gap-2 text-sm font-medium text-brand-primary border border-brand-primary/30 rounded-lg py-2 hover:bg-brand-primary/5 transition-colors cursor-pointer">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
