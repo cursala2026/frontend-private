@@ -562,7 +562,7 @@ describe('QuestionnaireTakeComponent', () => {
       component.nextItem.set(null);
 
       // Simular que getNextItem() tampoco encuentra nada
-      vi.spyOn(component, 'getNextItem').mockReturnValue(null);
+      vi.spyOn(component as any, 'getNextItem').mockReturnValue({} as any);
 
       component.goToNextItem();
 

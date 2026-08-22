@@ -82,17 +82,33 @@ export class AdminDashboardComponent implements OnInit {
     return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  getRoleBadgeClass(roles: string[]): string {
-    if (roles.includes('ADMIN')) return 'bg-brand-primary/10 text-brand-primary';
-    if (roles.includes('PROFESOR')) return 'bg-brand-secondary/20 text-brand-secondary-text';
-    if (roles.includes('ALUMNO')) return 'bg-brand-primary-dark/10 text-brand-primary-dark';
+  getRoleBadgeClass(rolesInput: any): string {
+    if (!rolesInput) return 'bg-gray-100 text-gray-800';
+
+    const rolesArray: string[] = Array.isArray(rolesInput)
+      ? rolesInput
+      : [String(rolesInput)];
+
+    const normalized = rolesArray.map((r) => String(r).trim().toUpperCase());
+
+    if (normalized.includes('ADMIN')) return 'bg-brand-primary/10 text-brand-primary';
+    if (normalized.includes('PROFESOR')) return 'bg-brand-secondary/20 text-brand-secondary-text';
+    if (normalized.includes('ALUMNO')) return 'bg-brand-primary-dark/10 text-brand-primary-dark';
     return 'bg-gray-100 text-gray-800';
   }
 
-  getRoleLabel(roles: string[]): string {
-    if (roles.includes('ADMIN')) return 'Admin';
-    if (roles.includes('PROFESOR')) return 'Profesor';
-    if (roles.includes('ALUMNO')) return 'Alumno';
+  getRoleLabel(rolesInput: any): string {
+    if (!rolesInput) return 'Usuario';
+
+    const rolesArray: string[] = Array.isArray(rolesInput)
+      ? rolesInput
+      : [String(rolesInput)];
+
+    const normalized = rolesArray.map((r) => String(r).trim().toUpperCase());
+
+    if (normalized.includes('ADMIN')) return 'Admin';
+    if (normalized.includes('PROFESOR')) return 'Profesor';
+    if (normalized.includes('ALUMNO')) return 'Alumno';
     return 'Usuario';
   }
 
