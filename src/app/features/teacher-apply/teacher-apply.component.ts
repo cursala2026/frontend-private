@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TeacherService } from '../../core/services/teacher-apply.service';
 import { InfoService } from '../../core/services/info.service';
 
@@ -32,18 +32,23 @@ export class TeacherApplyComponent {
   // estado de la postulacion (PENDING_APPROVAL cuando se envia ok)
   readonly applicationStatus = signal<string | null>(null);
 
-  // formulario reactivo
-  form = this.fb.group({
-    title: ['', [Validators.required]],
-    yearsOfExperience: [null as number | null, [Validators.required, Validators.min(0)]],
-    bio: ['', [Validators.required, Validators.maxLength(this.BIO_MAX)]],
-    agreementAccepted: [false, [Validators.requiredTrue]],
-  });
+  // formulario reactivo (se inicializa en initForm())
+  form: FormGroup = this.initForm();
 
   constructor() {
     // escuchamos los cambios de la bio para actualizar el contador
     this.form.get('bio')?.valueChanges.subscribe((value) => {
       this.charCount.set(value?.length || 0);
+    });
+  }
+
+  // inicializa todos los controles del formulario
+  private initForm(): FormGroup {
+    return this.fb.group({
+      title: ['', [Validators.required]],
+      yearsOfExperience: [null as number | null, [Validators.required, Validators.min(0)]],
+      bio: ['', [Validators.required, Validators.maxLength(this.BIO_MAX)]],
+      agreementAccepted: [false, [Validators.requiredTrue]],
     });
   }
 
@@ -58,45 +63,57 @@ export class TeacherApplyComponent {
     );
   }
 
-  // subida generica de un archivo, guarda la url en el signal correspondiente
-  private uploadFile(
-    file: File,
-    type: 'photo' | 'cv' | 'signature',
-    target: ReturnType<typeof signal<string | null>>
-  ): void {
-    this.isLoading.set(true);
-    this.teacherService.uploadDocument(file, type).subscribe({
-      next: (url) => {
-        target.set(url);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        target.set(null);
-        this.isLoading.set(false);
-        this.info.showError(`no se pudo subir el archivo (${type})`);
-      },
-    });
-  }
+  // archivos elegidos (se suben juntos cuando estan los 3)
+  private photoFile: File | null = null;
+  private cvFile: File | null = null;
+  private signatureFile: File | null = null;
 
   onPhotoChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.uploadFile(file, 'photo', this.photoUrl);
+    this.photoFile = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.tryUploadAll();
   }
 
   onCvChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    if (file.type !== 'application/pdf') {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (file && file.type !== 'application/pdf') {
       this.info.showError('el cv debe ser un pdf');
-      (event.target as HTMLInputElement).value = '';
+      input.value = '';
+      this.cvFile = null;
       return;
     }
-    this.uploadFile(file, 'cv', this.cvUrl);
+    this.cvFile = file;
+    this.tryUploadAll();
   }
 
   onSignatureChange(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this.uploadFile(file, 'signature', this.signatureUrl);
+    this.signatureFile = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.tryUploadAll();
+  }
+
+  // cuando estan los 3 archivos, se suben juntos al backend en un solo request
+  private tryUploadAll(): void {
+    if (!this.photoFile || !this.cvFile || !this.signatureFile) return;
+
+    this.isLoading.set(true);
+    this.teacherService
+      .uploadDocuments({
+        photo: this.photoFile,
+        cv: this.cvFile,
+        signature: this.signatureFile,
+      })
+      .subscribe({
+        next: (urls) => {
+          this.photoUrl.set(urls.photo ?? null);
+          this.cvUrl.set(urls.cv ?? null);
+          this.signatureUrl.set(urls.signature ?? null);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.info.showError('no se pudieron subir los archivos');
+        },
+      });
   }
 
   onSubmit(): void {
