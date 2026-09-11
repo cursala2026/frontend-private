@@ -162,6 +162,13 @@ export const routes: Routes = [
         path: 'students',
         loadComponent: () => import('./features/profesor/students/teacher-students.component').then(m => m.TeacherStudentsComponent)
       },
+            {
+        path: 'enrolled/:courseId',
+        loadComponent: () =>
+          import('./features/profesor/enrolled-students/enrolled-students.component').then(
+            (m) => m.EnrolledStudentsComponent
+          ),
+      },
       {
         path: 'questionnaires',
         loadComponent: () => import('./features/profesor/questionnaires/teacher-questionnaires.component').then(m => m.TeacherQuestionnairesComponent)
@@ -237,6 +244,13 @@ export const routes: Routes = [
       loadComponent: () => import('./features/report-issue/report-issue.component').then(m => m.ReportIssueComponent)
     }
   ]
+  },
+    // Postulación docente interna (usuario ya autenticado)
+  {
+    path: 'postular-docente',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/teacher-apply/teacher-apply.component').then(m => m.TeacherApplyComponent)
   },
 
   // Ruta wildcard - redirige al login si no encuentra la ruta
