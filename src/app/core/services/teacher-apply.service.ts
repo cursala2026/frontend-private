@@ -37,9 +37,9 @@ export class TeacherService {
     if (files.signature) formData.append('signature', files.signature);
 
     return this.http
-      .post<{ data?: { urls?: ITeacherUploadUrls } }>(`${this.apiUrl}/user/teacher/apply/upload`, formData)
+      .post<{ urls?: ITeacherUploadUrls }>(`${this.apiUrl}/user/teacher/apply/upload`, formData)
       .pipe(
-        map((res) => res?.data?.urls ?? {}),
+        map((res) => res?.urls ?? {}),
         catchError((error: HttpErrorResponse) => throwError(() => error))
       );
   }
