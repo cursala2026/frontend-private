@@ -561,9 +561,6 @@ describe('QuestionnaireTakeComponent', () => {
       component.courseData.set({ _id: COURSE_ID, classes: [], questionnaires: [] });
       component.nextItem.set(null);
 
-      // Simular que getNextItem() tampoco encuentra nada
-      vi.spyOn(component, 'getNextItem').mockReturnValue(null);
-
       component.goToNextItem();
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/alumno/course-detail', COURSE_ID]);
