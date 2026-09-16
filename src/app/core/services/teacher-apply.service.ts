@@ -47,7 +47,7 @@ export class TeacherService {
   // envia la postulacion final
   applyAsTeacher(payload: ITeacherApplication): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/teacher/apply`, payload)
+      .post(`${this.apiUrl}/user/teacher/apply`, payload)
       .pipe(catchError((error: HttpErrorResponse) => throwError(() => error)));
   }
 }
