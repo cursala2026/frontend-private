@@ -1,0 +1,38 @@
+<section class="p-6">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">Alumnos inscriptos</h1>
+
+  @if (loading()) {
+    <p class="text-gray-500">Cargando alumnos...</p>
+  }
+
+  @if (error()) {
+    <p class="text-red-600">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    @if (students().length > 0) {
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+            <tr>
+              <th class="px-4 py-3">Nombre</th>
+              <th class="px-4 py-3">Apellido</th>
+              <th class="px-4 py-3">Estudios</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of students(); track $index) {
+              <tr class="border-t border-gray-100 hover:bg-gray-50">
+                <td class="px-4 py-3">{{ student.name }}</td>
+                <td class="px-4 py-3">{{ student.lastName }}</td>
+                <td class="px-4 py-3">{{ student.education }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="text-gray-500">No hay alumnos inscriptos en este curso.</p>
+    }
+  }
+</section>

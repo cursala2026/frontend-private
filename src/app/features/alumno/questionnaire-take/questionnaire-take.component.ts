@@ -254,7 +254,8 @@ export class QuestionnaireTakeComponent implements OnInit, OnDestroy {
         this.questionnaire.set(response?.data);
         this.loadPreviousSubmissions();
       },
-      error: () => {
+      error: (error) => {
+        console.error('[q-take] Error loading questionnaire:', error);
         this.infoService.showError('Error al cargar el cuestionario');
         this.goBack();
       }
