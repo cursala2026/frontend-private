@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard, vendedorGuard, profesorGuard, alumnoGuard, profesorOrAdminInProfesorModeGuard } from './core/guards/role.guard';
 import { interestsFormGuard } from './core/guards/interests-form.guard';
+import { CourseGeneralInfoComponent } from './features/admin/courses/course-general-info/course-general-info.component';
+import { UnsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 export const routes: Routes = [
   // Ruta raíz - redirige al login
   {
@@ -49,6 +51,11 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () => import('./features/admin/dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+      },
+      {
+        path: 'courses/create-async',
+        component: CourseGeneralInfoComponent,
+        canDeactivate: [UnsavedChangesGuard]
       },
       {
         path: 'documentation',
