@@ -28,7 +28,7 @@ export class CourseAdminService {
       formData.append('imageFile', data.thumbnail);
     }
 
-    return this.http.post(`${this.apiUrl}/async`, formData);
+    return this.http.post(`${this.apiUrl}/course`, formData);
   }
 
   updateAsyncCourse(courseId: string, data: Partial<AsyncCourseData>): Observable<any> {

@@ -126,7 +126,7 @@ export class CourseGeneralInfoComponent implements OnInit, ComponentCanDeactivat
   private courseAdminService = inject(CourseAdminService);
 
   courseForm!: FormGroup;
-  courseStatus = signal<'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'REJECTED'>('DRAFT');
+  courseStatus = signal<'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED'>('DRAFT');
   submitting = signal(false);
   successMessage = signal('');
   errorMessage = signal('');
@@ -220,7 +220,7 @@ export class CourseGeneralInfoComponent implements OnInit, ComponentCanDeactivat
     const status = this.courseStatus();
     return status === 'DRAFT' ? 'Borrador' :
            status === 'PENDING_REVIEW' ? 'En Revision' :
-           status === 'ACTIVE' ? 'Publicado' : 'Rechazado';
+           'Publicado';
   }
 
   canDeactivate(): boolean {
