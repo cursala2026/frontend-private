@@ -58,6 +58,11 @@ export const routes: Routes = [
         canDeactivate: [UnsavedChangesGuard]
       },
       {
+        path: 'courses/:courseId/edit-async',
+        component: CourseGeneralInfoComponent,
+        canDeactivate: [UnsavedChangesGuard]
+      },
+      {
         path: 'documentation',
         loadComponent: () => import('./features/admin/documentation/admin-documentation.component').then(m => m.AdminDocumentationComponent)
       },

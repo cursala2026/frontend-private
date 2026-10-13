@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CourseGeneralInfoComponent } from './course-general-info.component';
 import { CourseAdminService } from '../../../../core/services/course-admin.service';
+import { CoursesService } from '../../../../core/services/courses.service';
 import { of, throwError } from 'rxjs';
 import { ImageUploaderComponent } from '../../../../shared/components/image-uploader/image-uploader.component';
 
@@ -12,8 +13,6 @@ describe('CourseGeneralInfoComponent', () => {
   let courseAdminService: CourseAdminService;
 
   beforeEach(async () => {
-    const servicespy = vi.spyOn(CourseAdminService.prototype, 'createAsyncCourse');
-
     await TestBed.configureTestingModule({
       imports: [CourseGeneralInfoComponent, ReactiveFormsModule, ImageUploaderComponent],
       providers: [
@@ -26,6 +25,10 @@ describe('CourseGeneralInfoComponent', () => {
     fixture = TestBed.createComponent(CourseGeneralInfoComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create', () => {
@@ -73,16 +76,55 @@ describe('CourseGeneralInfoComponent', () => {
     expect(courseAdminService.createAsyncCourse).toHaveBeenCalled();
   });
 
-  it('should call createAsyncCourse with PENDING_REVIEW on submit', () => {
+  it('should block PENDING_REVIEW submit when the course has no modules with lessons', () => {
     vi.spyOn(courseAdminService, 'createAsyncCourse').mockReturnValue(of({}));
-    
+
     component.courseForm.patchValue({
       titulo: 'Test Course',
       descripcion: 'Test Description'
     });
     component.onSubmit();
 
-    expect(courseAdminService.createAsyncCourse).toHaveBeenCalled();
+    expect(courseAdminService.createAsyncCourse).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toContain('modulo');
+  });
+
+  it('should call createAsyncCourse with PENDING_REVIEW on submit when the course has content', () => {
+    vi.spyOn(courseAdminService, 'createAsyncCourse').mockReturnValue(of({}));
+
+    component.courseForm.patchValue({
+      titulo: 'Test Course',
+      descripcion: 'Test Description'
+    });
+    component.hasContent.set(true);
+    component.onSubmit();
+
+    expect(courseAdminService.createAsyncCourse).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'PENDING_REVIEW' })
+    );
+  });
+
+  it('should use updateAsyncCourse instead of createAsyncCourse when editing an existing course', () => {
+    const coursesService = TestBed.inject(CoursesService);
+    vi.spyOn(coursesService, 'getCourseById').mockReturnValue(of({
+      _id: 'abc123',
+      name: 'Existing Course',
+      description: 'Existing Description',
+      status: 'DRAFT',
+      modules: [{ title: 'M1', lessons: [{ title: 'L1' }] }]
+    }));
+    const createSpy = vi.spyOn(courseAdminService, 'createAsyncCourse');
+    const updateSpy = vi.spyOn(courseAdminService, 'updateAsyncCourse').mockReturnValue(of({}));
+
+    component['courseId'] = 'abc123';
+    component['loadCourse']('abc123');
+    component.onSaveDraft();
+
+    expect(coursesService.getCourseById).toHaveBeenCalled();
+    expect(component.courseForm.get('titulo')?.value).toBe('Existing Course');
+    expect(component.hasContent()).toBe(true);
+    expect(updateSpy).toHaveBeenCalledWith('abc123', expect.objectContaining({ status: 'DRAFT' }));
+    expect(createSpy).not.toHaveBeenCalled();
   });
 
   it('should handle submission error', () => {

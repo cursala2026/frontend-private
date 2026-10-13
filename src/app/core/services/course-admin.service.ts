@@ -8,7 +8,7 @@ export interface AsyncCourseData {
   modality: string; // ASYNC
   description: string;
   thumbnail?: File;
-  status: 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'REJECTED';
+  status: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED';
 }
 
 @Injectable({
