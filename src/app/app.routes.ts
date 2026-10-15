@@ -63,6 +63,11 @@ export const routes: Routes = [
         canDeactivate: [UnsavedChangesGuard]
       },
       {
+        path: 'courses/:courseId/curriculum',
+        loadComponent: () => import('./features/admin/courses/curriculum-page/curriculum-page.component').then(m => m.CurriculumPageComponent),
+        canDeactivate: [UnsavedChangesGuard]
+      },
+      {
         path: 'documentation',
         loadComponent: () => import('./features/admin/documentation/admin-documentation.component').then(m => m.AdminDocumentationComponent)
       },
