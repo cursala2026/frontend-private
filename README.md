@@ -1,3 +1,8 @@
+# Cursala Platform
+
+![License: Proprietary](https://img.shields.io/badge/License-Proprietary%20%2F%20All%20Rights%20Reserved-red.svg)
+
+> **Aviso de Propiedad Intelectual:** El código fuente de este repositorio está disponible únicamente para inspección, portafolio técnico y auditoría de arquitectura. Queda estrictamente prohibida su copia, modificación, despliegue o uso comercial sin autorización expresa y por escrito de Cursala.
 # Cursala - Interfaz de Usuario (Frontend)
 
 Este proyecto representa la cara visible del ecosistema **Cursala**. Es una aplicación web moderna diseñada para proporcionar una experiencia de aprendizaje fluida, intuitiva y profesional.
