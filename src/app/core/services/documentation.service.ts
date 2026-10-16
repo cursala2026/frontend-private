@@ -34,41 +34,41 @@ export class DocumentationService {
 
   // Control sustantivo de visibilidad derivado según el rol
   public readonly filteredDocuments = computed(() => {
-    const roles = this.authService.getUserRoles() || [];
-    const normalizedRoles = roles.map((r: string) => r.trim().toUpperCase());
+  const roles = this.authService.getUserRoles() || [];
+  const normalizedRoles = roles.map((r: string) => r.trim().toUpperCase());
 
-    let effectiveRole = 'ALUMNO';
-    if (normalizedRoles.includes('ADMIN')) {
-      effectiveRole = 'ADMIN';
-    } else if (normalizedRoles.includes('PROFESOR')) {
-      effectiveRole = 'PROFESOR';
-    }
+  let effectiveRole = 'ALUMNO';
+  if (normalizedRoles.includes('ADMIN')) {
+    effectiveRole = 'ADMIN';
+  } else if (normalizedRoles.includes('PROFESOR')) {
+    effectiveRole = 'PROFESOR';
+  }
 
-    const docs = this.documents();
+  const docs = this.documents();
 
-    if (effectiveRole === 'ADMIN') {
-      return docs;
-    }
+  if (effectiveRole === 'ADMIN') {
+    return docs;
+  }
 
-    if (effectiveRole === 'PROFESOR') {
-      return docs.filter(
-        (doc) => doc.visibility === 'PROFESORES' || doc.visibility === 'TODOS'
-      );
-    }
-
-    return docs.filter((doc) => doc.visibility === 'TODOS');
-  });
-
-  public getDocuments(): Observable<IDocument[]> {
-    return this.http.get<IDocument[]>(this.apiUrl).pipe(
-      tap((docs) => {
-        this._documents.set(docs || []);
+  // Profesores y alumnos solo ven documentos públicos,
+  // que es el único control de visibilidad que existe hoy en el backend.
+  return docs.filter((doc) => doc.isPublic === true);
+});
+public getDocuments(): Observable<IDocument[]> {
+    return this.http.get<any>(this.apiUrl).pipe(
+      tap((response) => {
+        // Desempaqueta response.data (estándar de Cursala) o response directo
+        const items = Array.isArray(response)
+          ? response
+          : (Array.isArray(response?.data) ? response.data : (response?.data?.docs || []));
+        this._documents.set(items);
       }),
       catchError((error: HttpErrorResponse) => {
         this._documents.set([]);
         return throwError(() => error);
       })
     );
+  
   }
 
   public refreshDocuments(): void {
