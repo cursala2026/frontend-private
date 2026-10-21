@@ -14,6 +14,7 @@ import { EnrollModalComponent } from '../../../shared/components/enroll-modal/en
 import { UnenrollModalComponent } from '../../../shared/components/unenroll-modal/unenroll-modal.component';
 import { PurchaseModalComponent } from '../../../shared/components/purchase-modal/purchase-modal.component';
 import { TransferModalComponent } from '../../../shared/components/transfer-modal/transfer-modal.component';
+import { getCourseModalityLabel, isAsyncCourse } from '../../../core/models/course-modality';
 
 interface CourseItem {
   type: 'class' | 'questionnaire';
@@ -66,6 +67,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
 
   currentUser = this.authService.currentUser;
   isEnrolled = computed(() => this.isEnrolledSignal());
+  isAsync = computed(() => isAsyncCourse(this.course()?.modality));
 
   // Computed for item access to avoid repeated calculations
   itemAccess = computed(() => {
@@ -416,6 +418,10 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
     }).format(price);
   }
 
+  modalityLabel(value?: string): string {
+    return getCourseModalityLabel(value);
+  }
+
   formatDate(date?: Date | string): string {
     if (!date) return '';
     let dateObj: Date;
@@ -461,6 +467,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    */
   hasAnyDateFields(courseData: any): boolean {
     if (!courseData) return false;
+    // Los cursos ASYNC no muestran cronograma ni fechas
+    if (isAsyncCourse(courseData.modality)) return false;
     return !!(
       courseData.startDate ||
       this.hasDays(courseData.days) ||
@@ -475,6 +483,7 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    */
   getDateFields(courseData: any): Array<{ key: string; label: string; value: string }> {
     if (!courseData) return [];
+    if (isAsyncCourse(courseData.modality)) return [];
     const fields: Array<{ key: string; label: string; value: string }> = [];
 
     if (courseData.startDate) {
@@ -500,6 +509,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Verifica si el usuario puede inscribirse al curso según la fecha de apertura de inscripciones
    */
   canEnroll(): boolean {
+    // ASYNC: sin fecha de apertura de inscripciones
+    if (this.isAsync()) return true;
     const courseData = this.course();
     if (!courseData?.registrationOpenDate) return true; // Si no hay fecha, se puede inscribir
     
@@ -517,6 +528,8 @@ export class CourseDetailComponent implements OnInit, OnDestroy {
    * Verifica si el curso ya comenzó según la fecha de inicio
    */
   canStartCourse(): boolean {
+    // ASYNC: acceso inmediato, sin fecha de inicio
+    if (this.isAsync()) return true;
     const courseData = this.course();
     if (!courseData?.startDate) return true; // Si no hay fecha de inicio, se puede cursar
     
