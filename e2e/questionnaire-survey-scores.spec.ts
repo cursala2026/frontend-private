@@ -234,7 +234,7 @@ test.describe('Issue #115 — Encuestas no muestran puntajes ni tiempo de resolu
 
     // Usar tbody para apuntar específicamente al botón de la tabla, no al del header
     await p.locator('tbody button:has-text("Ver")').first().click();
-    await p.waitForSelector('text=Revisar y Calificar', { timeout: 8000 });
+    await p.waitForSelector('text=Pendientes de Calificar', { timeout: 8000 });
 
     // Con isSurvey=true el template no renderiza el span "Correcta" ni el mensaje "Incorrecta"
     await expect(p.locator('text=Correcta').first()).not.toBeVisible();
@@ -259,7 +259,7 @@ test.describe('Issue #115 — Encuestas no muestran puntajes ni tiempo de resolu
 
     // Usar tbody para apuntar específicamente al botón de la tabla, no al del header
     await p.locator('tbody button:has-text("Ver")').first().click();
-    await p.waitForSelector('text=Revisar y Calificar', { timeout: 8000 });
+    await p.waitForSelector('text=Pendientes de Calificar', { timeout: 8000 });
 
     // El label "Puntos (de X)" está condicionado a !isSurvey en el template
     await expect(p.locator('label:has-text("Puntos")')).not.toBeVisible();

@@ -52,18 +52,15 @@ export const routes: Routes = [
       },
       {
         path: 'courses/create-async',
-        component: CourseGeneralInfoComponent,
-        canDeactivate: [UnsavedChangesGuard]
+        loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
       },
       {
         path: 'courses/:courseId/edit-async',
-        component: CourseGeneralInfoComponent,
-        canDeactivate: [UnsavedChangesGuard]
+        loadComponent: () => import('./features/admin/courses/courses.component').then(m => m.CoursesComponent)
       },
       {
         path: 'courses/:courseId/curriculum',
-        loadComponent: () => import('./features/admin/courses/curriculum-page/curriculum-page.component').then(m => m.CurriculumPageComponent),
-        canDeactivate: [UnsavedChangesGuard]
+        loadComponent: () => import('./features/admin/courses/curriculum-page/curriculum-page.component').then(m => m.CurriculumPageComponent)
       },
       {
         path: 'documentation',

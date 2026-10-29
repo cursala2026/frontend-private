@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurriculumBuilderComponent } from '../curriculum-builder/curriculum-builder.component';
-import { ComponentCanDeactivate } from '../../../../core/guards/unsaved-changes.guard';
 import { InfoService } from '../../../../core/services/info.service';
 
 @Component({
@@ -21,7 +20,7 @@ import { InfoService } from '../../../../core/services/info.service';
     </div>
   `,
 })
-export class CurriculumPageComponent implements ComponentCanDeactivate {
+export class CurriculumPageComponent {
   private info = inject(InfoService);
   courseId = inject(ActivatedRoute).snapshot.paramMap.get('courseId') ?? '';
   builder = viewChild(CurriculumBuilderComponent);
