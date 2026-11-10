@@ -335,6 +335,11 @@ export class AuthService implements OnDestroy {
     if (hasToken) localStorage.removeItem(this.TOKEN_KEY);
     if (hasUser) localStorage.removeItem(this.USER_KEY);
 
+    // Limpiar también la cookie de sesión
+    const isProduction = window.location.hostname.endsWith('cursala.com.ar');
+    const domainPart = isProduction ? '; domain=.cursala.com.ar' : '';
+    document.cookie = `${this.TOKEN_KEY}=; path=/${domainPart}; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax`;
+
     this.tokenSignal.set(null);
     this.userSignal.set(null);
 
@@ -362,7 +367,6 @@ export class AuthService implements OnDestroy {
       this.router.navigate(['/login']);
     }
   }
-
   /**
    * Realiza el login del usuario
    */
@@ -401,6 +405,13 @@ export class AuthService implements OnDestroy {
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.TOKEN_KEY, authResult.token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(authResult.userInfo));
+
+    // Sincronizar token en Cookie para que frontend-public pueda leer la sesión
+    const isProduction = window.location.hostname.endsWith('cursala.com.ar');
+    const domainPart = isProduction ? '; domain=.cursala.com.ar' : '';
+    const securePart = isProduction ? '; secure' : '';
+    // Cookie válida por 7 días
+    document.cookie = `${this.TOKEN_KEY}=${authResult.token}; path=/${domainPart}${securePart}; samesite=lax; max-age=604800`;
 
     this.tokenSignal.set(authResult.token);
     this.userSignal.set(authResult.userInfo);

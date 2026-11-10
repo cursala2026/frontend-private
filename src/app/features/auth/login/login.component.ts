@@ -12,7 +12,6 @@ import { environment } from '../../../core/config/environment';
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterModule, NgOptimizedImage, PasswordFieldComponent],
   templateUrl: './login.component.html',
-  
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
@@ -21,7 +20,7 @@ export class LoginComponent {
   private route = inject(ActivatedRoute);
   private info = inject(InfoService);
 
-  loginForm: FormGroup;
+  loginForm!: FormGroup;
   errorMessage = signal<string | null>(null);
   isLoading = signal<boolean>(false);
   // mostrar/ocultar contraseña
@@ -32,15 +31,29 @@ export class LoginComponent {
   private courseId: string | null = null;
 
   constructor() {
-    // Si ya está autenticado y el token es válido, redirigir al dashboard/alumno
+    // Si ya está autenticado y el token es válido, redirigir
     if (this.authService.isAuthenticated()) {
       if (this.authService.checkTokenExpired()) {
         this.authService.logout();
       } else {
-        // Ya está logueado y el token es válido, redirigir
         const user = this.authService.currentUser();
         if (user) {
+          const callbackUrl: string | undefined = this.route.snapshot.queryParams['callbackUrl'];
+          if (callbackUrl) {
+            const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+            const isProduction = window.location.hostname.endsWith('cursala.com.ar');
+            const publicBaseUrl = isProduction ? 'https://cursala.com.ar' : 'http://localhost:3002';
+            const targetUrl = callbackUrl.startsWith('http') ? callbackUrl : `${publicBaseUrl}${callbackUrl}`;
+
+            const urlObj = new URL(targetUrl);
+            if (token) {
+              urlObj.searchParams.set('token', token);
+            }
+            window.location.href = urlObj.toString();
+            return;
+          }
           this.router.navigate(['/dashboard']);
+          return;
         }
       }
     }
@@ -95,7 +108,6 @@ export class LoginComponent {
       return;
     }
     this.isLoading.set(true);
-    // disable form controls to avoid using [disabled] attribute on form controls
     try { this.loginForm.disable(); } catch (e) { /* ignore */ }
     this.errorMessage.set(null);
 
@@ -106,14 +118,29 @@ export class LoginComponent {
         this.isLoading.set(false);
         try { this.loginForm.enable(); } catch (e) { /* ignore */ }
 
-        // Redirigir según el rol del usuario
+        // 1. Verificar si venía con callbackUrl
+        const callbackUrl: string | undefined = this.route.snapshot.queryParams['callbackUrl'];
+        if (callbackUrl) {
+          const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+          const isProduction = window.location.hostname.endsWith('cursala.com.ar');
+          const publicBaseUrl = isProduction ? 'https://cursala.com.ar' : 'http://localhost:3002';
+          const targetUrl = callbackUrl.startsWith('http') ? callbackUrl : `${publicBaseUrl}${callbackUrl}`;
+
+          const urlObj = new URL(targetUrl);
+          if (token) {
+            urlObj.searchParams.set('token', token);
+          }
+          window.location.href = urlObj.toString();
+          return;
+        }
+
+        // 2. Si no hay callbackUrl, sigue el flujo estándar por rol
         this.redirectByRole();
       },
       error: (error) => {
         this.isLoading.set(false);
         try { this.loginForm.enable(); } catch (e) { /* ignore */ }
 
-        // Manejar diferentes tipos de errores
         if (error.status === 401) {
           this.errorMessage.set('Usuario o contraseña incorrectos.');
         } else if (error.status === 429) {
