@@ -31,7 +31,16 @@ export class LoginComponent {
   private courseId: string | null = null;
 
   constructor() {
-    // Si ya está autenticado y el token es válido, redirigir
+    // 1. --- ATRAJAMOS EL FORCELOGOUT ANTES DE EVALUAR LA SESIÓN ---
+    if (this.route.snapshot.queryParams['forceLogout'] === 'true') {
+      console.log('[AUTH] Limpiando sesión fantasma por forceLogout');
+      this.authService.logout(); // Ejecutamos el método del servicio
+      localStorage.clear();      // Forzamos limpieza por las dudas
+      sessionStorage.clear();
+    }
+    // --------------------------------------------------------------
+
+    // 2. Ahora sí, si está autenticado (y no lo acabamos de limpiar), redirigimos
     if (this.authService.isAuthenticated()) {
       if (this.authService.checkTokenExpired()) {
         this.authService.logout();
