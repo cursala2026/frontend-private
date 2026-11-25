@@ -562,8 +562,8 @@ export class TeacherStudentsComponent implements OnInit, OnDestroy {
       let students = value.students;
       if (term) {
         students = students.filter(s => {
-          const fullName = (s.firstName + ' ' + s.lastName).toLowerCase();
-          return fullName.includes(term) || (s.email || '').toLowerCase().includes(term);
+          const fullName = `${s.firstName} ${s.lastName}`.toLowerCase();
+          return fullName.includes(term);
         });
       }
       // Always include the course entry; show empty students array if none match

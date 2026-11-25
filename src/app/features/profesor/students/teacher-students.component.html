@@ -111,7 +111,7 @@
                     <input
                       id="search-{{ group.courseId }}"
                       type="text"
-                      placeholder="Buscar alumno por nombre o email"
+                      placeholder="Buscar alumno por nombre"
                       [ngModel]="searchTerms()[group.courseId] || ''"
                       (ngModelChange)="onCourseSearchChange(group.courseId, $event)"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -158,12 +158,10 @@
                               }
                             </div>
 
-                            <!-- Name and Email in one line -->
+                            <!-- Name only -->
                             <div class="min-w-0 flex-1">
                               <p class="text-sm text-gray-900 truncate">
                                 <span class="font-medium">{{ student.firstName }} {{ student.lastName }}</span>
-                                <span class="text-brand-tertiary mx-2">·</span>
-                                <span class="text-brand-tertiary-light">{{ student.email }}</span>
                               </p>
                             </div>
                           </div>
