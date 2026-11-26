@@ -23,5 +23,6 @@ export interface IUser {
   updatedAt?: string | Date;
   hasCompletedInterestsForm?: boolean;
   interests?: any[];           
-  interestSuggestions?: string; 
+  interestSuggestions?: string;
+  teacherStatus?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | string; 
 }

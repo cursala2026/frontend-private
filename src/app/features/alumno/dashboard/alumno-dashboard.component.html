@@ -10,6 +10,81 @@
       </p>
     </div>
   </div>
+  <!-- Teacher Application Status Banner (TC-04) -->
+  @if (isProfesor() || teacherStatus() === 'APPROVED') {
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 bg-emerald-100 text-emerald-700 rounded-lg p-2">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-semibold text-emerald-900">¡Ya sos docente en Cursala!</h3>
+          <p class="text-xs sm:text-sm text-emerald-700">Tu perfil docente está activo. Podés gestionar tus cursos y clases desde tu panel.</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="goToProfesorPanel()"
+        class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors cursor-pointer"
+      >
+        Ir al Panel Docente
+      </button>
+    </div>
+  } @else if (teacherStatus() === 'PENDING_APPROVAL') {
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5 flex items-start gap-3">
+      <div class="shrink-0 bg-amber-100 text-amber-700 rounded-lg p-2">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-sm sm:text-base font-semibold text-amber-900">Postulación docente en revisión</h3>
+        <p class="text-xs sm:text-sm text-amber-800">Recibimos tu solicitud para enseñar en Cursala. Te notificaremos cuando el equipo la evalúe.</p>
+      </div>
+    </div>
+  } @else if (teacherStatus() === 'REJECTED') {
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 bg-red-100 text-red-700 rounded-lg p-2">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-semibold text-red-900">Tu postulación docente no fue aprobada</h3>
+          <p class="text-xs sm:text-sm text-red-700">Podés revisar tus datos y volver a enviar una nueva solicitud cuando quieras.</p>
+        </div>
+      </div>
+      <a
+        [href]="publicTeacherApplyUrl"
+        class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+      >
+        Volver a postularme
+      </a>
+    </div>
+  } @else {
+    <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 bg-brand-primary/10 text-brand-primary rounded-lg p-2">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-semibold text-gray-900">¿Querés enseñar en Cursala?</h3>
+          <p class="text-xs sm:text-sm text-gray-600">Compartí tu experiencia profesional y dictá tus propios cursos en la plataforma.</p>
+        </div>
+      </div>
+      <a
+        [href]="publicTeacherApplyUrl"
+        class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary-dark transition-colors"
+      >
+        Postularme como docente
+      </a>
+    </div>
+  }
 
   <!-- Stats Grid -->
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">

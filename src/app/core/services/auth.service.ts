@@ -459,12 +459,13 @@ export class AuthService implements OnDestroy {
    * Obtiene el usuario actual del backend
    */
   getCurrentUserFromBackend(): Observable<IUser> {
-    // El endpoint devuelve { message, user }
     return this.http.get<any>(`${this.apiUrl}/current-user`).pipe(
-      map((resp: any) => resp.user as IUser),
+      map((resp: any) => (resp?.user || resp?.data?.user || resp?.data || resp) as IUser),
       tap(user => {
-        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-        this.userSignal.set(user);
+        if (user && user._id) {
+          localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+          this.userSignal.set(user);
+        }
       })
     );
   }

@@ -1,11 +1,12 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoursesService, Course } from '../../../core/services/courses.service';
 import { CourseProgressService, CourseProgress } from '../../../core/services/course-progress.service';
 import { BunnyConfigService } from '../../../core/services/bunny-config.service';
+import { environment } from '../../../core/config/environment';
 
 @Component({
   selector: 'app-alumno-dashboard',
@@ -39,6 +40,7 @@ export class AlumnoDashboardComponent implements OnInit {
     
     // Cargar cursos publicados y datos del alumno en paralelo
     forkJoin({
+      currentUser: this.authService.getCurrentUserFromBackend().pipe(catchError(() => of(null))),
       publishedCourses: this.coursesService.getPublishedCourses(),
       studentCourses: this.coursesService.getStudentCourses(),
       progress: this.progressService.getAllProgress()
@@ -134,6 +136,14 @@ export class AlumnoDashboardComponent implements OnInit {
     if (placeholder) {
       placeholder.style.display = 'flex';
     }
+  }
+  // Estado reactivo de postulación docente (TC-04)
+  isProfesor = computed(() => this.authService.isProfesor());
+  teacherStatus = computed(() => this.user()?.teacherStatus ?? null);
+  publicTeacherApplyUrl = `${environment.publicFrontend}/ser-profesor`;
+
+  goToProfesorPanel(): void {
+    this.router.navigate(['/profesor']);
   }
 
   formatPrice(price?: number): string {
