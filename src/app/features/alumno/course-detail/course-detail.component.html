@@ -776,11 +776,13 @@
   ></app-purchase-modal>
 
   <!-- Transfer Modal -->
+  @if (showEnrollModal()) {
   <app-transfer-modal
     [isOpen]="showTransferModal()"
     [amount]="course()?.price || 0"
     [courseId]="course()?._id || ''"
     (onClose)="closeTransferModal()"
   ></app-transfer-modal>
+  }
 </div>
 

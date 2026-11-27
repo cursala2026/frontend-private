@@ -44,17 +44,11 @@ export class TransferModalComponent implements OnInit {
       next: (res) => {
         const list = res?.data || [];
         const first = list.length ? list[0] : null;
-        if (first) {
-          this.bankAccount.set({ cbu: first.cbu, alias: first.alias });
-        } else {
-          this.bankAccount.set(null);
-          this.infoService.showError('Error al cargar datos bancarios. Intente nuevamente.');
-        }
+        this.bankAccount.set(first ? { cbu: first.cbu, alias: first.alias } : null);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error fetching public bank accounts:', err);
-        this.infoService.showError('Error al cargar datos bancarios. Intente nuevamente.');
         this.bankAccount.set(null);
         this.loading.set(false);
       }
@@ -117,7 +111,7 @@ export class TransferModalComponent implements OnInit {
         }
         this.promoValidating.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error validating promo code:', err);
         this.promoValid.set(false);
         this.promoError.set(err?.error?.message || 'Error al validar el código');
