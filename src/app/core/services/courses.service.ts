@@ -103,6 +103,9 @@ export interface CreateCourseDto {
   maxInstallments?: number;
   interestFree?: boolean;
   isPublished?: boolean;
+  reviewNotes?: string;
+  reviewRequestedAt?: Date;
+  modules?: any[];
   teachers?: string[]; // Array de IDs de profesores (1-3)
 }
 
@@ -343,5 +346,8 @@ export class CoursesService {
       interestSuggestions: payload.suggestions,
       hasCompletedInterestsForm: true
     });
+  }
+  requestReview(courseId: string, notes?: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${courseId}/request-review`, { notes: notes || '' });
   }
 }
